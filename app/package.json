@@ -44,7 +44,9 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test:logic": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/game/__tests__/run.ts"
+    "test:logic": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/game/__tests__/run.ts",
+    "build:apk": "npx eas-cli@latest build -p android --profile preview",
+    "build:store": "npx eas-cli@latest build -p android --profile production"
   },
   "private": true
 }

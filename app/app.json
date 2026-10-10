@@ -8,9 +8,11 @@
     "scheme": "pipspuzzles",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anujpal.pipspuzzles"
     },
     "android": {
+      "package": "com.anujpal.pipspuzzles",
       "adaptiveIcon": {
         "backgroundColor": "#6CCFF6",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

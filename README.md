@@ -101,6 +101,26 @@ Windows may ask to allow Python through the firewall the first time: allow it on
 
 ---
 
+## 5. Build the real app (installable APK)
+
+Expo Go (step 2) is only a preview tool. To get **Pip's Puzzles** as its own app with its own icon, build it in the cloud with EAS. You don't need Android Studio.
+
+1. Make a free account at **expo.dev**.
+2. In the `app` folder:
+   ```bash
+   npm install
+   npx eas-cli@latest login
+   npm run build:apk
+   ```
+3. The first run asks a few questions. Answer **Yes** to creating the EAS project, and **Yes** to generating a new Android keystore (EAS stores it safely for you).
+4. Wait about 10–20 minutes. You get a link and a QR code: open it **on your Android phone**, download the APK and install it. Allow *Install unknown apps* for your browser when Android asks.
+
+The app id is `com.anujpal.pipspuzzles` (in `app/app.json`). Change it before your first Play Store upload if you want a different one; after that it can never change.
+
+**For the Play Store:** run `npm run build:store`. It makes an `.aab` file instead of an APK, and the version number goes up automatically on every build.
+
+---
+
 ## What's where
 
 ### App: `app/src`

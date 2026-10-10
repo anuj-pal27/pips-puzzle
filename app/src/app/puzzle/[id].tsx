@@ -8,16 +8,16 @@ import Svg, { Path } from 'react-native-svg';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { ChunkyButton, CircleButton, Pill } from '@/components/Buttons';
+import { TipBubble } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
 import { PieceArt } from '@/components/PieceArt';
 import { Txt } from '@/components/Txt';
-import { getPuzzle, getTier, PICTURES, type Puzzle } from '@/data/puzzles';
-import { jigsawStars, pieceMargin, piecePath, slotPath, trayLayout, type JigsawGrid } from '@/game/jigsaw';
+import { getPuzzle, getTier, PICTURES, type JigsawPuzzle } from '@/data/puzzles';
+import { jigsawStars, pieceMargin, piecePath, slotPath, startTurns, trayLayout, type JigsawGrid } from '@/game/jigsaw';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 
 type Rect = { x: number; y: number; w: number; h: number };
-type JigsawPuzzle = Extract<Puzzle, { kind: 'jigsaw' }>;
 
 const PANEL_PAD = 14;
 
@@ -37,11 +37,12 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
   // Board size follows the screen width; pieces follow the board.
   const boardW = Math.min(width - 32 - PANEL_PAD * 2, 420);
   const boardH = (boardW * picture.height) / picture.width;
-  const grid: JigsawGrid = { cols: tier.cols, rows: tier.rows, pw: boardW / tier.cols, ph: boardH / tier.rows };
+  const grid: JigsawGrid = { cols: puzzle.cols, rows: puzzle.rows, pw: boardW / puzzle.cols, ph: boardH / puzzle.rows };
   const margin = pieceMargin(grid);
   const boxW = grid.pw + 2 * margin;
   const boxH = grid.ph + 2 * margin;
-  const total = tier.cols * tier.rows;
+  const total = puzzle.cols * puzzle.rows;
+  const spin = !!puzzle.spin;
 
   const [placed, setPlaced] = useState<number[]>([]);
   const [hint, setHint] = useState(false);
@@ -50,6 +51,9 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
   const [paused, setPaused] = useState(false);
   const [panel, setPanel] = useState<Rect | null>(null);
   const [tray, setTray] = useState<Rect | null>(null);
+  // Spin jigsaws: quarter-turns per piece. Only ever counts up, so pieces always spin the same way.
+  const [turns, setTurns] = useState<number[]>(() => (spin ? startTurns(total) : Array(total).fill(0)));
+  const [tip, setTip] = useState('Some pieces are turned round. Tap a piece to spin it!');
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const done = placed.length === total;
 
@@ -82,6 +86,7 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
   };
   const restart = () => {
     setPlaced([]);
+    setTurns(spin ? startTurns(total) : Array(total).fill(0));
     setMisses(0);
     setUsedHint(false);
     setHint(false);
@@ -160,6 +165,8 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
           </View>
         </View>
 
+        {spin && !done ? <TipBubble text={tip} /> : null}
+
         {/* tray: pieces start here */}
         <View style={styles.tray} onLayout={measure(setTray)}>
           {done ? (
@@ -187,6 +194,10 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
                       target={{ x: boardX + c * grid.pw + grid.pw / 2, y: boardY + r * grid.ph + grid.ph / 2 }}
                       scale={s.scale}
                       rot={s.rot}
+                      turn={turns[s.id]}
+                      spin={spin}
+                      onSpin={(id) => setTurns((t) => t.map((v, i) => (i === id ? v + 1 : v)))}
+                      onWrongWay={() => setTip('Spin it the right way up first! Tap the piece to turn it.')}
                       boxW={boxW}
                       boxH={boxH}
                       margin={margin}
@@ -236,12 +247,16 @@ function TrayPiece({
   target,
   scale,
   rot,
+  turn,
+  spin,
   boxW,
   boxH,
   margin,
   snap,
   onPlaced,
   onMiss,
+  onSpin,
+  onWrongWay,
   children,
 }: {
   id: number;
@@ -251,22 +266,28 @@ function TrayPiece({
   target: { x: number; y: number };
   scale: number;
   rot: number;
+  turn: number; // quarter-turns clockwise; upright when a multiple of 4
+  spin: boolean; // tapping turns the piece
   boxW: number;
   boxH: number;
   margin: number;
   snap: number;
   onPlaced: (id: number) => void;
   onMiss: () => void;
+  onSpin: (id: number) => void;
+  onWrongWay: () => void;
   children: ReactNode;
 }) {
   const x = useSharedValue(home.x);
   const y = useSharedValue(home.y);
   const s = useSharedValue(scale);
-  const r = useSharedValue(rot);
+  const r = useSharedValue(rot + turn * 90);
   const z = useSharedValue(1);
   const near = useSharedValue(0);
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
+  const touchX = useSharedValue(0);
+  const touchY = useSharedValue(0);
 
   // Screen size or layout changed: move the piece to its new home.
   useEffect(() => {
@@ -275,28 +296,41 @@ function TrayPiece({
     s.set(scale);
   }, [home.x, home.y, scale, x, y, s]);
 
+  // Tapped: turn a quarter clockwise.
+  useEffect(() => {
+    r.set(withTiming(rot + turn * 90, { duration: 180 }));
+  }, [turn, rot, r]);
+  const upright = turn % 4 === 0;
+
   const distance = () => {
     'worklet';
     return Math.hypot(x.get() + boxW / 2 - target.x, y.get() + boxH / 2 - target.y);
   };
 
+  // The piece follows the finger from where it first touched down, so it never lags behind
+  // however far the finger moved before the drag was recognised.
   const pan = Gesture.Pan()
     .hitSlop({ left: -margin, right: -margin, top: -margin, bottom: -margin })
-    .onStart(() => {
+    .onBegin((e) => {
+      touchX.set(e.absoluteX);
+      touchY.set(e.absoluteY);
       startX.set(x.get());
       startY.set(y.get());
+    })
+    .onStart(() => {
       z.set(100);
       s.set(withTiming(1, { duration: 120 }));
-      r.set(withTiming(0, { duration: 120 }));
+      r.set(withTiming(turn * 90, { duration: 120 }));
     })
     .onUpdate((e) => {
-      x.set(startX.get() + e.translationX);
-      y.set(startY.get() + e.translationY);
+      x.set(startX.get() + e.absoluteX - touchX.get());
+      y.set(startY.get() + e.absoluteY - touchY.get());
       near.set(distance() < snap ? 1 : 0);
     })
     .onEnd(() => {
+      const d = distance();
       near.set(0);
-      if (distance() < snap) {
+      if (d < snap && upright) {
         x.set(withTiming(target.x - boxW / 2, { duration: 90 }));
         y.set(
           withTiming(target.y - boxH / 2, { duration: 90 }, (finished) => {
@@ -307,11 +341,21 @@ function TrayPiece({
         x.set(withSpring(home.x));
         y.set(withSpring(home.y));
         s.set(withSpring(scale));
-        r.set(withSpring(rot));
+        r.set(withSpring(rot + turn * 90));
         z.set(2);
-        scheduleOnRN(onMiss);
+        // Right spot but upside down: explain instead of counting a miss.
+        if (d < snap * 1.5 && !upright) scheduleOnRN(onWrongWay);
+        else scheduleOnRN(onMiss);
       }
     });
+  const tap = Gesture.Tap()
+    .maxDuration(300)
+    .maxDistance(10)
+    .hitSlop({ left: -margin, right: -margin, top: -margin, bottom: -margin })
+    .onEnd((_e, success) => {
+      if (success) scheduleOnRN(onSpin, id);
+    });
+  const gesture = spin ? Gesture.Race(pan, tap) : pan;
 
   const pieceStyle = useAnimatedStyle(() => ({
     zIndex: z.get(),
@@ -328,12 +372,12 @@ function TrayPiece({
           <Path d={outline} fill={colors.sun} fillOpacity={0.4} stroke={colors.sun} strokeWidth={4} strokeLinejoin="round" />
         </Svg>
       </Animated.View>
-      <GestureDetector gesture={pan}>
+      <GestureDetector gesture={gesture}>
         <Animated.View
           accessible
           accessibilityRole="button"
           accessibilityLabel={label}
-          accessibilityHint="Drag it to its place on the picture"
+          accessibilityHint={spin ? 'Tap to spin it, drag it to its place on the picture' : 'Drag it to its place on the picture'}
           accessibilityActions={[{ name: 'activate', label: 'Put piece in place' }]}
           onAccessibilityAction={() => onPlaced(id)}
           style={[{ position: 'absolute', left: 0, top: 0, width: boxW, height: boxH }, pieceStyle]}>

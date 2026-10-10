@@ -7,27 +7,38 @@
     "title": "Gappu the Goat",
     "picture": "gappu",
     "cols": 3,
-    "rows": 2
+    "rows": 2,
+    "config": {}
   },
   {
     "slug": "easy-2",
     "tier": "easy",
     "order": 2,
-    "kind": "jigsaw",
-    "title": "Mithu the Parrot",
-    "picture": "mithu",
-    "cols": 3,
-    "rows": 2
+    "kind": "shadow",
+    "title": "Who's That Shadow?",
+    "config": {
+      "friends": [
+        "mithu",
+        "tillu",
+        "pip"
+      ],
+      "cols": 3
+    }
   },
   {
     "slug": "easy-3",
     "tier": "easy",
     "order": 3,
-    "kind": "jigsaw",
-    "title": "Tillu the Tortoise",
-    "picture": "tillu",
-    "cols": 3,
-    "rows": 2
+    "kind": "memory",
+    "title": "Snack Snap",
+    "config": {
+      "snacks": [
+        "jalebi",
+        "laddoo",
+        "samosa"
+      ],
+      "cols": 3
+    }
   },
   {
     "slug": "easy-4",
@@ -37,7 +48,8 @@
     "title": "Chunnu the Monkey",
     "picture": "chunnu",
     "cols": 3,
-    "rows": 2
+    "rows": 2,
+    "config": {}
   },
   {
     "slug": "easy-5",
@@ -77,7 +89,8 @@
           "dir": 1
         }
       ]
-    }
+    },
+    "config": {}
   },
   {
     "slug": "medium-1",
@@ -87,37 +100,66 @@
     "title": "Gappu's Jalebi Shop",
     "picture": "shop",
     "cols": 4,
-    "rows": 3
+    "rows": 3,
+    "config": {}
   },
   {
     "slug": "medium-2",
     "tier": "medium",
     "order": 2,
-    "kind": "jigsaw",
-    "title": "Tillu the Tortoise",
-    "picture": "tillu",
-    "cols": 4,
-    "rows": 3
+    "kind": "tracks",
+    "title": "Fix the Tracks",
+    "config": {
+      "map": [
+        "T|HFT",
+        "Ha-cP",
+        "FTbdH",
+        "PHacT",
+        "TFT|F"
+      ],
+      "taps": [
+        "01000",
+        "01120",
+        "00310",
+        "00210",
+        "00010"
+      ],
+      "start": 1,
+      "goal": 3
+    }
   },
   {
     "slug": "medium-3",
     "tier": "medium",
     "order": 3,
-    "kind": "jigsaw",
-    "title": "Chunnu the Monkey",
-    "picture": "chunnu",
-    "cols": 4,
-    "rows": 3
+    "kind": "shadow",
+    "title": "Who's That Shadow?",
+    "config": {
+      "friends": [
+        "gappu",
+        "chunnu",
+        "gauri",
+        "mithu",
+        "tillu"
+      ],
+      "cols": 3
+    }
   },
   {
     "slug": "medium-4",
     "tier": "medium",
     "order": 4,
-    "kind": "jigsaw",
-    "title": "Mithu the Parrot",
-    "picture": "mithu",
-    "cols": 4,
-    "rows": 3
+    "kind": "memory",
+    "title": "Snack Snap",
+    "config": {
+      "snacks": [
+        "jalebi",
+        "laddoo",
+        "samosa",
+        "chai"
+      ],
+      "cols": 4
+    }
   },
   {
     "slug": "medium-5",
@@ -172,7 +214,8 @@
           "dir": 1
         }
       ]
-    }
+    },
+    "config": {}
   },
   {
     "slug": "hard-1",
@@ -182,37 +225,78 @@
     "title": "All Aboard at Jalebi Junction",
     "picture": "station",
     "cols": 5,
-    "rows": 4
+    "rows": 4,
+    "config": {
+      "spin": true
+    }
   },
   {
     "slug": "hard-2",
     "tier": "hard",
     "order": 2,
-    "kind": "jigsaw",
-    "title": "Gappu's Jalebi Shop",
-    "picture": "shop",
-    "cols": 5,
-    "rows": 4
+    "kind": "slide",
+    "title": "Tillu's Slide Puzzle",
+    "picture": "tillu",
+    "config": {
+      "size": 3,
+      "start": [
+        4,
+        3,
+        1,
+        0,
+        7,
+        2,
+        -1,
+        6,
+        5
+      ],
+      "par": 10
+    }
   },
   {
     "slug": "hard-3",
     "tier": "hard",
     "order": 3,
-    "kind": "jigsaw",
-    "title": "Gappu the Goat",
-    "picture": "gappu",
-    "cols": 5,
-    "rows": 4
+    "kind": "tracks",
+    "title": "Fix the Tracks",
+    "config": {
+      "map": [
+        "|Tb-cH",
+        "a-dP||",
+        "|b-bdd",
+        "T-c|-F",
+        "aH|a-c",
+        "F-dTH|"
+      ],
+      "taps": [
+        "102110",
+        "112011",
+        "121121",
+        "002110",
+        "301211",
+        "012001"
+      ],
+      "start": 0,
+      "goal": 5
+    }
   },
   {
     "slug": "hard-4",
     "tier": "hard",
     "order": 4,
-    "kind": "jigsaw",
-    "title": "Chunnu the Monkey",
-    "picture": "chunnu",
-    "cols": 5,
-    "rows": 4
+    "kind": "memory",
+    "title": "Snack Snap",
+    "config": {
+      "snacks": [
+        "jalebi",
+        "laddoo",
+        "samosa",
+        "chai",
+        "kulfi",
+        "mango"
+      ],
+      "cols": 4
+    }
   },
   {
     "slug": "hard-5",
@@ -274,6 +358,7 @@
           "dir": 1
         }
       ]
-    }
+    },
+    "config": {}
   }
 ]

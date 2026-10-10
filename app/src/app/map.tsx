@@ -8,20 +8,31 @@ import { CircleButton, Pill } from '@/components/Buttons';
 import { Icon } from '@/components/Icon';
 import { Stars } from '@/components/Stars';
 import { Txt } from '@/components/Txt';
-import { isTierUnlocked, nextPuzzle, PICTURES, puzzlesInTier, TIERS, type Puzzle, type Tier } from '@/data/puzzles';
+import { THUMBS } from '@/data/art';
+import { isTierUnlocked, KIND_LABEL, nextPuzzle, PICTURES, puzzlesInTier, TIERS, type Puzzle, type Tier } from '@/data/puzzles';
+import { openPuzzle } from '@/navigation';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 
-const MAZE_THUMB = require('@/assets/images/game/maze-thumb.png');
-
-function openPuzzle(p: Puzzle) {
-  if (p.kind === 'maze') router.push({ pathname: '/maze/[id]', params: { id: p.id } });
-  else router.push({ pathname: '/puzzle/[id]', params: { id: p.id } });
+/** Every puzzle has its own picture on the map. */
+function thumbFor(p: Puzzle) {
+  switch (p.kind) {
+    case 'jigsaw':
+      return PICTURES[p.picture].image;
+    case 'maze':
+    case 'slide':
+      return THUMBS[p.kind];
+    case 'shadow':
+      return THUMBS[`shadow-${p.game}`];
+    case 'memory':
+      return THUMBS[`memory-${p.game}`];
+    case 'tracks':
+      return THUMBS[`tracks-${p.game}`];
+  }
 }
-
-function describe(p: Puzzle) {
-  return p.kind === 'maze' ? 'Jalebi maze hunt' : PICTURES[p.picture].title;
-}
+/** Chip on the tile: what kind of game it is (plain jigsaws don't need one). */
+const chipFor = (p: Puzzle) => (p.kind === 'jigsaw' ? (p.spin ? 'Spin' : null) : KIND_LABEL[p.kind]);
+const describe = (p: Puzzle) => `${p.title}${p.kind === 'jigsaw' ? ' jigsaw' : ''}`;
 
 function PuzzleTile({ puzzle, size, stars, isNext }: { puzzle: Puzzle; size: number; stars: number; isNext: boolean }) {
   const pulse = useSharedValue(1);
@@ -29,7 +40,7 @@ function PuzzleTile({ puzzle, size, stars, isNext }: { puzzle: Puzzle; size: num
     if (isNext) pulse.set(withRepeat(withSequence(withTiming(1.06, { duration: 800 }), withTiming(1, { duration: 800 })), -1));
   }, [isNext, pulse]);
   const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.get() }] }));
-  const thumb = puzzle.kind === 'maze' ? MAZE_THUMB : PICTURES[puzzle.picture].image;
+  const chip = chipFor(puzzle);
 
   return (
     <View style={{ width: size, alignItems: 'center', gap: 4 }}>
@@ -44,10 +55,10 @@ function PuzzleTile({ puzzle, size, stars, isNext }: { puzzle: Puzzle; size: num
             isNext ? styles.tileNext : null,
             pressed && { transform: [{ translateY: 3 }] },
           ]}>
-          <Image source={thumb} style={styles.thumb} resizeMode="cover" />
-          {puzzle.kind === 'maze' ? (
-            <View style={styles.mazeChip}>
-              <Txt size={12} weight="extrabold" color={colors.white}>Maze</Txt>
+          <Image source={thumbFor(puzzle)} style={styles.thumb} resizeMode="cover" />
+          {chip ? (
+            <View style={styles.chip}>
+              <Txt size={12} weight="extrabold" color={colors.white}>{chip}</Txt>
             </View>
           ) : null}
           {isNext ? (
@@ -70,14 +81,14 @@ function LockedTier({ tier, previous }: { tier: Tier; previous: Tier }) {
           <View style={[styles.badge, { backgroundColor: tier.color }]}>
             <Txt weight="display" size={20}>{tier.name}</Txt>
           </View>
-          <Txt size={15} color={colors.inkBrown}>{tier.pieces} pieces</Txt>
+          <Txt size={15} color={colors.inkBrown}>{tier.tagline}</Txt>
         </View>
         <Icon name="lock" size={24} />
       </View>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {puzzlesInTier(tier.id).map((p) => (
           <View key={p.id} style={styles.lockedTile}>
-            {p.kind === 'maze' ? <Image source={MAZE_THUMB} style={[styles.thumb, { opacity: 0.35, position: 'absolute' }]} /> : null}
+            <Image source={thumbFor(p)} style={[styles.thumb, { opacity: 0.3, position: 'absolute' }]} />
             <View style={styles.lockCircle}>
               <Icon name="lock" size={16} />
             </View>
@@ -119,7 +130,7 @@ export default function PuzzleMap() {
                   <View style={[styles.badge, { backgroundColor: tier.color }]}>
                     <Txt weight="display" size={20} accessibilityRole="header">{tier.name}</Txt>
                   </View>
-                  <Txt size={15} color={colors.inkSoft}>{tier.pieces} pieces</Txt>
+                  <Txt size={15} color={colors.inkSoft}>{tier.tagline}</Txt>
                 </View>
                 <Txt weight="extrabold" size={16}>{done} of 5 done</Txt>
               </View>
@@ -149,7 +160,7 @@ const styles = StyleSheet.create({
   tile: { padding: 5, borderRadius: 22, backgroundColor: colors.sand, boxShadow: `0px 4px 0px ${colors.sandShadow}` },
   tileNext: { backgroundColor: colors.sun, boxShadow: `0px 0px 0px 4px ${colors.white}, 0px 0px 0px 6px ${colors.sun}, 0px 8px 0px ${colors.sunShadow}` },
   thumb: { width: '100%', height: '100%', borderRadius: 17 },
-  mazeChip: { position: 'absolute', left: -4, top: -6, paddingHorizontal: 9, borderRadius: 999, backgroundColor: colors.ink },
+  chip: { position: 'absolute', left: -4, top: -6, paddingHorizontal: 9, borderRadius: 999, backgroundColor: colors.ink },
   playBadge: {
     position: 'absolute',
     alignSelf: 'center',

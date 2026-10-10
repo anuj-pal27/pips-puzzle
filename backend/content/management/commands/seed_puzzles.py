@@ -7,6 +7,7 @@ from django.db import transaction
 from content.models import Puzzle
 
 SEED_FILE = Path(__file__).resolve().parents[2] / "seed.json"
+BLANK = {"picture": "", "cols": None, "rows": None, "maze": None, "config": {}}
 
 
 class Command(BaseCommand):
@@ -17,7 +18,8 @@ class Command(BaseCommand):
         created = updated = 0
         with transaction.atomic():
             for item in items:
-                fields = {k: v for k, v in item.items() if k != "slug"}
+                # Start from blanks so a slot that changed kind (say jigsaw -> shadow) loses its old settings.
+                fields = {**BLANK, **{k: v for k, v in item.items() if k != "slug"}}
                 puzzle = Puzzle(slug=item["slug"], **fields)
                 puzzle.clean()  # same checks the admin runs
                 _, was_created = Puzzle.objects.update_or_create(slug=item["slug"], defaults=fields)

@@ -10,13 +10,14 @@ export type RemotePuzzle = {
   slug: string;
   tier: 'easy' | 'medium' | 'hard';
   order: number;
-  kind: 'jigsaw' | 'maze';
+  kind: 'jigsaw' | 'maze' | 'shadow' | 'memory' | 'tracks' | 'slide';
   title: string;
   picture: string;
   image: string | null;
   cols: number | null;
   rows: number | null;
   maze: unknown;
+  config: Record<string, unknown>; // settings for the other kinds, same shape as src/data/games.ts
 };
 
 export type Tokens = { access: string; refresh: string };

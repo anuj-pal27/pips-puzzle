@@ -1,6 +1,6 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View, type ImageSourcePropType } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -9,7 +9,10 @@ import { ChunkyButton, CircleButton } from '@/components/Buttons';
 import { OutlinedText } from '@/components/OutlinedText';
 import { Star } from '@/components/Stars';
 import { Txt } from '@/components/Txt';
+import { FRIEND_ART, FRIEND_RATIO, SNACK_ART, TRAIN_ART } from '@/data/art';
+import { SHADOW_GAMES, SNAP_GAMES } from '@/data/games';
 import { getPuzzle, PICTURES, puzzleAfter, type Puzzle } from '@/data/puzzles';
+import { openPuzzle } from '@/navigation';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 
@@ -34,18 +37,47 @@ function Sunburst() {
   );
 }
 
-function openPuzzle(p: Puzzle) {
-  if (p.kind === 'maze') router.replace({ pathname: '/maze/[id]', params: { id: p.id } });
-  else router.replace({ pathname: '/puzzle/[id]', params: { id: p.id } });
+const PHOTO_W = 300;
+
+/** What goes in the photo card: the finished picture, the friends, the snacks or the train. */
+function Showcase({ puzzle }: { puzzle: Puzzle }) {
+  const picture = (id: string) => {
+    const p = PICTURES[id];
+    return <Image source={p.image} style={{ width: PHOTO_W, height: (PHOTO_W * p.height) / p.width, borderRadius: 12 }} accessibilityLabel={p.title} />;
+  };
+  const row = (items: ImageSourcePropType[], size: number, h = size, bg: string = colors.white) => (
+    <View style={[styles.showRow, { backgroundColor: bg }]}>
+      {items.map((src, i) => (
+        <Image key={i} source={src} style={{ width: size, height: h }} />
+      ))}
+    </View>
+  );
+  switch (puzzle.kind) {
+    case 'jigsaw':
+    case 'slide':
+      return picture(puzzle.picture);
+    case 'shadow': {
+      const friends = SHADOW_GAMES[puzzle.game].friends;
+      const size = Math.min(96, (PHOTO_W - 16) / friends.length);
+      return row(friends.map((f) => FRIEND_ART[f]), size, size * FRIEND_RATIO, '#A8E6FF');
+    }
+    case 'memory': {
+      const snacks = SNAP_GAMES[puzzle.game].snacks;
+      return row(snacks.map((sn) => SNACK_ART[sn]), Math.min(84, (PHOTO_W - 16) / snacks.length), undefined, '#FFC2CF');
+    }
+    case 'tracks':
+      return row([TRAIN_ART.station, TRAIN_ART.engine, TRAIN_ART.stall], 92, 92, '#A8E07F');
+    default:
+      return null;
+  }
 }
 
 export default function Complete() {
   const { id, stars: starsParam } = useLocalSearchParams<{ id: string; stars?: string }>();
   const { stars } = useProgress();
   const puzzle = getPuzzle(id);
-  if (!puzzle || puzzle.kind !== 'jigsaw') return <Redirect href="/map" />;
+  if (!puzzle || puzzle.kind === 'maze') return <Redirect href="/map" />;
 
-  const picture = PICTURES[puzzle.picture];
   const count = Math.min(3, Math.max(1, Number(starsParam) || 3));
   const next = puzzleAfter(puzzle.id, stars);
 
@@ -54,7 +86,7 @@ export default function Complete() {
       <Sunburst />
       <SafeAreaView style={styles.safe}>
         <View style={styles.title}>
-          <OutlinedText size={picture.cheer.length > 12 ? 40 : 52}>{picture.cheer}</OutlinedText>
+          <OutlinedText size={puzzle.cheer.length > 12 ? 40 : 52}>{puzzle.cheer}</OutlinedText>
         </View>
 
         <View style={styles.stars} accessible accessibilityLabel={`${count} of 3 stars`}>
@@ -69,12 +101,12 @@ export default function Complete() {
         </View>
 
         <View style={styles.photo}>
-          <Image source={picture.image} style={{ width: 300, height: (300 * picture.height) / picture.width, borderRadius: 12 }} accessibilityLabel={picture.title} />
+          <Showcase puzzle={puzzle} />
         </View>
 
         <View style={styles.nameCard}>
-          <Txt weight="display" size={26} align="center">{picture.title}</Txt>
-          <Txt weight="semibold" size={16} color={colors.inkSoft} align="center">{picture.blurb}</Txt>
+          <Txt weight="display" size={26} align="center">{puzzle.title}</Txt>
+          <Txt weight="semibold" size={16} color={colors.inkSoft} align="center">{puzzle.blurb}</Txt>
         </View>
 
         <View style={styles.buttons}>
@@ -87,9 +119,9 @@ export default function Complete() {
             height={86}
             width={190}
             fontSize={34}
-            onPress={() => (next ? openPuzzle(next) : router.dismissTo('/map'))}
+            onPress={() => (next ? openPuzzle(next, 'replace') : router.dismissTo('/map'))}
           />
-          <CircleButton icon="replay" label="Play again" size={66} shadow="#D9A520" onPress={() => openPuzzle(puzzle)} />
+          <CircleButton icon="replay" label="Play again" size={66} shadow="#D9A520" onPress={() => openPuzzle(puzzle, 'replace')} />
         </View>
       </SafeAreaView>
       <Image source={require('@/assets/images/game/pip.png')} style={styles.pip} accessibilityElementsHidden />
@@ -104,6 +136,7 @@ const styles = StyleSheet.create({
   title: { marginTop: 28 },
   stars: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 8 },
   photo: { marginTop: 24, padding: 10, borderRadius: 22, backgroundColor: colors.white, boxShadow: '0px 8px 0px rgba(30, 42, 79, 0.2)', transform: [{ rotate: '-3deg' }] },
+  showRow: { width: PHOTO_W, flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', paddingTop: 12, paddingHorizontal: 8, borderRadius: 12, overflow: 'hidden' },
   nameCard: { marginTop: 20, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 22, backgroundColor: colors.white, boxShadow: '0px 6px 0px rgba(30, 42, 79, 0.2)', maxWidth: 320 },
   buttons: { marginTop: 'auto', marginBottom: 36, flexDirection: 'row', alignItems: 'center', gap: 18 },
   pip: { position: 'absolute', right: -6, bottom: 170, width: 96, height: 100, transform: [{ rotate: '10deg' }] },

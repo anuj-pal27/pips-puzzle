@@ -12,8 +12,9 @@ class PuzzleAdmin(admin.ModelAdmin):
     readonly_fields = ["created_at", "updated_at"]
     fieldsets = [
         (None, {"fields": ["slug", "title", "tier", "order", "kind", "is_published"]}),
-        ("Jigsaw", {"fields": ["picture", "image", "cols", "rows"], "description": "Only for character jigsaws."}),
+        ("Picture", {"fields": ["picture", "image", "cols", "rows"], "description": "Jigsaws (and the picture for slide puzzles)."}),
         ("Maze", {"fields": ["maze"], "description": "Only for Jalebi Hunt mazes."}),
+        ("Settings", {"fields": ["config"], "description": "Shadow, Snack Snap, tracks and slide puzzles; spin for jigsaws."}),
         ("History", {"fields": ["created_at", "updated_at"], "classes": ["collapse"]}),
     ]
 

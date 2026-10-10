@@ -12,7 +12,7 @@ import { GateTile, HouseTile, LeverTile, RailTile, SwitchTile } from '@/componen
 import { Stars } from '@/components/Stars';
 import { Txt } from '@/components/Txt';
 import { MAZES } from '@/data/mazes';
-import { getPuzzle, getTier, puzzleAfter, type Puzzle } from '@/data/puzzles';
+import { getPuzzle, getTier, puzzleAfter, type MazePuzzle } from '@/data/puzzles';
 import {
   gateIsOpen,
   initMaze,
@@ -26,6 +26,7 @@ import {
   type MazeConfig,
   type MazeState,
 } from '@/game/maze';
+import { openPuzzle } from '@/navigation';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 
@@ -36,8 +37,6 @@ const IMG = {
   jalebi: require('@/assets/images/game/jalebi.png'),
   laddoo: require('@/assets/images/game/laddoo.png'),
 };
-
-type MazePuzzle = Extract<Puzzle, { kind: 'maze' }>;
 
 export default function MazeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -152,11 +151,7 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
               shadow={colors.grassShadow}
               height={66}
               width="100%"
-              onPress={() => {
-                if (!next) return router.back();
-                if (next.kind === 'maze') router.replace({ pathname: '/maze/[id]', params: { id: next.id } });
-                else router.replace({ pathname: '/puzzle/[id]', params: { id: next.id } });
-              }}
+              onPress={() => (next ? openPuzzle(next, 'replace') : router.back())}
             />
             <ChunkyButton icon="replay" label="Play again" fontSize={18} height={54} color={colors.white} shadow={colors.sandShadow} onPress={restart} />
           </Animated.View>

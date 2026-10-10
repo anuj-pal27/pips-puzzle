@@ -29,6 +29,10 @@ class Puzzle(models.Model):
     class Kind(models.TextChoices):
         JIGSAW = "jigsaw", "Character jigsaw"
         MAZE = "maze", "Jalebi maze hunt"
+        SHADOW = "shadow", "Who's That Shadow?"
+        MEMORY = "memory", "Snack Snap (memory)"
+        TRACKS = "tracks", "Fix the Tracks"
+        SLIDE = "slide", "Slide puzzle"
 
     slug = models.SlugField(unique=True)
     tier = models.CharField(max_length=10, choices=Tier.choices)
@@ -38,7 +42,7 @@ class Puzzle(models.Model):
     picture = models.CharField(
         max_length=40,
         blank=True,
-        help_text="Id of a picture bundled in the app (gappu, mithu, tillu, chunnu, shop, station).",
+        help_text="Id of a picture bundled in the app (gappu, mithu, tillu, chunnu, shop, station). Jigsaws and slide puzzles.",
     )
     image = models.ImageField(
         upload_to="puzzles/",
@@ -51,6 +55,16 @@ class Puzzle(models.Model):
         null=True,
         blank=True,
         help_text="Maze map, gates and monkeys, in the same format as the app's src/data/mazes.ts.",
+    )
+    config = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=(
+            "Settings for the other kinds, in the same format as the app's src/data/games.ts: "
+            'shadow {"friends": [...], "cols": 3}; memory {"snacks": [...], "cols": 4}; '
+            'tracks {"map": [...], "taps": [...], "start": 0, "goal": 5}; slide {"size": 3, "start": [...], "par": 10}; '
+            'jigsaw {"spin": true} to start pieces turned round.'
+        ),
     )
     is_published = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -65,12 +79,13 @@ class Puzzle(models.Model):
         return f"{self.get_tier_display()} {self.order}: {self.title}"
 
     def clean(self):
+        config = self.config or {}
         if self.kind == self.Kind.JIGSAW:
             if not (self.cols and self.rows):
                 raise ValidationError("A jigsaw needs columns and rows.")
             if not (self.picture or self.image):
                 raise ValidationError("A jigsaw needs a bundled picture id or an uploaded image.")
-        if self.kind == self.Kind.MAZE:
+        elif self.kind == self.Kind.MAZE:
             maze = self.maze or {}
             rows = maze.get("map") or []
             if not rows or len({len(r) for r in rows}) != 1:
@@ -78,3 +93,49 @@ class Puzzle(models.Model):
             joined = "".join(rows)
             if joined.count("S") != 1 or joined.count("J") != 1:
                 raise ValidationError("A maze map needs exactly one start 'S' and one jalebi stall 'J'.")
+        elif self.kind == self.Kind.SHADOW:
+            _unique_list(config, "friends", FRIENDS)
+        elif self.kind == self.Kind.MEMORY:
+            _unique_list(config, "snacks", SNACKS)
+        elif self.kind == self.Kind.TRACKS:
+            _check_tracks(config)
+        elif self.kind == self.Kind.SLIDE:
+            if not (self.picture or self.image):
+                raise ValidationError("A slide puzzle needs a bundled picture id or an uploaded image.")
+            _check_slide(config)
+
+
+FRIENDS = {"gappu", "mithu", "tillu", "chunnu", "gauri", "pip"}
+SNACKS = {"jalebi", "laddoo", "samosa", "chai", "kulfi", "mango"}
+TRACK_TILES = set("|-abcd.THPF")
+
+
+def _unique_list(config, key, allowed):
+    items = config.get(key)
+    if not isinstance(items, list) or len(items) < 2 or len(set(items)) != len(items):
+        raise ValidationError(f"'{key}' must be a list of at least two different ids.")
+    unknown = set(items) - allowed
+    if unknown:
+        raise ValidationError(f"Unknown {key}: {', '.join(sorted(unknown))}. The app has: {', '.join(sorted(allowed))}.")
+
+
+def _check_tracks(config):
+    rows, taps = config.get("map") or [], config.get("taps") or []
+    if not rows or len({len(r) for r in rows}) != 1:
+        raise ValidationError("A tracks puzzle needs a rectangular 'map'.")
+    if [len(r) for r in taps] != [len(r) for r in rows]:
+        raise ValidationError("'taps' must have one digit for every tile in 'map'.")
+    if set("".join(rows)) - TRACK_TILES or set("".join(taps)) - set("0123"):
+        raise ValidationError("'map' uses | - a b c d for track and . T H P F for scenery; 'taps' uses digits 0-3.")
+    width = len(rows[0])
+    for key in ("start", "goal"):
+        if not isinstance(config.get(key), int) or not 0 <= config[key] < width:
+            raise ValidationError(f"'{key}' must be a column number on the map.")
+
+
+def _check_slide(config):
+    size, start = config.get("size"), config.get("start")
+    if not isinstance(size, int) or not 2 <= size <= 5:
+        raise ValidationError("'size' must be 2 to 5.")
+    if not isinstance(start, list) or sorted(start) != [-1, *range(size * size - 1)]:
+        raise ValidationError("'start' must list every tile once, with -1 for the gap.")

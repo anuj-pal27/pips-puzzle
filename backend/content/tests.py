@@ -11,14 +11,49 @@ class SeedTests(TestCase):
         call_command("seed_puzzles", verbosity=0)
         call_command("seed_puzzles", verbosity=0)
         self.assertEqual(Puzzle.objects.count(), 15)
-        for tier in ["easy", "medium", "hard"]:
-            kinds = list(Puzzle.objects.filter(tier=tier).order_by("order").values_list("kind", flat=True))
-            self.assertEqual(kinds, ["jigsaw"] * 4 + ["maze"], tier)
+        kinds = {
+            tier: list(Puzzle.objects.filter(tier=tier).order_by("order").values_list("kind", flat=True))
+            for tier in ["easy", "medium", "hard"]
+        }
+        self.assertEqual(kinds["easy"], ["jigsaw", "shadow", "memory", "jigsaw", "maze"])
+        self.assertEqual(kinds["medium"], ["jigsaw", "tracks", "shadow", "memory", "maze"])
+        self.assertEqual(kinds["hard"], ["jigsaw", "slide", "tracks", "memory", "maze"])
+
+    def test_no_two_puzzles_in_a_row_play_the_same_way(self):
+        call_command("seed_puzzles", verbosity=0)
+        kinds = list(Puzzle.objects.in_play_order().values_list("kind", flat=True))
+        for a, b in zip(kinds, kinds[1:]):
+            self.assertNotEqual(a, b)
+
+    def test_reseeding_clears_settings_from_an_old_kind(self):
+        # An older database where easy-2 was still a jigsaw.
+        Puzzle.objects.create(slug="easy-2", tier="easy", order=2, kind="jigsaw", title="Mithu", picture="mithu", cols=3, rows=2)
+        call_command("seed_puzzles", verbosity=0)
+        p = Puzzle.objects.get(slug="easy-2")
+        self.assertEqual((p.kind, p.picture, p.cols, p.rows), ("shadow", "", None, None))
+        self.assertEqual(p.config["friends"], ["mithu", "tillu", "pip"])
 
     def test_maze_must_have_one_start_and_goal(self):
         bad = Puzzle(slug="x", tier="easy", order=1, kind="maze", title="x", maze={"map": ["S..", "..."]})
         with self.assertRaises(ValidationError):
             bad.clean()
+
+    def test_settings_for_the_new_kinds_are_checked(self):
+        bad = [
+            Puzzle(kind="shadow", config={"friends": ["gappu", "motu"]}),
+            Puzzle(kind="shadow", config={"friends": ["gappu", "gappu"]}),
+            Puzzle(kind="memory", config={"snacks": ["jalebi"]}),
+            Puzzle(kind="tracks", config={"map": ["|.", "|"], "taps": ["10", "1"], "start": 0, "goal": 0}),
+            Puzzle(kind="tracks", config={"map": ["|x"], "taps": ["10"], "start": 0, "goal": 0}),
+            Puzzle(kind="tracks", config={"map": ["|."], "taps": ["10"], "start": 0, "goal": 7}),
+            Puzzle(kind="slide", picture="tillu", config={"size": 3, "start": [0, 1, 2, 3, 4, 5, 6, 7, 7]}),
+            Puzzle(kind="slide", config={"size": 3, "start": [0, 1, 2, 3, 4, 5, 6, 7, -1]}),
+        ]
+        for puzzle in bad:
+            with self.assertRaises(ValidationError, msg=puzzle.config):
+                puzzle.clean()
+        Puzzle(kind="tracks", config={"map": ["|."], "taps": ["10"], "start": 0, "goal": 0}).clean()
+        Puzzle(kind="slide", picture="tillu", config={"size": 2, "start": [2, 0, 1, -1]}).clean()
 
 
 class PuzzleApiTests(APITestCase):
@@ -40,3 +75,8 @@ class PuzzleApiTests(APITestCase):
         self.assertNotIn("hard-2", slugs)
         maze = next(p for p in res.json() if p["slug"] == "medium-5")
         self.assertEqual(len(maze["maze"]["map"]), 10)
+        tracks = next(p for p in res.json() if p["slug"] == "hard-3")
+        self.assertEqual(tracks["kind"], "tracks")
+        self.assertEqual(len(tracks["config"]["map"]), 6)
+        spin = next(p for p in res.json() if p["slug"] == "hard-1")
+        self.assertEqual(spin["config"], {"spin": True})

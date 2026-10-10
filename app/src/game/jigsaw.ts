@@ -110,6 +110,17 @@ export function trayLayout(g: JigsawGrid, trayW: number, trayH: number): TraySpo
   });
 }
 
+/**
+ * "Spin" jigsaws: how many quarter-turns clockwise each piece starts with (0 = already upright).
+ * Fixed per piece, so the puzzle is the same every time. Roughly two pieces in three are turned.
+ */
+export function startTurns(n: number): number[] {
+  return Array.from({ length: n }, (_, id) => {
+    const h = ((id + 1) * 2654435761) >>> 0;
+    return (h >>> 7) % 3 === 0 ? 0 : 1 + ((h >>> 11) % 3);
+  });
+}
+
 /** Stars for a finished jigsaw: start at 3, lose one for using the picture hint, one for lots of misses. */
 export function jigsawStars(usedHint: boolean, misses: number): 1 | 2 | 3 {
   const stars = 3 - (usedHint ? 1 : 0) - (misses > 5 ? 1 : 0);

@@ -1,6 +1,14 @@
 # Pip's Puzzles
 
-A puzzle game for kids aged 3–7, set in **Jalebi Junction**: build the characters with drag-and-drop jigsaws, then guide Gappu through the town in the **Jalebi Hunt** maze.
+A puzzle game for kids aged 3–7, set in **Jalebi Junction**. Fifteen puzzles in three tiers, and no two in a row play the same way:
+
+| | Easy | Medium | Hard |
+|---|---|---|---|
+| 1 | Jigsaw: Gappu (6 pieces) | Jigsaw: Jalebi Shop (12) | **Spin jigsaw**: Station (20), pieces start turned round, tap to spin |
+| 2 | **Who's That Shadow?** Drag 3 friends onto their shadows | **Fix the Tracks** Turn track pieces to join the station to the jalebi stall | **Slide puzzle** Put Tillu back together |
+| 3 | **Snack Snap** Memory cards, 3 pairs | **Who's That Shadow?** 5 friends, with look-alikes | **Fix the Tracks** Bigger, with decoy pieces |
+| 4 | Jigsaw: Chunnu (6) | **Snack Snap** 4 pairs | **Snack Snap** 6 pairs |
+| 5 | Jalebi Hunt maze | Jalebi Hunt maze (2 levers) | Jalebi Hunt maze (levers + switch) |
 
 ```
 pips-puzzles/
@@ -130,26 +138,41 @@ The app id is `com.anujpal.pipspuzzles` (in `app/app.json`). Change it before yo
 | `app/` | Screens (Expo Router: every file is a screen) |
 | `app/index.tsx` | Home |
 | `app/map.tsx` | Puzzle map: Easy / Medium / Hard, 5 each, with unlocking |
-| `app/puzzle/[id].tsx` | Drag-and-drop character jigsaw (6 / 12 / 20 pieces) |
+| `app/puzzle/[id].tsx` | Drag-and-drop jigsaw (6 / 12 / 20 pieces; "spin" jigsaws: tap a piece to turn it) |
+| `app/shadow/[id].tsx` | Who's That Shadow? (drag friends onto their shadows) |
+| `app/memory/[id].tsx` | Snack Snap memory game |
+| `app/tracks/[id].tsx` | Fix the Tracks (tap to turn track pieces, then the train drives) |
+| `app/slide/[id].tsx` | Slide puzzle |
 | `app/maze/[id].tsx` | Jalebi Hunt maze (arrow pad + swipe) |
-| `app/complete/[id].tsx` | "You made Tillu!" celebration |
+| `app/complete/[id].tsx` | Celebration screen ("Choo choo!", "Found them all!"…) |
 | `app/grown-ups/` | Parental gate + settings |
-| `data/puzzles.ts` | Every puzzle and picture, tiers and unlock rules |
+| `data/puzzles.ts` | The 15 puzzles in order, pictures, tiers and unlock rules |
+| `data/games.ts` | Settings for shadows, Snack Snap, track maps and the slide puzzle |
 | `data/mazes.ts` | The three maze maps (Easy, Medium, Hard) |
-| `game/jigsaw.ts` | Piece shapes, board guides, tray layout, stars |
+| `data/art.ts` | Friend cut-outs, snacks, train set and map thumbnails |
+| `game/jigsaw.ts` | Piece shapes, board guides, tray layout, spin turns, stars |
 | `game/maze.ts` | Maze rules: levers, gates, the switch, monkeys, laddoos |
+| `game/tracks.ts`, `memory.ts`, `slide.ts`, `shadow.ts` | Rules for the other games (no React, unit-tested) |
+| `navigation.ts` | Which screen plays each kind of puzzle |
 | `state/progress.tsx` | Stars + settings, saved on the phone |
 | `api/client.ts` | Calls to the Django API |
 | `components/` | Buttons, icons, stars, jigsaw pieces, maze tiles |
 
 **Unlocking:** Medium opens when every Easy puzzle has at least one star; Hard opens after Medium.
-**Stars:** jigsaw = 3, minus 1 for using the picture hint, minus 1 for more than 5 missed drops. Maze = 1 per laddoo collected (at least 1).
+**Stars** (always at least 1 for finishing):
+
+- Jigsaw: 3, minus 1 for using the picture hint, minus 1 for more than 5 missed drops.
+- Shadows: 3 for at most 1 wrong try, 2 for at most 3.
+- Snack Snap: 3 for at most one wrong guess per pair, 2 for at most two per pair.
+- Tracks: 3 within 6 taps of the fewest possible, 2 within a generous margin.
+- Slide: 3 within 10 moves of the fewest possible (10), 2 within a generous margin.
+- Maze: 1 per laddoo collected.
 
 ### Backend: `backend/`
 
 | App | Models | Endpoints |
 |---|---|---|
-| `content` | `Puzzle` (tier, order, kind, picture or uploaded image, grid size, maze JSON) | `GET /api/puzzles/`, `GET /api/health/` |
+| `content` | `Puzzle` (tier, order, kind, picture or uploaded image, grid size, maze JSON, settings JSON for the other kinds) | `GET /api/puzzles/`, `GET /api/health/` |
 | `accounts` | `User` (parent, signs in with email), `ChildProfile` (nickname + avatar only) | `POST /api/auth/register/`, `POST /api/auth/token/`, `POST /api/auth/token/refresh/`, `/api/children/` |
 | `progress` | `Progress` (best stars per child per puzzle) | `GET /api/progress/?child=<id>`, `POST /api/progress/sync/` |
 
@@ -164,11 +187,11 @@ Sign-in returns JWT tokens; send `Authorization: Bearer <access>` on the other c
 cd app
 npm run typecheck
 npx expo lint
-npm run test:logic      # 22 checks: piece shapes; every maze is solvable, needs its levers/switch, has no traps
+npm run test:logic      # 45 checks: every maze and track map is solvable, the slide puzzle's best solution, card deals, and more
 
 # backend (venv active, PostgreSQL running)
 cd backend
-python manage.py test   # 11 API tests
+python manage.py test   # 14 API tests
 ```
 
 ---
@@ -176,7 +199,6 @@ python manage.py test   # 11 API tests
 ## Good next steps
 
 - **Sound:** add `expo-audio` with snap, cheer and click sounds; the Sound and Music switches are already saved.
-- **New art:** Medium 2–4 and Hard 2–4 reuse Easy pictures for now (see `TODO(art)` in `data/puzzles.ts`).
 - **Parent sign-in screen:** the API calls already exist in `api/client.ts`; add a screen under Grown-ups to use them.
 - **Privacy policy:** both stores require one for kids' apps; set `PRIVACY_POLICY_URL` in `app/grown-ups/settings.tsx`.
 - **Real builds:** `npx eas-cli@latest build -p android` makes an installable app in the cloud (no Android Studio needed).

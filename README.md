@@ -127,6 +127,29 @@ The app id is `com.anujpal.pipspuzzles` (in `app/app.json`). Change it before yo
 
 **For the Play Store:** run `npm run build:store`. It makes an `.aab` file instead of an APK, and the version number goes up automatically on every build.
 
+### Build on your own computer instead (no EAS, nothing uploaded)
+
+This needs the Android tools on your computer:
+
+1. Install **Android Studio** (developer.android.com/studio). Open it once and let it download the Android SDK.
+2. Install **Java 17** (for example Temurin 17 from adoptium.net).
+3. Set `ANDROID_HOME` to the SDK folder:
+   - Windows: `C:\Users\<you>\AppData\Local\Android\Sdk` (System settings → Environment variables), then open a new terminal
+   - Mac: add `export ANDROID_HOME=$HOME/Library/Android/sdk` to `~/.zshrc`
+   - Linux: add `export ANDROID_HOME=$HOME/Android/Sdk` to `~/.bashrc`
+
+Then, in the `app` folder:
+
+```bash
+npm run build:apk:local
+```
+
+The first build takes a while (it downloads Gradle and the Android libraries). The APK ends up at `app/android/app/build/outputs/apk/release/app-release.apk`. Copy it to your phone and open it, or with the phone plugged in (USB debugging on): `adb install -r android/app/build/outputs/apk/release/app-release.apk`.
+
+- This APK is signed with a test key, so it's for your own phones, not the Play Store.
+- If the EAS-built app is already on the phone, uninstall it first: Android won't replace an app signed with a different key.
+- The `android/` folder is generated each time and isn't committed.
+
 ---
 
 ## What's where

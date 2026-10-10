@@ -177,7 +177,8 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
         </View>
 
         {/* loose pieces live in a layer over everything, so they can be dragged from the tray to the board */}
-        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        {/* collapsable={false} + zIndex: keep this layer real on Android, so the pieces' own layering stays inside it */}
+        <View style={[StyleSheet.absoluteFill, { zIndex: 1 }]} pointerEvents="box-none" collapsable={false}>
           {tray && panel
             ? spots
                 .filter((s) => !placed.includes(s.id))
@@ -403,6 +404,18 @@ const styles = StyleSheet.create({
   },
   tray: { flex: 1, marginTop: 20, borderTopLeftRadius: 36, borderTopRightRadius: 36, backgroundColor: colors.sandDark },
   doneBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scrim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: colors.navyScrim, alignItems: 'center', justifyContent: 'center' },
+  // Above everything, including a piece that is being dragged.
+  scrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: 1000,
+    elevation: 1000,
+    backgroundColor: colors.navyScrim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   pauseCard: { width: 300, padding: 24, borderRadius: 32, backgroundColor: colors.white, gap: 14 },
 });

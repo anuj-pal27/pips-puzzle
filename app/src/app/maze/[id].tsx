@@ -280,6 +280,6 @@ const styles = StyleSheet.create({
   padRow: { flexDirection: 'row', gap: 5 },
   padButton: { width: 58, height: 58, borderRadius: 18, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   padCenter: { width: 58, height: 58, borderRadius: 29, backgroundColor: colors.sun, alignItems: 'center', justifyContent: 'center' },
-  scrim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: colors.navyScrim, alignItems: 'center', justifyContent: 'center' },
+  scrim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, zIndex: 1000, elevation: 1000, backgroundColor: colors.navyScrim, alignItems: 'center', justifyContent: 'center' },
   winCard: { width: 310, padding: 22, borderRadius: 32, backgroundColor: colors.white, alignItems: 'center', gap: 12 },
 });

@@ -11,8 +11,7 @@ import { Icon, type IconName } from '@/components/Icon';
 import { GateTile, HouseTile, LeverTile, RailTile, SwitchTile } from '@/components/MazeParts';
 import { Stars } from '@/components/Stars';
 import { Txt } from '@/components/Txt';
-import { MAZES } from '@/data/mazes';
-import { getPuzzle, getTier, puzzleAfter, type MazePuzzle } from '@/data/puzzles';
+import { getTier, type MazePuzzle } from '@/data/puzzles';
 import {
   gateIsOpen,
   initMaze,
@@ -27,6 +26,8 @@ import {
   type MazeState,
 } from '@/game/maze';
 import { openPuzzle } from '@/navigation';
+import { useCatalog, usePuzzle } from '@/state/catalog';
+import { usePlayStats } from '@/state/playStats';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 
@@ -40,13 +41,15 @@ const IMG = {
 
 export default function MazeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const puzzle = getPuzzle(id);
+  const puzzle = usePuzzle(id);
   if (!puzzle || puzzle.kind !== 'maze') return <Redirect href="/map" />;
   return <MazeGame key={puzzle.id} puzzle={puzzle} />;
 }
 
 function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
-  const cfg = MAZES[puzzle.maze];
+  usePlayStats(puzzle.id);
+  const cfg = puzzle.maze;
+  const { puzzleAfter } = useCatalog();
   const tier = getTier(puzzle.tier);
   const { stars, recordStars } = useProgress();
   const [state, setState] = useState<MazeState>(() => initMaze(cfg));

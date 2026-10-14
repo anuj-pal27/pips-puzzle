@@ -3,6 +3,8 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Case, IntegerField, Value, When
 
+from . import builders
+
 
 class Tier(models.TextChoices):
     EASY = "easy", "Easy"
@@ -36,9 +38,14 @@ class Puzzle(models.Model):
 
     slug = models.SlugField(unique=True)
     tier = models.CharField(max_length=10, choices=Tier.choices)
-    order = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    order = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(99)],
+        help_text="Position inside the tier: 1 is played first. Add 6, 7, ... to give a tier more puzzles.",
+    )
     kind = models.CharField(max_length=10, choices=Kind.choices)
-    title = models.CharField(max_length=80)
+    title = models.CharField(max_length=80, help_text="Shown on the map and on the finish screen's name card.")
+    cheer = models.CharField(max_length=40, blank=True, help_text='Big headline on the finish screen, e.g. "You made Gappu!".')
+    blurb = models.CharField(max_length=120, blank=True, help_text="One short line under the name card on the finish screen.")
     picture = models.CharField(
         max_length=40,
         blank=True,
@@ -47,8 +54,12 @@ class Puzzle(models.Model):
     image = models.ImageField(
         upload_to="puzzles/",
         blank=True,
-        help_text="Optional: a new picture sent from the server instead of a bundled one.",
+        width_field="image_width",
+        height_field="image_height",
+        help_text="Optional: a new picture sent from the server instead of a bundled one. About 3:2, at least 660 x 440.",
     )
+    image_width = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    image_height = models.PositiveIntegerField(null=True, blank=True, editable=False)
     cols = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Jigsaw columns (Easy 3, Medium 4, Hard 5).")
     rows = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Jigsaw rows (Easy 2, Medium 3, Hard 4).")
     maze = models.JSONField(
@@ -83,16 +94,16 @@ class Puzzle(models.Model):
         if self.kind == self.Kind.JIGSAW:
             if not (self.cols and self.rows):
                 raise ValidationError("A jigsaw needs columns and rows.")
+            if not (2 <= self.cols <= 6 and 2 <= self.rows <= 5):
+                raise ValidationError("A jigsaw has 2 to 6 columns and 2 to 5 rows.")
             if not (self.picture or self.image):
                 raise ValidationError("A jigsaw needs a bundled picture id or an uploaded image.")
         elif self.kind == self.Kind.MAZE:
-            maze = self.maze or {}
-            rows = maze.get("map") or []
-            if not rows or len({len(r) for r in rows}) != 1:
-                raise ValidationError("A maze needs a rectangular 'map' (a list of equal-length rows).")
-            joined = "".join(rows)
-            if joined.count("S") != 1 or joined.count("J") != 1:
-                raise ValidationError("A maze map needs exactly one start 'S' and one jalebi stall 'J'.")
+            if not isinstance(self.maze, dict):
+                raise ValidationError("A maze needs its map, gates and monkeys.")
+            problems = builders.check_maze(self.maze)
+            if problems:
+                raise ValidationError(problems)
         elif self.kind == self.Kind.SHADOW:
             _unique_list(config, "friends", FRIENDS)
         elif self.kind == self.Kind.MEMORY:
@@ -131,6 +142,9 @@ def _check_tracks(config):
     for key in ("start", "goal"):
         if not isinstance(config.get(key), int) or not 0 <= config[key] < width:
             raise ValidationError(f"'{key}' must be a column number on the map.")
+    _, reached = builders.trace_tracks(rows, config["start"], config["goal"])
+    if not reached:
+        raise ValidationError("The track pieces (as written, the right way round) don't join the station to the stall.")
 
 
 def _check_slide(config):
@@ -139,3 +153,8 @@ def _check_slide(config):
         raise ValidationError("'size' must be 2 to 5.")
     if not isinstance(start, list) or sorted(start) != [-1, *range(size * size - 1)]:
         raise ValidationError("'start' must list every tile once, with -1 for the gap.")
+    if not builders.slide_solvable(start, size):
+        raise ValidationError("This 'start' can never be solved: swap two tiles (not the gap) to fix it.")
+    if not isinstance(config.get("par"), int) or config["par"] < 1:
+        raise ValidationError("'par' must be the fewest moves that solve it (a whole number), for the stars.")
+

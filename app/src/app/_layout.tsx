@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { CatalogProvider } from '@/state/catalog';
 import { ProgressProvider } from '@/state/progress';
 
 // Keep the splash screen up until the fonts are ready, so text never flashes in the wrong font.
@@ -35,8 +36,10 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ProgressProvider>
-        <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
+        <CatalogProvider>
+          <StatusBar style="dark" />
+          <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
+        </CatalogProvider>
       </ProgressProvider>
     </GestureHandlerRootView>
   );

@@ -1,0 +1,175 @@
+{% extends "dashboard/base.html" %}
+{% load dash %}
+{% block title %}{% if puzzle %}Edit {{ puzzle.title }}{% else %}New puzzle{% endif %}{% endblock %}
+{% block content %}
+<div class="head">
+  <div>
+    <p class="muted small" style="margin:0"><a href="{% url 'dashboard:puzzles' %}">Puzzles</a>{% if puzzle %} / <a href="{% url 'dashboard:puzzle' puzzle.slug %}">{{ puzzle.slug }}</a>{% endif %}</p>
+    <h1>{% if puzzle %}Edit “{{ puzzle.title }}”{% else %}Make a new puzzle{% endif %}</h1>
+    <p class="muted">{% if puzzle %}Its id <code>{{ puzzle.slug }}</code> never changes, so children keep their stars on it.{% else %}It's checked before it's saved, so a puzzle that can't be finished never reaches a phone.{% endif %}</p>
+  </div>
+</div>
+
+{% if form.non_field_errors %}
+<div class="msg error" role="alert">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" id="builder" novalidate
+      data-tool-tracks="{% url 'dashboard:tool-tracks' %}" data-tool-slide="{% url 'dashboard:tool-slide' %}" data-tool-check="{% url 'dashboard:tool-check' %}">
+  {% csrf_token %}
+  <div class="builder">
+    <div class="grid">
+      <section class="card">
+        <fieldset>
+          <legend>1. What kind of game?</legend>
+          <div class="kinds">
+            {% for value, label, thumb, help in kinds %}
+            <label class="pick"><input type="radio" name="kind" value="{{ value }}"{% if form.kind.value == value %} checked{% endif %}>
+              <img src="{{ thumb }}" alt="">{{ label }}<small>{{ help }}</small></label>
+            {% endfor %}
+          </div>
+          {{ form.kind.errors }}
+        </fieldset>
+      </section>
+
+      <section class="card">
+        <fieldset>
+          <legend>2. Name and place</legend>
+          <div class="field">{{ form.title.label_tag }}{{ form.title }}<span class="help">{{ form.title.help_text }}</span>{{ form.title.errors }}</div>
+          <div class="two">
+            <div class="field">{{ form.tier.label_tag }}{{ form.tier }}{{ form.tier.errors }}</div>
+            <div class="field">{{ form.order.label_tag }}{{ form.order }}<span class="help">{{ form.order.help_text }}</span>{{ form.order.errors }}</div>
+          </div>
+          <div class="two">
+            <div class="field">{{ form.cheer.label_tag }}{{ form.cheer }}<span class="help">{{ form.cheer.help_text }}</span>{{ form.cheer.errors }}</div>
+            <div class="field">{{ form.blurb.label_tag }}{{ form.blurb }}<span class="help">{{ form.blurb.help_text }}</span>{{ form.blurb.errors }}</div>
+          </div>
+          <label class="check">{{ form.is_published }} {{ form.is_published.label }}</label>
+        </fieldset>
+      </section>
+
+      <section class="card" data-for="jigsaw slide">
+        <fieldset>
+          <legend>3. Picture</legend>
+          <div class="kinds picks-sm">
+            {% for value, label, url in pictures %}
+            <label class="pick"><input type="radio" name="picture" value="{{ value }}"{% if form.picture.value == value %} checked{% endif %}><img src="{{ url }}" alt="">{{ label }}</label>
+            {% endfor %}
+            <label class="pick"><input type="radio" name="picture" value="upload"{% if form.picture.value == "upload" %} checked{% endif %}>
+              {% if builder_data.currentImage %}<img src="{{ builder_data.currentImage }}" alt="">{% else %}<span style="font-size:40px; line-height:56px">⬆️</span>{% endif %}Upload my own</label>
+          </div>
+          {{ form.picture.errors }}
+          <div class="field" data-when-picture="upload">
+            {{ form.image.label_tag }}{{ form.image }}
+            <span class="help">{{ form.image.help_text }}{% if builder_data.currentImage %} Leave empty to keep the current one.{% endif %}</span>{{ form.image.errors }}
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card" data-for="jigsaw">
+        <fieldset>
+          <legend>4. Pieces</legend>
+          <div class="two">
+            <div class="field">{{ form.cols.label_tag }}{{ form.cols }}</div>
+            <div class="field">{{ form.rows.label_tag }}{{ form.rows }}</div>
+          </div>
+          <p class="help" id="piece-count"></p>
+          <label class="check">{{ form.spin }} {{ form.spin.label }}</label>
+          <p class="faint small">Easy puzzles in the game use 3 × 2, Medium 4 × 3, Hard 5 × 4 with spin.</p>
+        </fieldset>
+      </section>
+
+      <section class="card" data-for="slide">
+        <fieldset>
+          <legend>4. Board</legend>
+          <div class="toolbar">
+            <div class="field">{{ form.size.label_tag }}{{ form.size }}</div>
+            <div class="field">{{ form.difficulty.label_tag }}{{ form.difficulty }}</div>
+            <button type="button" class="btn" id="shuffle">Shuffle</button>
+          </div>
+          {{ form.slide_board }}
+          <p class="help" id="slide-info">The server mixes up the tiles (always in a way that can be solved) and works out the fewest moves, which sets the stars.</p>
+        </fieldset>
+      </section>
+
+      <section class="card" data-for="shadow">
+        <fieldset>
+          <legend>3. Friends</legend>
+          <div class="kinds picks-sm">
+            {% for value, label, url in friends %}
+            <label class="pick"><input type="checkbox" name="friends" value="{{ value }}"{% if value in form.friends.value %} checked{% endif %}><img src="{{ url }}" alt="">{{ label }}</label>
+            {% endfor %}
+          </div>
+          <span class="help">{{ form.friends.help_text }} Gappu and Gauri look alike as shadows, so together they're harder.</span>
+          {{ form.friends.errors }}
+          <div class="field" style="max-width:200px">{{ form.shadow_cols.label_tag }}{{ form.shadow_cols }}</div>
+        </fieldset>
+      </section>
+
+      <section class="card" data-for="memory">
+        <fieldset>
+          <legend>3. Snacks</legend>
+          <div class="kinds picks-sm">
+            {% for value, label, url in snacks %}
+            <label class="pick"><input type="checkbox" name="snacks" value="{{ value }}"{% if value in form.snacks.value %} checked{% endif %}><img src="{{ url }}" alt="">{{ label }}</label>
+            {% endfor %}
+          </div>
+          <span class="help">{{ form.snacks.help_text }}</span>
+          {{ form.snacks.errors }}
+          <div class="field" style="max-width:200px">{{ form.memory_cols.label_tag }}{{ form.memory_cols }}</div>
+        </fieldset>
+      </section>
+
+      <section class="card" data-for="tracks">
+        <fieldset>
+          <legend>3. Track map</legend>
+          <div class="toolbar">
+            <div class="field"><label for="tw">Width</label><select id="tw">{% for n in "345678" %}<option{% if n == "5" %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>
+            <div class="field"><label for="th">Height</label><select id="th">{% for n in "345678" %}<option{% if n == "5" %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>
+            <div class="field"><label for="td">Decoy pieces</label><select id="td"><option value="0">None</option><option value="0.2">A few</option><option value="0.35" selected>Some</option><option value="0.55">Lots</option></select></div>
+            <button type="button" class="btn" id="gen-tracks">Generate</button>
+          </div>
+          <p class="help">Generate makes a new map each time, until you like one. Medium in the game is 5 × 5 with no decoys; Hard is 6 × 6 with decoys.</p>
+          <details{% if form.tracks_json.errors %} open{% endif %}>
+            <summary class="label">Edit the map by hand</summary>
+            <div class="field" style="margin-top:8px">{{ form.tracks_json }}{{ form.tracks_json.errors }}
+              <span class="help">Pieces are written the right way round: <code>|</code> <code>-</code> straight, <code>a</code> top-right, <code>b</code> right-bottom, <code>c</code> bottom-left, <code>d</code> left-top; scenery <code>.</code> grass, <code>T</code> tree, <code>H</code> house, <code>P</code> pond, <code>F</code> flowers. <code>taps</code> says how many turns each piece starts off by; <code>start</code>/<code>goal</code> are the station and stall columns (from 0).</span></div>
+          </details>
+        </fieldset>
+      </section>
+
+      <section class="card" data-for="maze">
+        <fieldset>
+          <legend>3. Maze</legend>
+          <div class="row"><span class="label">Start from</span>
+            {% for tier in builder_data.mazeTemplates %}<button type="button" class="btn btn-small" data-maze-template="{{ tier }}">{{ tier|capfirst }} maze</button>{% endfor %}
+          </div>
+          <div class="field">{{ form.maze_json }}{{ form.maze_json.errors }}</div>
+          <span class="help">Map: <code>.</code> road, <code>#</code> house, <code>R</code> railway, <code>S</code> start, <code>J</code> jalebis, <code>o</code> laddoo (exactly 3), <code>C</code> sleeping cow,
+            capital letters are gates and lowercase letters their levers, <code>x</code> is the switch (opens gates with <code>openWhen: true</code>, shuts <code>false</code> ones).
+            Monkeys walk a lane: <code>axis</code> <code>h</code>/<code>v</code>, <code>line</code> (row or column), <code>min</code>…<code>max</code>, <code>start</code>, <code>dir</code> 1 or −1.</span>
+        </fieldset>
+      </section>
+
+      <div class="savebar">
+        <button class="btn btn-primary" type="submit">{% if puzzle %}Save changes{% else %}Save puzzle{% endif %}</button>
+        <a class="btn" href="{% if puzzle %}{% url 'dashboard:puzzle' puzzle.slug %}{% else %}{% url 'dashboard:puzzles' %}{% endif %}">Cancel</a>
+      </div>
+    </div>
+
+    <div class="sticky">
+      <section class="card">
+        <header><h2>Preview</h2><span class="muted small" id="preview-note"></span></header>
+        <div class="preview-box" id="preview"></div>
+        <ul class="checks" id="checks" aria-live="polite"></ul>
+      </section>
+      <section class="card">
+        <h3>How phones get it</h3>
+        <p class="muted small" style="margin-bottom:0">When you save a published puzzle, phones pick it up the next time the game opens (or a grown-up opens Grown-ups). Puzzles with a picture the phone can't download are skipped until it can.</p>
+      </section>
+    </div>
+  </div>
+</form>
+{{ builder_data|json_script:"builder-data" }}
+{% endblock %}
+{% block scripts %}<script>Dash.startBuilder();</script>{% endblock %}

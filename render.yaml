@@ -1,0 +1,45 @@
+# Render blueprint for the Django backend (backend/). The database lives on Supabase; see README,
+# "Deploy the backend". In Render: New + > Blueprint > pick this repository.
+#
+# No rootDir on purpose: the dashboard shows the game's own pictures from app/assets/images/game,
+# and Render hides files outside a service's root directory. The commands cd into backend/ instead.
+
+services:
+  - type: web
+    name: pips-puzzles-api
+    runtime: python
+    plan: free
+    region: singapore # closest Render region to India; Supabase in Mumbai (ap-south-1) is next door
+    buildCommand: pip install -r backend/requirements.txt && cd backend && python manage.py collectstatic --noinput
+    # Migrations run on every start (free instances can't run a pre-deploy command); they're quick
+    # when there's nothing new.
+    startCommand: cd backend && python manage.py migrate --noinput && gunicorn config.wsgi --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    # Only redeploy when the backend (or the pictures the dashboard shows) change, not for app-only changes.
+    buildFilter:
+      paths:
+        - backend/**
+        - app/assets/images/game/**
+        - render.yaml
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      # Supabase > Connect > Session pooler, with ?sslmode=require on the end.
+      - key: DATABASE_URL
+        sync: false
+      # Uploaded puzzle pictures in Supabase Storage (bucket "puzzles", public).
+      - key: MEDIA_S3_BUCKET
+        value: puzzles
+      - key: MEDIA_S3_ENDPOINT
+        sync: false # https://<project-ref>.storage.supabase.co/storage/v1/s3
+      - key: MEDIA_S3_REGION
+        sync: false # the Supabase project's region, e.g. ap-south-1
+      - key: MEDIA_S3_ACCESS_KEY_ID
+        sync: false
+      - key: MEDIA_S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: MEDIA_PUBLIC_HOST
+        sync: false # <project-ref>.supabase.co/storage/v1/object/public/puzzles

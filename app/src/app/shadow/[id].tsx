@@ -11,9 +11,11 @@ import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
 import { FRIEND_ART, FRIEND_RATIO } from '@/data/art';
-import { FRIEND_NAMES, SHADOW_GAMES, type FriendId } from '@/data/games';
-import { getPuzzle, type ShadowPuzzle } from '@/data/puzzles';
+import { FRIEND_NAMES, type FriendId } from '@/data/games';
+import type { ShadowPuzzle } from '@/data/puzzles';
 import { shadowStars, trayOrder } from '@/game/shadow';
+import { usePuzzle } from '@/state/catalog';
+import { usePlayStats } from '@/state/playStats';
 import { colors } from '@/theme';
 
 // Who's That Shadow?  Friends wait in the tray; drag each one onto their own shadow on the wall.
@@ -28,7 +30,7 @@ const LABEL = 26;
 
 export default function ShadowScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const puzzle = getPuzzle(id);
+  const puzzle = usePuzzle(id);
   if (!puzzle || puzzle.kind !== 'shadow') return <Redirect href="/map" />;
   return <ShadowGame key={puzzle.id} puzzle={puzzle} />;
 }
@@ -44,7 +46,8 @@ function gridCentres(n: number, cols: number, cellW: number, cellH: number, gapX
 }
 
 function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
-  const game = SHADOW_GAMES[puzzle.game];
+  usePlayStats(puzzle.id);
+  const game = puzzle; // friends and cols
   const friends = game.friends;
   const finish = useFinish(puzzle.id);
   const { width } = useWindowDimensions();

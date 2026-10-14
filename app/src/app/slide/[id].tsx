@@ -7,23 +7,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Pill } from '@/components/Buttons';
 import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
 import { Txt } from '@/components/Txt';
-import { SLIDE_GAMES } from '@/data/games';
-import { getPuzzle, PICTURES, type SlidePuzzle } from '@/data/puzzles';
+import type { SlidePuzzle } from '@/data/puzzles';
 import { BLANK, canSlide, isSolved, slideStars, slideTile } from '@/game/slide';
+import { useCatalog, usePuzzle } from '@/state/catalog';
+import { usePlayStats } from '@/state/playStats';
 import { colors } from '@/theme';
 
 // Slide puzzle: Tillu's picture is mixed up. Tap a tile next to the gap to slide it in.
 
 export default function SlideScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const puzzle = getPuzzle(id);
+  const puzzle = usePuzzle(id);
   if (!puzzle || puzzle.kind !== 'slide') return <Redirect href="/map" />;
   return <SlideGame key={puzzle.id} puzzle={puzzle} />;
 }
 
 function SlideGame({ puzzle }: { puzzle: SlidePuzzle }) {
-  const game = SLIDE_GAMES[puzzle.game];
-  const picture = PICTURES[puzzle.picture];
+  usePlayStats(puzzle.id);
+  const game = puzzle; // size, start and par
+  const picture = useCatalog().getPicture(puzzle.picture);
   const n = game.size;
   const finish = useFinish(puzzle.id);
   const { width } = useWindowDimensions();

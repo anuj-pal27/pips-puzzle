@@ -10,9 +10,9 @@ import { OutlinedText } from '@/components/OutlinedText';
 import { Star } from '@/components/Stars';
 import { Txt } from '@/components/Txt';
 import { FRIEND_ART, FRIEND_RATIO, SNACK_ART, TRAIN_ART } from '@/data/art';
-import { SHADOW_GAMES, SNAP_GAMES } from '@/data/games';
-import { getPuzzle, PICTURES, puzzleAfter, type Puzzle } from '@/data/puzzles';
+import type { Puzzle } from '@/data/puzzles';
 import { openPuzzle } from '@/navigation';
+import { useCatalog, usePuzzle } from '@/state/catalog';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 
@@ -41,8 +41,9 @@ const PHOTO_W = 300;
 
 /** What goes in the photo card: the finished picture, the friends, the snacks or the train. */
 function Showcase({ puzzle }: { puzzle: Puzzle }) {
+  const { getPicture } = useCatalog();
   const picture = (id: string) => {
-    const p = PICTURES[id];
+    const p = getPicture(id);
     return <Image source={p.image} style={{ width: PHOTO_W, height: (PHOTO_W * p.height) / p.width, borderRadius: 12 }} accessibilityLabel={p.title} />;
   };
   const row = (items: ImageSourcePropType[], size: number, h = size, bg: string = colors.white) => (
@@ -57,12 +58,12 @@ function Showcase({ puzzle }: { puzzle: Puzzle }) {
     case 'slide':
       return picture(puzzle.picture);
     case 'shadow': {
-      const friends = SHADOW_GAMES[puzzle.game].friends;
+      const friends = puzzle.friends;
       const size = Math.min(96, (PHOTO_W - 16) / friends.length);
       return row(friends.map((f) => FRIEND_ART[f]), size, size * FRIEND_RATIO, '#A8E6FF');
     }
     case 'memory': {
-      const snacks = SNAP_GAMES[puzzle.game].snacks;
+      const snacks = puzzle.snacks;
       return row(snacks.map((sn) => SNACK_ART[sn]), Math.min(84, (PHOTO_W - 16) / snacks.length), undefined, '#FFC2CF');
     }
     case 'tracks':
@@ -75,7 +76,8 @@ function Showcase({ puzzle }: { puzzle: Puzzle }) {
 export default function Complete() {
   const { id, stars: starsParam } = useLocalSearchParams<{ id: string; stars?: string }>();
   const { stars } = useProgress();
-  const puzzle = getPuzzle(id);
+  const { puzzleAfter } = useCatalog();
+  const puzzle = usePuzzle(id);
   if (!puzzle || puzzle.kind === 'maze') return <Redirect href="/map" />;
 
   const count = Math.min(3, Math.max(1, Number(starsParam) || 3));

@@ -9,9 +9,11 @@ import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
 import { GAPPU_FACE, SNACK_ART } from '@/data/art';
-import { SNACK_NAMES, SNAP_GAMES, type SnackId } from '@/data/games';
-import { getPuzzle, type MemoryPuzzle } from '@/data/puzzles';
+import { SNACK_NAMES, type SnackId } from '@/data/games';
+import type { MemoryPuzzle } from '@/data/puzzles';
 import { flipCard, memoryDone, memoryStars, newMemory, pairResult, settle, type MemoryState } from '@/game/memory';
+import { usePuzzle } from '@/state/catalog';
+import { usePlayStats } from '@/state/playStats';
 import { colors } from '@/theme';
 
 // Snack Snap: flip two cards at a time and find the matching snacks for hungry Gappu.
@@ -20,7 +22,7 @@ type Tip = { text: string; tone: 'plain' | 'good' | 'oops' };
 
 export default function MemoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const puzzle = getPuzzle(id);
+  const puzzle = usePuzzle(id);
   if (!puzzle || puzzle.kind !== 'memory') return <Redirect href="/map" />;
   return <SnackSnap key={puzzle.id} puzzle={puzzle} />;
 }
@@ -28,7 +30,8 @@ export default function MemoryScreen() {
 const plural = (s: SnackId) => (s === 'chai' ? 'cups of chai' : `${SNACK_NAMES[s].toLowerCase()}s`);
 
 function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
-  const game = SNAP_GAMES[puzzle.game];
+  usePlayStats(puzzle.id);
+  const game = puzzle; // snacks and cols
   const pairs = game.snacks.length;
   const finish = useFinish(puzzle.id);
   const { width, height } = useWindowDimensions();

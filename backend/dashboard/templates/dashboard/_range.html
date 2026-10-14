@@ -1,0 +1,1 @@
+<nav class="seg" aria-label="Time range">{% for value, label in ranges %}<a href="?days={{ value }}"{% if value == days %} aria-current="true"{% endif %}>{{ label }}</a>{% endfor %}</nav>

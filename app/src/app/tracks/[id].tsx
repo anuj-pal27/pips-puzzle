@@ -9,9 +9,10 @@ import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
 import { Txt } from '@/components/Txt';
 import { SceneryArt, TrackArt } from '@/components/TrackParts';
 import { TRAIN_ART } from '@/data/art';
-import { TRACK_GAMES } from '@/data/games';
-import { getPuzzle, type TracksPuzzle } from '@/data/puzzles';
+import type { TracksPuzzle } from '@/data/puzzles';
 import { initTracks, tapPiece, traceTracks, tracksPar, tracksStars, type TrackPiece, type TrackState } from '@/game/tracks';
+import { usePuzzle } from '@/state/catalog';
+import { usePlayStats } from '@/state/playStats';
 import { colors } from '@/theme';
 
 // Fix the Tracks: tap track pieces to turn them until the rails join the station to the jalebi stall.
@@ -19,7 +20,7 @@ import { colors } from '@/theme';
 
 export default function TracksScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const puzzle = getPuzzle(id);
+  const puzzle = usePuzzle(id);
   if (!puzzle || puzzle.kind !== 'tracks') return <Redirect href="/map" />;
   return <TracksGame key={puzzle.id} puzzle={puzzle} />;
 }
@@ -27,7 +28,8 @@ export default function TracksScreen() {
 type Point = { x: number; y: number };
 
 function TracksGame({ puzzle }: { puzzle: TracksPuzzle }) {
-  const cfg = TRACK_GAMES[puzzle.game];
+  usePlayStats(puzzle.id);
+  const cfg = puzzle.tracks;
   const finish = useFinish(puzzle.id);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();

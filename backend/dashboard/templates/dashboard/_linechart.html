@@ -1,0 +1,30 @@
+{% comment %} Plays per day: two lines (started, finished), hover for a day's numbers, table underneath. {% endcomment %}
+{% load dash %}
+{% if chart.empty %}
+  <div class="empty-chart">No plays in this time yet.</div>
+{% else %}
+<div class="chart" data-chart>
+  <svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" role="img" aria-label="{{ aria }}">
+    {% for t in chart.ticks %}
+      <line class="gridline" x1="{{ chart.left }}" x2="{{ chart.right_edge }}" y1="{{ t.y }}" y2="{{ t.y }}"/>
+      <text class="axis-text" x="{{ chart.left|add:'-8' }}" y="{{ t.y }}" text-anchor="end" dominant-baseline="middle">{{ t.value|compact }}</text>
+    {% endfor %}
+    {% for t in chart.x_ticks %}<text class="axis-text" x="{{ t.x }}" y="{{ chart.bottom_y|add:'20' }}" text-anchor="middle">{{ t.label }}</text>{% endfor %}
+    {% with first=chart.lines.0 %}<polygon class="area" points="{{ first.area }}"/>{% endwith %}
+    {% for line in chart.lines %}<polyline class="line s{{ line.slot }}" points="{{ line.points }}"/>{% endfor %}
+    <line class="crosshair" x1="0" x2="0" y1="{{ chart.top }}" y2="{{ chart.bottom_y }}"/>
+    {% for line in chart.lines %}
+      <circle class="dot s{{ line.slot }}" cx="{{ line.end.0 }}" cy="{{ line.end.1 }}" r="4.5"/>
+      <text class="end-label" x="{{ line.end.0|add:'9' }}" y="{{ line.label_y }}" dominant-baseline="middle">{{ line.last|compact }} {{ line.label|lower }}</text>
+    {% endfor %}
+    {% for c in chart.columns %}
+      <rect class="hit" x="{{ c.hit_x }}" y="{{ chart.top }}" width="{{ chart.band }}" height="{{ chart.plot_h }}" data-x="{{ c.x }}" data-tip="{{ c.label }}|{% for line in chart.lines %}{{ line.label }}: {{ c.values|get:line.key }}{% if not forloop.last %}|{% endif %}{% endfor %}"/>
+    {% endfor %}
+  </svg>
+</div>
+<div class="row" style="margin-top:6px">{% for line in chart.lines %}<span class="key"><i class="k{{ line.slot }}"></i>{{ line.label }}</span>{% endfor %}</div>
+<details class="table-view"><summary>Show as a table</summary>
+  <div class="scroll"><table><thead><tr><th>Day</th>{% for line in chart.lines %}<th class="r">{{ line.label }}</th>{% endfor %}</tr></thead>
+  <tbody>{% for c in chart.columns reversed %}<tr><td>{{ c.label }}</td>{% for line in chart.lines %}<td class="r num">{{ c.values|get:line.key }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+</details>
+{% endif %}

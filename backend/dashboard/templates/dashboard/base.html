@@ -1,0 +1,42 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dashboard{% endblock %} · Pip's Puzzles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'dashboard/dash.css' %}">
+  <link rel="icon" href="{% static 'game/pip-cut.png' %}">
+</head>
+<body>
+  <header class="top">
+    <div class="top-in">
+      <a class="brand" href="{% url 'dashboard:overview' %}"><img src="{% static 'game/pip-cut.png' %}" alt=""> Pip's Puzzles <small>Dashboard</small></a>
+      <nav class="nav" aria-label="Dashboard">
+        {% url 'dashboard:overview' as u_over %}{% url 'dashboard:puzzles' as u_puz %}{% url 'dashboard:new' as u_new %}
+        <a href="{{ u_over }}"{% if request.path == u_over %} aria-current="page"{% endif %}>Overview</a>
+        <a href="{{ u_puz }}"{% if request.path == u_puz %} aria-current="page"{% endif %}>Puzzles</a>
+        <a href="{{ u_new }}"{% if request.path == u_new %} aria-current="page"{% endif %}>New puzzle</a>
+        <a href="{% url 'admin:index' %}">Django admin</a>
+      </nav>
+      <div class="who">
+        {{ request.user.get_username }}
+        <form method="post" action="{% url 'admin:logout' %}">{% csrf_token %}<button type="submit">Log out</button></form>
+      </div>
+    </div>
+  </header>
+  <main>
+    {% for m in messages %}<div class="msg{% if m.level_tag == 'error' %} error{% endif %}" role="status">{{ m }}</div>{% endfor %}
+    {% if demo_events %}
+      <div class="banner"><strong>Includes demo data</strong> <span class="chip chip-demo">{{ demo_events|floatformat:0 }} made-up events</span>
+        <span class="muted small">Remove it with <code>python manage.py demo_analytics --clear</code> before you look at real numbers.</span></div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+  <script src="{% static 'dashboard/dash.js' %}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

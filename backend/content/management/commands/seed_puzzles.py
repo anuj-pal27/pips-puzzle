@@ -11,7 +11,7 @@ BLANK = {"picture": "", "cols": None, "rows": None, "maze": None, "config": {}}
 
 
 class Command(BaseCommand):
-    help = "Load (or refresh) the 15 built-in puzzles: Easy, Medium and Hard, 5 each. Safe to run again."
+    help = "Load (or refresh) the 15 puzzles the app ships with: Easy, Medium and Hard, 5 each. Safe to run again; puzzles you added yourself are left alone."
 
     def handle(self, *args, **options):
         items = json.loads(SEED_FILE.read_text(encoding="utf-8"))

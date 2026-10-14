@@ -3,15 +3,22 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { API_URL, checkServer } from '@/api/client';
+import { API_URL } from '@/api/client';
 import { CircleButton } from '@/components/Buttons';
 import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
+import { useCatalog, type CatalogSource } from '@/state/catalog';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 
 // TODO before publishing: both app stores require a privacy policy link for kids' apps.
 const PRIVACY_POLICY_URL = '';
+
+const SOURCE_TEXT: Record<CatalogSource, string> = {
+  server: 'From the game server',
+  saved: 'Saved from the game server last time',
+  'built-in': 'Built into the app',
+};
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -44,13 +51,13 @@ function ToggleRow({ label, help, value, onChange, last }: { label: string; help
 
 export default function GrownUpsSettings() {
   const { settings, updateSettings, resetProgress, totalStars } = useProgress();
+  const { refresh, source, puzzles } = useCatalog();
   const [server, setServer] = useState<'checking' | 'ok' | 'offline'>('checking');
 
+  // Opening this screen also picks up any puzzles added on the server since the app started.
   useEffect(() => {
-    checkServer()
-      .then(() => setServer('ok'))
-      .catch(() => setServer('offline'));
-  }, []);
+    refresh().then((ok) => setServer(ok ? 'ok' : 'offline'));
+  }, [refresh]);
 
   const confirmReset = () => {
     const doReset = () => resetProgress();
@@ -86,6 +93,16 @@ export default function GrownUpsSettings() {
           />
         </Section>
 
+        <Section title="Privacy">
+          <ToggleRow
+            label="Share play stats"
+            help="Tells the game's makers which puzzles get played and finished, so they can make the hard ones kinder. Anonymous: no names, no account."
+            value={settings.shareStats}
+            onChange={(shareStats) => updateSettings({ shareStats })}
+            last
+          />
+        </Section>
+
         <Section title="Progress">
           <View style={[styles.row, styles.divider]}>
             <Txt size={19}>Stars collected</Txt>
@@ -97,6 +114,13 @@ export default function GrownUpsSettings() {
         </Section>
 
         <Section title="About">
+          <View style={[styles.row, styles.divider]}>
+            <View style={{ flex: 1 }}>
+              <Txt size={19}>Puzzles</Txt>
+              <Txt weight="regular" size={15} color={colors.inkSoft}>{SOURCE_TEXT[source]}</Txt>
+            </View>
+            <Txt weight="extrabold" size={19}>{puzzles.length}</Txt>
+          </View>
           <View style={[styles.row, PRIVACY_POLICY_URL ? styles.divider : null]}>
             <View style={{ flex: 1 }}>
               <Txt size={19}>Game server</Txt>

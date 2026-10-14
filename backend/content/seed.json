@@ -5,6 +5,8 @@
     "order": 1,
     "kind": "jigsaw",
     "title": "Gappu the Goat",
+    "cheer": "You made Gappu!",
+    "blurb": "Always hungry, always grinning.",
     "picture": "gappu",
     "cols": 3,
     "rows": 2,
@@ -16,6 +18,8 @@
     "order": 2,
     "kind": "shadow",
     "title": "Who's That Shadow?",
+    "cheer": "Found them all!",
+    "blurb": "Mithu, Tillu and Pip came out of the shadows.",
     "config": {
       "friends": [
         "mithu",
@@ -31,6 +35,8 @@
     "order": 3,
     "kind": "memory",
     "title": "Snack Snap",
+    "cheer": "Snack Snap!",
+    "blurb": "Three pairs of snacks. Gappu says yum!",
     "config": {
       "snacks": [
         "jalebi",
@@ -46,6 +52,8 @@
     "order": 4,
     "kind": "jigsaw",
     "title": "Chunnu the Monkey",
+    "cheer": "You made Chunnu!",
+    "blurb": "The cheekiest monkey in town.",
     "picture": "chunnu",
     "cols": 3,
     "rows": 2,
@@ -56,7 +64,9 @@
     "tier": "easy",
     "order": 5,
     "kind": "maze",
-    "title": "Jalebi Hunt (Easy)",
+    "title": "Jalebi Hunt",
+    "cheer": "Yum!",
+    "blurb": "Gappu found the jalebis!",
     "maze": {
       "id": "easy",
       "intro": "Help Gappu find the jalebis!",
@@ -98,6 +108,8 @@
     "order": 1,
     "kind": "jigsaw",
     "title": "Gappu's Jalebi Shop",
+    "cheer": "You did it!",
+    "blurb": "Watch out, Chunnu is sneaking a jalebi!",
     "picture": "shop",
     "cols": 4,
     "rows": 3,
@@ -109,6 +121,8 @@
     "order": 2,
     "kind": "tracks",
     "title": "Fix the Tracks",
+    "cheer": "Choo choo!",
+    "blurb": "The jalebi train made it to the stall.",
     "config": {
       "map": [
         "T|HFT",
@@ -134,6 +148,8 @@
     "order": 3,
     "kind": "shadow",
     "title": "Who's That Shadow?",
+    "cheer": "Super spotting!",
+    "blurb": "Gappu and Gauri look alike in the dark!",
     "config": {
       "friends": [
         "gappu",
@@ -151,6 +167,8 @@
     "order": 4,
     "kind": "memory",
     "title": "Snack Snap",
+    "cheer": "Snack Snap!",
+    "blurb": "Four pairs found. Time for chai!",
     "config": {
       "snacks": [
         "jalebi",
@@ -166,7 +184,9 @@
     "tier": "medium",
     "order": 5,
     "kind": "maze",
-    "title": "Jalebi Hunt (Medium)",
+    "title": "Jalebi Hunt",
+    "cheer": "Yum!",
+    "blurb": "Gappu found the jalebis!",
     "maze": {
       "id": "medium",
       "intro": "Two gates this time! Find the yellow lever first.",
@@ -223,6 +243,8 @@
     "order": 1,
     "kind": "jigsaw",
     "title": "All Aboard at Jalebi Junction",
+    "cheer": "All aboard!",
+    "blurb": "Twenty pieces, all the right way up!",
     "picture": "station",
     "cols": 5,
     "rows": 4,
@@ -236,6 +258,8 @@
     "order": 2,
     "kind": "slide",
     "title": "Tillu's Slide Puzzle",
+    "cheer": "You fixed Tillu!",
+    "blurb": "Slow and steady, just like Tillu.",
     "picture": "tillu",
     "config": {
       "size": 3,
@@ -259,6 +283,8 @@
     "order": 3,
     "kind": "tracks",
     "title": "Fix the Tracks",
+    "cheer": "Choo choo!",
+    "blurb": "You found the one line that works!",
     "config": {
       "map": [
         "|Tb-cH",
@@ -286,6 +312,8 @@
     "order": 4,
     "kind": "memory",
     "title": "Snack Snap",
+    "cheer": "Snack feast!",
+    "blurb": "Six pairs! Nobody remembers snacks like you.",
     "config": {
       "snacks": [
         "jalebi",
@@ -303,7 +331,9 @@
     "tier": "hard",
     "order": 5,
     "kind": "maze",
-    "title": "Jalebi Hunt (Hard)",
+    "title": "Jalebi Hunt",
+    "cheer": "Yum!",
+    "blurb": "Gappu found the jalebis!",
     "maze": {
       "id": "hard",
       "intro": "The switch opens one gate and shuts the other. Think first!",

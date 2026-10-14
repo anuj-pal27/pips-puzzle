@@ -1,8 +1,10 @@
 // Logic tests for every puzzle kind's rules. Run with:  npm run test:logic
 // Plain Node (no test framework needed). Fails with a non-zero exit code if anything is wrong.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
-import { SHADOW_GAMES, SLIDE_GAMES, SNAP_GAMES, TRACK_GAMES } from '../../data/games.ts';
+import { isTierUnlocked, nextPuzzle, puzzleAfter, readServerPuzzles, unlockNeed } from '../../data/catalog.ts';
+import { FRIEND_NAMES, SHADOW_GAMES, SLIDE_GAMES, SNACK_NAMES, SNAP_GAMES, TRACK_GAMES } from '../../data/games.ts';
 import { MAZES } from '../../data/mazes.ts';
 import { jigsawStars, pieceMargin, piecePath, slotPath, startTurns, trayLayout } from '../jigsaw.ts';
 import { canFlip, flipCard, memoryDone, memoryStars, newMemory, pairResult, seededRandom, settle } from '../memory.ts';
@@ -353,6 +355,88 @@ test('slide: only tiles next to the gap move; solvability check agrees with real
     assert.ok(!isSolvable(swapped, n), 'a board with two tiles swapped was called solvable');
   }
   assert.deepEqual([slideStars(10, 10), slideStars(25, 10), slideStars(90, 10)], [3, 2, 1]);
+});
+
+// ---------------------------------------------------------------- puzzles from the server
+const KNOWN = {
+  pictures: ['gappu', 'mithu', 'tillu', 'chunnu', 'shop', 'station'],
+  friends: Object.keys(FRIEND_NAMES),
+  snacks: Object.keys(SNACK_NAMES),
+};
+const SEED = JSON.parse(readFileSync(new URL('../../../../backend/content/seed.json', import.meta.url), 'utf8'));
+
+test("server seed: all 15 puzzles read cleanly, and match the app's built-in settings", () => {
+  const { puzzles, skipped } = readServerPuzzles(SEED, KNOWN);
+  assert.deepEqual(skipped, []);
+  assert.equal(puzzles.length, 15);
+  assert.deepEqual(
+    puzzles.map((p) => p.kind),
+    ['jigsaw', 'shadow', 'memory', 'jigsaw', 'maze', 'jigsaw', 'tracks', 'shadow', 'memory', 'maze', 'jigsaw', 'slide', 'tracks', 'memory', 'maze'],
+  );
+  for (const p of puzzles) {
+    assert.ok(p.cheer && p.blurb && p.title, `${p.id} is missing its finish-screen text`);
+    const tier = p.tier as 'easy' | 'medium' | 'hard';
+    if (p.kind === 'shadow') assert.deepEqual([p.friends, p.cols], [SHADOW_GAMES[tier as 'easy'].friends, SHADOW_GAMES[tier as 'easy'].cols]);
+    if (p.kind === 'memory') assert.deepEqual([p.snacks, p.cols], [SNAP_GAMES[tier].snacks, SNAP_GAMES[tier].cols]);
+    if (p.kind === 'tracks') assert.deepEqual({ ...p.tracks, id: tier }, TRACK_GAMES[tier as 'medium']);
+    if (p.kind === 'maze') assert.deepEqual({ ...p.maze, id: tier }, MAZES[tier]);
+    if (p.kind === 'slide') {
+      const g = SLIDE_GAMES.hard;
+      assert.deepEqual([p.picture, p.size, p.start, p.par], [g.picture, g.size, g.start, g.par]);
+    }
+  }
+});
+
+test('server puzzles: anything the app cannot play is skipped, not crashed on', () => {
+  const ok = { slug: 'easy-6', tier: 'easy', order: 6, kind: 'shadow', title: 'More shadows', cheer: '', blurb: '', config: { friends: ['gappu', 'gauri'] } };
+  const { puzzles, skipped } = readServerPuzzles(
+    [
+      ok,
+      { ...ok, slug: 'easy-6' }, // twice
+      { ...ok, slug: 'x1', kind: 'racing' },
+      { ...ok, slug: 'x2', config: { friends: ['gappu', 'motu'] } },
+      { ...ok, slug: 'x3', kind: 'jigsaw', picture: 'dragon', cols: 3, rows: 2, image: null },
+      { ...ok, slug: 'x4', kind: 'jigsaw', picture: 'gappu', cols: 12, rows: 2, image: null },
+      { ...ok, slug: 'x5', kind: 'tracks', config: { map: ['|x'], taps: ['10'], start: 0, goal: 0 } },
+      { ...ok, slug: 'x6', kind: 'maze', maze: { map: ['S..', '...'] } },
+      { ...ok, slug: 'x7', kind: 'slide', picture: 'tillu', config: { size: 2, start: [0, 1, 2, -1] } }, // no par
+      { ...ok, slug: 'x8', tier: 'expert' },
+      'not a puzzle',
+    ],
+    KNOWN,
+  );
+  assert.deepEqual(puzzles.map((p) => p.id), ['easy-6']);
+  assert.deepEqual(skipped.map((s) => s.slug), ['easy-6', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8', '?']);
+  assert.equal(puzzles[0].cheer, 'Found them all!', 'a blank cheer gets the kind\'s default');
+  assert.equal(puzzles[0].kind === 'shadow' && puzzles[0].cols, 3);
+});
+
+test('server puzzles: an uploaded picture wins over a bundled one', () => {
+  const item = { slug: 'easy-7', tier: 'easy', order: 7, kind: 'jigsaw', title: 'New', picture: 'gappu', cols: 3, rows: 2, config: {} };
+  const up = readServerPuzzles([{ ...item, image: 'http://server/media/puzzles/new.png', image_width: 900, image_height: 600 }], KNOWN);
+  const p = up.puzzles[0];
+  assert.ok(p.kind === 'jigsaw' && p.picture === 'upload:easy-7');
+  assert.deepEqual(up.pictures['upload:easy-7'], { id: 'upload:easy-7', title: 'New', image: { uri: 'http://server/media/puzzles/new.png' }, width: 900, height: 600 });
+  const bundled = readServerPuzzles([{ ...item, image: null }], KNOWN).puzzles[0];
+  assert.ok(bundled.kind === 'jigsaw' && bundled.picture === 'gappu');
+});
+
+test('more than five puzzles in a tier: play order holds, and five stars still open the next tier', () => {
+  const extra = { slug: 'easy-6', tier: 'easy', order: 6, kind: 'jigsaw', title: 'Mithu', cheer: '', blurb: '', picture: 'mithu', cols: 3, rows: 2, image: null, config: {} };
+  const { puzzles } = readServerPuzzles([...SEED, extra].reverse(), KNOWN);
+  assert.deepEqual(puzzles.slice(4, 7).map((p) => p.id), ['easy-5', 'easy-6', 'medium-1']);
+  assert.equal(unlockNeed(puzzles, 'medium'), 5);
+  const four = { 'easy-1': 3, 'easy-2': 1, 'easy-3': 2, 'easy-4': 1 };
+  assert.ok(!isTierUnlocked(puzzles, 'medium', four));
+  assert.equal(nextPuzzle(puzzles, four)?.id, 'easy-5');
+  assert.equal(puzzleAfter(puzzles, 'easy-5', four)?.id, 'easy-6');
+  assert.equal(puzzleAfter(puzzles, 'easy-6', four), undefined, 'medium is still locked');
+  const five = { ...four, 'easy-6': 1 };
+  assert.ok(isTierUnlocked(puzzles, 'medium', five), 'any five Easy puzzles open Medium');
+  assert.equal(puzzleAfter(puzzles, 'easy-6', five)?.id, 'medium-1');
+  // A tier with fewer than five puzzles needs all of them.
+  const short = puzzles.filter((p) => p.tier !== 'easy' || p.order <= 3);
+  assert.equal(unlockNeed(short, 'medium'), 3);
 });
 
 console.log(`\n${passed} checks passed`);

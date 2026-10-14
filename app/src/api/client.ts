@@ -1,23 +1,30 @@
-// Talks to the Django + DRF backend (../backend). The game itself never needs the server:
-// everything is saved on the phone. These calls are for later features (cloud save, new puzzle packs).
+// Talks to the Django + DRF backend (../backend). The game never needs the server to play: it loads
+// the puzzle list from it when it can (src/state/catalog.tsx) and saves that on the phone. The other
+// calls are for later features (parent accounts, cloud save).
 //
 // Set the address in app/.env (copy .env.example):
 //   EXPO_PUBLIC_API_URL=http://192.168.1.5:8000      <- your laptop's Wi-Fi address, not 127.0.0.1
 
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://127.0.0.1:8000').replace(/\/$/, '');
 
+// One puzzle as the server sends it. src/data/catalog.ts checks it and turns it into a game puzzle.
 export type RemotePuzzle = {
   slug: string;
   tier: 'easy' | 'medium' | 'hard';
   order: number;
   kind: 'jigsaw' | 'maze' | 'shadow' | 'memory' | 'tracks' | 'slide';
   title: string;
-  picture: string;
-  image: string | null;
+  cheer: string;
+  blurb: string;
+  picture: string; // id of a picture bundled in the app
+  image: string | null; // or the full address of a picture uploaded on the server
+  image_width: number | null;
+  image_height: number | null;
   cols: number | null;
   rows: number | null;
   maze: unknown;
   config: Record<string, unknown>; // settings for the other kinds, same shape as src/data/games.ts
+  updated_at: string;
 };
 
 export type Tokens = { access: string; refresh: string };
@@ -43,11 +50,8 @@ async function request<T>(path: string, options: RequestInit & { token?: string 
   }
 }
 
-/** Is the server reachable? Used by the grown-ups settings screen. */
-export const checkServer = () => request<{ status: string }>('/api/health/');
-
-/** Published puzzles, in tier order. */
-export const fetchPuzzles = () => request<RemotePuzzle[]>('/api/puzzles/');
+/** Published puzzles, in tier order. Not checked yet: pass the result to readServerPuzzles(). */
+export const fetchPuzzles = () => request<unknown>('/api/puzzles/');
 
 /** Parent sign-in (email + password) -> JWT tokens. */
 export const signIn = (email: string, password: string) =>
@@ -68,3 +72,16 @@ export const syncProgress = (token: string, child: number, stars: Record<string,
     token,
     body: JSON.stringify({ child, items: Object.entries(stars).map(([puzzle, s]) => ({ puzzle, stars: s })) }),
   });
+
+/** One thing that happened in a game, for the anonymous play stats (src/state/playStats.ts). */
+export type PlayEvent = {
+  id: string;
+  type: 'start' | 'finish' | 'quit';
+  puzzle: string;
+  stars?: number;
+  seconds?: number;
+  at: string; // ISO time on the phone
+};
+
+export const sendPlayEvents = (body: { device: string; platform: string; app_version: string; events: PlayEvent[] }) =>
+  request<{ saved: number }>('/api/events/', { method: 'POST', body: JSON.stringify(body) });

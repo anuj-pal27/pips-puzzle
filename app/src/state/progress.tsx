@@ -1,18 +1,21 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
+import { playFinished, setPlayStatsEnabled } from './playStats';
+
 // Everything the game remembers, saved on the phone (no account, works offline).
 
 export type Settings = {
   sound: boolean;
   music: boolean;
   pictureHint: boolean; // show the light-bulb button in jigsaws
+  shareStats: boolean; // send anonymous play stats to the game server (src/state/playStats.ts)
 };
 
 type Saved = { version: 1; stars: Record<string, number>; settings: Settings };
 
 const STORAGE_KEY = 'pips-puzzles/progress';
-const DEFAULTS: Saved = { version: 1, stars: {}, settings: { sound: true, music: true, pictureHint: true } };
+const DEFAULTS: Saved = { version: 1, stars: {}, settings: { sound: true, music: true, pictureHint: true, shareStats: true } };
 
 type ProgressApi = {
   ready: boolean;
@@ -44,6 +47,10 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       .finally(() => setReady(true));
   }, []);
 
+  useEffect(() => {
+    setPlayStatsEnabled(saved.settings.shareStats);
+  }, [saved.settings.shareStats]);
+
   const save = (next: Saved) => {
     setSaved(next);
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
@@ -55,6 +62,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     totalStars: Object.values(saved.stars).reduce((a, b) => a + b, 0),
     settings: saved.settings,
     recordStars: (puzzleId, stars) => {
+      playFinished(puzzleId, stars);
       const best = Math.max(saved.stars[puzzleId] ?? 0, stars);
       save({ ...saved, stars: { ...saved.stars, [puzzleId]: best } });
     },

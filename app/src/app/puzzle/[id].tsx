@@ -12,8 +12,10 @@ import { TipBubble } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
 import { PieceArt } from '@/components/PieceArt';
 import { Txt } from '@/components/Txt';
-import { getPuzzle, getTier, PICTURES, type JigsawPuzzle } from '@/data/puzzles';
+import { getTier, type JigsawPuzzle } from '@/data/puzzles';
 import { jigsawStars, pieceMargin, piecePath, slotPath, startTurns, trayLayout, type JigsawGrid } from '@/game/jigsaw';
+import { useCatalog, usePuzzle } from '@/state/catalog';
+import { usePlayStats } from '@/state/playStats';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 
@@ -23,14 +25,15 @@ const PANEL_PAD = 14;
 
 export default function PuzzleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const puzzle = getPuzzle(id);
+  const puzzle = usePuzzle(id);
   if (!puzzle || puzzle.kind !== 'jigsaw') return <Redirect href="/map" />;
   return <Jigsaw key={puzzle.id} puzzle={puzzle} />;
 }
 
 function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
+  usePlayStats(puzzle.id);
   const { settings, recordStars } = useProgress();
-  const picture = PICTURES[puzzle.picture];
+  const picture = useCatalog().getPicture(puzzle.picture);
   const tier = getTier(puzzle.tier);
   const { width } = useWindowDimensions();
 

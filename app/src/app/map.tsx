@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ImageSourcePropType } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,26 +9,18 @@ import { Icon } from '@/components/Icon';
 import { Stars } from '@/components/Stars';
 import { Txt } from '@/components/Txt';
 import { THUMBS } from '@/data/art';
-import { isTierUnlocked, KIND_LABEL, nextPuzzle, PICTURES, puzzlesInTier, TIERS, type Puzzle, type Tier } from '@/data/puzzles';
+import { KIND_LABEL, TIERS, type Picture, type Puzzle, type Tier } from '@/data/puzzles';
 import { openPuzzle } from '@/navigation';
+import { useCatalog } from '@/state/catalog';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 
-/** Every puzzle has its own picture on the map. */
-function thumbFor(p: Puzzle) {
-  switch (p.kind) {
-    case 'jigsaw':
-      return PICTURES[p.picture].image;
-    case 'maze':
-    case 'slide':
-      return THUMBS[p.kind];
-    case 'shadow':
-      return THUMBS[`shadow-${p.game}`];
-    case 'memory':
-      return THUMBS[`memory-${p.game}`];
-    case 'tracks':
-      return THUMBS[`tracks-${p.game}`];
-  }
+/** Jigsaws show their own picture on the map; other kinds show their tier's picture of that game. */
+function thumbFor(p: Puzzle, getPicture: (id: string) => Picture) {
+  if (p.kind === 'jigsaw') return getPicture(p.picture).image;
+  const thumbs: Record<string, ImageSourcePropType> = THUMBS;
+  // No Hard shadow picture (say): use the closest one there is.
+  return thumbs[`${p.kind}-${p.tier}`] ?? thumbs[p.kind] ?? Object.entries(thumbs).find(([k]) => k.startsWith(`${p.kind}-`))![1];
 }
 /** Chip on the tile: what kind of game it is (plain jigsaws don't need one). */
 const chipFor = (p: Puzzle) => (p.kind === 'jigsaw' ? (p.spin ? 'Spin' : null) : KIND_LABEL[p.kind]);
@@ -41,6 +33,7 @@ function PuzzleTile({ puzzle, size, stars, isNext }: { puzzle: Puzzle; size: num
   }, [isNext, pulse]);
   const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.get() }] }));
   const chip = chipFor(puzzle);
+  const { getPicture } = useCatalog();
 
   return (
     <View style={{ width: size, alignItems: 'center', gap: 4 }}>
@@ -55,7 +48,7 @@ function PuzzleTile({ puzzle, size, stars, isNext }: { puzzle: Puzzle; size: num
             isNext ? styles.tileNext : null,
             pressed && { transform: [{ translateY: 3 }] },
           ]}>
-          <Image source={thumbFor(puzzle)} style={styles.thumb} resizeMode="cover" />
+          <Image source={thumbFor(puzzle, getPicture)} style={styles.thumb} resizeMode="cover" />
           {chip ? (
             <View style={styles.chip}>
               <Txt size={12} weight="extrabold" color={colors.white}>{chip}</Txt>
@@ -74,8 +67,11 @@ function PuzzleTile({ puzzle, size, stars, isNext }: { puzzle: Puzzle; size: num
 }
 
 function LockedTier({ tier, previous }: { tier: Tier; previous: Tier }) {
+  const { puzzlesInTier, unlockNeed, getPicture } = useCatalog();
+  const need = unlockNeed(tier.id);
+  const howMany = need === puzzlesInTier(previous.id).length ? `all ${need}` : `${need}`;
   return (
-    <View style={styles.lockedCard} accessible accessibilityLabel={`${tier.name} puzzles, locked. Finish all 5 ${previous.name} puzzles to unlock.`}>
+    <View style={styles.lockedCard} accessible accessibilityLabel={`${tier.name} puzzles, locked. Finish ${howMany} ${previous.name} puzzles to unlock.`}>
       <View style={styles.tierHead}>
         <View style={styles.tierHeadLeft}>
           <View style={[styles.badge, { backgroundColor: tier.color }]}>
@@ -88,20 +84,21 @@ function LockedTier({ tier, previous }: { tier: Tier; previous: Tier }) {
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {puzzlesInTier(tier.id).map((p) => (
           <View key={p.id} style={styles.lockedTile}>
-            <Image source={thumbFor(p)} style={[styles.thumb, { opacity: 0.3, position: 'absolute' }]} />
+            <Image source={thumbFor(p, getPicture)} style={[styles.thumb, { opacity: 0.3, position: 'absolute' }]} />
             <View style={styles.lockCircle}>
               <Icon name="lock" size={16} />
             </View>
           </View>
         ))}
       </View>
-      <Txt size={15} color={colors.inkBrown}>Finish all 5 {previous.name} puzzles to unlock</Txt>
+      <Txt size={15} color={colors.inkBrown}>Finish {howMany} {previous.name} puzzles to unlock</Txt>
     </View>
   );
 }
 
 export default function PuzzleMap() {
   const { stars, totalStars } = useProgress();
+  const { puzzlesInTier, isTierUnlocked, nextPuzzle } = useCatalog();
   const { width } = useWindowDimensions();
   const cardInner = Math.min(width, 480) - 40 - 28;
   const tile = Math.min(104, Math.floor((cardInner - 22) / 3));
@@ -120,8 +117,9 @@ export default function PuzzleMap() {
 
       <ScrollView contentContainerStyle={styles.list}>
         {TIERS.map((tier, i) => {
-          if (!isTierUnlocked(tier.id, stars)) return <LockedTier key={tier.id} tier={tier} previous={TIERS[i - 1]} />;
           const puzzles = puzzlesInTier(tier.id);
+          if (!puzzles.length) return null; // the server has none in this tier right now
+          if (!isTierUnlocked(tier.id, stars)) return <LockedTier key={tier.id} tier={tier} previous={TIERS[i - 1]} />;
           const done = puzzles.filter((p) => (stars[p.id] ?? 0) > 0).length;
           return (
             <View key={tier.id} style={styles.card}>
@@ -132,7 +130,7 @@ export default function PuzzleMap() {
                   </View>
                   <Txt size={15} color={colors.inkSoft}>{tier.tagline}</Txt>
                 </View>
-                <Txt weight="extrabold" size={16}>{done} of 5 done</Txt>
+                <Txt weight="extrabold" size={16}>{done} of {puzzles.length} done</Txt>
               </View>
               <View style={styles.tiles}>
                 {puzzles.map((p) => (

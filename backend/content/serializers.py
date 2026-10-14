@@ -6,4 +6,21 @@ from .models import Puzzle
 class PuzzleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Puzzle
-        fields = ["slug", "tier", "order", "kind", "title", "picture", "image", "cols", "rows", "maze", "config"]
+        fields = [
+            "slug",
+            "tier",
+            "order",
+            "kind",
+            "title",
+            "cheer",
+            "blurb",
+            "picture",
+            "image",
+            "image_width",
+            "image_height",
+            "cols",
+            "rows",
+            "maze",
+            "config",
+            "updated_at",
+        ]

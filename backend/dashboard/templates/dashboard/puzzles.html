@@ -1,0 +1,56 @@
+{% extends "dashboard/base.html" %}
+{% load dash %}
+{% block title %}Puzzles{% endblock %}
+{% block content %}
+<div class="head">
+  <div>
+    <h1>Puzzles</h1>
+    <p class="muted">{{ total }} puzzles in play order. Changes reach phones the next time the game opens.</p>
+  </div>
+  <div class="row">
+    {% include "dashboard/_range.html" %}
+    <a class="btn btn-primary" href="{% url 'dashboard:new' %}">+ New puzzle</a>
+  </div>
+</div>
+
+{% for tier, rows in tiers %}
+<section class="card">
+  <div class="tier-head">
+    <h2><span class="chip chip-{{ tier.value }}">{{ tier.label }}</span> {{ rows|length }} puzzle{{ rows|length|pluralize }}</h2>
+    <a class="btn btn-small" href="{% url 'dashboard:new' %}?tier={{ tier.value }}">+ Add to {{ tier.label }}</a>
+  </div>
+  {% if rows %}
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th></th><th>Puzzle</th><th class="r">Players</th><th class="r">Started</th><th>Finish rate</th><th class="r">Avg stars</th><th class="r">Typical time</th><th class="r">Order &amp; actions</th></tr></thead>
+    <tbody>
+      {% for r in rows %}{% with p=r.puzzle %}
+      <tr>
+        <td><a href="{% url 'dashboard:puzzle' p.slug %}?days={{ days }}"><img class="thumb" src="{{ r.thumb }}" alt=""></a></td>
+        <td class="title-cell">
+          <a href="{% url 'dashboard:puzzle' p.slug %}?days={{ days }}">{{ p.order }}. {{ p.title }}</a>
+          <div class="meta"><span class="chip">{{ p.get_kind_display }}</span><code class="faint small">{{ p.slug }}</code>{% if not p.is_published %}<span class="chip chip-off">Hidden</span>{% endif %}</div>
+        </td>
+        <td class="r num">{{ r.players|compact }}</td>
+        <td class="r num">{{ r.starts|compact }}</td>
+        <td>{% if r.starts %}<div class="meter"><div class="bar-track" title="{{ r.finishes }} finished of {{ r.starts }} started"><div class="bar-fill" style="width: {{ r.completion|pct_width }}%"></div></div><span class="num small"><strong>{{ r.completion|pct }}</strong></span></div>{% else %}<span class="faint">no plays</span>{% endif %}</td>
+        <td class="r num">{{ r.avg_stars|one_decimal }}</td>
+        <td class="r num">{{ r.median_seconds|duration }}</td>
+        <td>
+          <div class="actions">
+            <form class="inline" method="post" action="{% url 'dashboard:action' p.slug 'up' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-icon" {% if forloop.first %}disabled{% endif %} aria-label="Move {{ p.title }} earlier">↑</button></form>
+            <form class="inline" method="post" action="{% url 'dashboard:action' p.slug 'down' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-icon" {% if forloop.last %}disabled{% endif %} aria-label="Move {{ p.title }} later">↓</button></form>
+            <form class="inline" method="post" action="{% url 'dashboard:action' p.slug 'publish' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-small">{% if p.is_published %}Hide{% else %}Publish{% endif %}</button></form>
+            <a class="btn btn-small" href="{% url 'dashboard:edit' p.slug %}">Edit</a>
+          </div>
+        </td>
+      </tr>
+      {% endwith %}{% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}<p class="muted">No puzzles in this tier.</p>{% endif %}
+</section>
+{% endfor %}
+<p class="faint small">Moving a puzzle changes when children meet it. Its id (and every child's stars on it) stays the same.</p>
+{% endblock %}

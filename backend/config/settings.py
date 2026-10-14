@@ -185,6 +185,10 @@ SIMPLE_JWT = {
 # The phone app doesn't need CORS; this is only for the Expo web preview (npx expo start --web).
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:8081,http://127.0.0.1:8081")
 
+# Shown on the public privacy policy page (/privacy/), which the app and the store listings link to.
+PRIVACY_OWNER = os.environ.get("PRIVACY_OWNER", "Anuj Pal")
+PRIVACY_EMAIL = os.environ.get("PRIVACY_EMAIL", "anujpal27669@gmail.com")
+
 # --- Production hardening (applies when DJANGO_DEBUG=0) --------------------------------------
 
 if not DEBUG:

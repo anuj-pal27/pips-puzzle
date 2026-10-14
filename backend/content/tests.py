@@ -71,6 +71,12 @@ class PuzzleApiTests(APITestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json(), {"status": "ok"})
 
+    def test_privacy_policy_is_public(self):
+        res = self.client.get("/privacy/")
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Share play stats")
+        self.assertContains(res, "mailto:")
+
     def test_puzzles_are_public_and_in_play_order(self):
         Puzzle.objects.filter(slug="hard-2").update(is_published=False)
         res = self.client.get("/api/puzzles/")

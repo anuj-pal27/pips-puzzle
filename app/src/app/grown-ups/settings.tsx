@@ -11,8 +11,8 @@ import { useCatalog, type CatalogSource } from '@/state/catalog';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 
-// TODO before publishing: both app stores require a privacy policy link for kids' apps.
-const PRIVACY_POLICY_URL = '';
+// The public privacy policy (backend/content/templates/content/privacy.html). Stores link to the same page.
+const PRIVACY_POLICY_URL = 'https://pips-puzzles-api.onrender.com/privacy/';
 
 const SOURCE_TEXT: Record<CatalogSource, string> = {
   server: 'From the game server',

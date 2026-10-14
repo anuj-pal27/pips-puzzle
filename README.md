@@ -357,7 +357,7 @@ npm run test:logic      # 49 checks: every maze and track map is solvable, the s
 
 # backend (venv active, PostgreSQL running)
 cd backend
-python manage.py test   # 38 tests: API, play stats, dashboard pages and puzzle builder, game-rule checks
+python manage.py test   # 39 tests: API, play stats, dashboard pages and puzzle builder, game-rule checks
 ```
 
 ---
@@ -366,6 +366,6 @@ python manage.py test   # 38 tests: API, play stats, dashboard pages and puzzle 
 
 - **Sound:** add `expo-audio` with snap, cheer and click sounds; the Sound and Music switches are already saved.
 - **Parent sign-in screen:** the API calls already exist in `api/client.ts`; add a screen under Grown-ups to use them.
-- **Privacy policy:** both stores require one for kids' apps; set `PRIVACY_POLICY_URL` in `app/grown-ups/settings.tsx`. It should mention the anonymous play stats (what's sent, and the off switch in Grown-ups).
+- **Privacy policy:** live at `/privacy/` on the backend (`backend/content/templates/content/privacy.html`; the contact comes from `PRIVACY_OWNER` and `PRIVACY_EMAIL`). The app links to it from Grown-ups → About. Update the page and its date whenever the game starts collecting something new.
 - **Real builds:** `npx eas-cli@latest build -p android` makes an installable app in the cloud (no Android Studio needed).
 - **Once the backend is live (step 6):** a custom domain on Render, and a paid instance so the server doesn't sleep.

@@ -97,6 +97,16 @@ class StatsTests(TestCase):
         self.assertEqual(sum(d["starts"] for d in days), 3)
         self.assertEqual(stats.summary(stats.window("all", now=self.later))["devices"], 3)
 
+    def test_bit_lessons_are_counted_apart_from_puzzles(self):
+        self.add("a", "easy-1", "start")
+        for kind, extra in [("start", {}), ("finish", {"stars": 3, "seconds": 50})]:
+            PlayEvent.objects.create(event_id=uuid.uuid4(), device="a", puzzle_slug="lab-1", type=kind, played_at=self.now, **extra)
+        w = stats.window("7", now=self.later)
+        self.assertEqual(stats.summary(w)["starts"], 1)
+        lab = {r["slug"]: r for r in stats.lab_lessons(w)}
+        self.assertEqual((lab["lab-1"]["starts"], lab["lab-1"]["finishes"], lab["lab-1"]["avg_stars"]), (1, 1, 3))
+        self.assertEqual(lab["lab-5"]["starts"], 0)
+
     def test_change_and_hardest(self):
         self.assertEqual(stats.change({"x": 15}, {"x": 10}, "x"), 0.5)
         self.assertIsNone(stats.change({"x": 15}, {"x": 0}, "x"))

@@ -41,6 +41,17 @@ class PlayEvent(models.Model):
     def is_demo(self) -> bool:
         return self.device.startswith(DEMO_PREFIX)
 
+# Learn with Bit lessons are built into the app (app/src/game/teach.ts) and report plays under these slugs.
+# Their stats are kept apart from the puzzles' (they aren't Puzzle rows).
+LAB_PREFIX = "lab-"
+LAB_LESSONS = {
+    "lab-1": "Fruit or not?",
+    "lab-2": "Can it fly?",
+    "lab-3": "Hot or cold?",
+    "lab-4": "Bit gets muddled",
+    "lab-5": "Three baskets",
+}
+
 
 # Devices made up by `manage.py demo_analytics`, so demo data can be told apart and removed.
 DEMO_PREFIX = "demo-"

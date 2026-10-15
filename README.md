@@ -297,7 +297,7 @@ Install the new build, open **Grown-ups**: *Game server* should say **Connected*
 | Path | What it is |
 |---|---|
 | `app/` | Screens (Expo Router: every file is a screen) |
-| `app/index.tsx` | Home |
+| `app/index.tsx` | Home: two doors, **Puzzles** (Pip) and **Learn with Bit** (the robot) |
 | `app/map.tsx` | Puzzle map: Easy / Medium / Hard, 5 each, with unlocking |
 | `app/puzzle/[id].tsx` | Drag-and-drop jigsaw (6 / 12 / 20 pieces; "spin" jigsaws: tap a piece to turn it) |
 | `app/shadow/[id].tsx` | Who's That Shadow? (drag friends onto their shadows) |
@@ -306,7 +306,9 @@ Install the new build, open **Grown-ups**: *Game server* should say **Connected*
 | `app/slide/[id].tsx` | Slide puzzle |
 | `app/maze/[id].tsx` | Jalebi Hunt maze (arrow pad + swipe) |
 | `app/complete/[id].tsx` | Celebration screen ("Choo choo!", "Found them all!"…) |
-| `app/grown-ups/` | Parental gate + settings |
+| `app/lab/index.tsx` | Learn with Bit: the robot lab, lesson path and badges |
+| `app/lab/[id].tsx` | Teach the Robot: the child sorts pictures, then Bit sorts new ones by itself |
+| `app/grown-ups/` | Parental gate + settings (incl. "What your child learned with Bit") |
 | `data/puzzles.ts` | The 15 built-in puzzles, pictures and tiers (used until a server has been reached) |
 | `data/catalog.ts` | Reads and checks the server's puzzle list; play order and unlock rules (no React, unit-tested) |
 | `data/games.ts` | Settings for shadows, Snack Snap, track maps and the slide puzzle |
@@ -314,13 +316,15 @@ Install the new build, open **Grown-ups**: *Game server* should say **Connected*
 | `data/art.ts` | Friend cut-outs, snacks, train set and map thumbnails |
 | `game/jigsaw.ts` | Piece shapes, board guides, tray layout, spin turns, stars |
 | `game/maze.ts` | Maze rules: levers, gates, the switch, monkeys, laddoos |
-| `game/tracks.ts`, `memory.ts`, `slide.ts`, `shadow.ts` | Rules for the other games (no React, unit-tested) |
+| `game/tracks.ts`, `memory.ts`, `slide.ts`, `shadow.ts` | Rules for the other games, including the random layouts (no React, unit-tested) |
+| `game/teach.ts` | Teach the Robot: what Bit sees in each picture, how it guesses (nearest example), the 5 lessons |
+| `audio/sound.ts` | Sound effects and music (made by `scripts/make-sounds.py`), obeying the Sound and Music switches |
 | `navigation.ts` | Which screen plays each kind of puzzle |
 | `state/catalog.tsx` | Which puzzles are played: asks the server when the game opens, saves the list on the phone |
 | `state/playStats.ts` | Anonymous play stats for the dashboard: queued on the phone, sent when online, off-switch in Grown-ups |
 | `state/progress.tsx` | Stars + settings, saved on the phone |
 | `api/client.ts` | Calls to the Django API |
-| `components/` | Buttons, icons, stars, jigsaw pieces, maze tiles |
+| `components/` | Buttons, icons, stars, jigsaw pieces, maze tiles, Bit (`Bit.tsx`) and the lesson pictures (`ThingArt.tsx`), all drawn in code |
 
 **Unlocking:** Medium opens once 5 Easy puzzles have at least one star (all of them, if Easy has fewer than 5); Hard opens the same way after Medium. Adding more puzzles to a tier never locks a tier a child has already opened.
 **Stars** (always at least 1 for finishing):
@@ -331,6 +335,9 @@ Install the new build, open **Grown-ups**: *Game server* should say **Connected*
 - Tracks: 3 within 6 taps of the fewest possible, 2 within a generous margin.
 - Slide: 3 within 10 moves of the fewest possible (10), 2 within a generous margin.
 - Maze: 1 per laddoo collected.
+- Learn with Bit: 3 if Bit sorts everything right the first time, 2 after one re-teach, 1 after that. Lessons open one after another; the lab itself is always open.
+
+**How Bit learns** (`game/teach.ts`): each picture has a few things you can see (colour, shape, wings, wheels, a stem…). For a new picture Bit finds the taught example that shares the most, colour counting less than shape, and copies its basket. So Bit really does copy the child's mistakes. Lesson 4 is set up so Bit first learns from red fruits only and wrongly calls a red ball a fruit; the logic tests check every lesson works out the way the story needs.
 
 ### Backend: `backend/`
 
@@ -353,11 +360,11 @@ Sign-in returns JWT tokens; send `Authorization: Bearer <access>` on the other c
 cd app
 npm run typecheck
 npx expo lint
-npm run test:logic      # 59 checks: every maze and track map is solvable, random layouts never start a piece near its spot, slide scrambles get the true best solution, the server's seed matches the built-in puzzles, and more
+npm run test:logic      # 66 checks: every maze and track map is solvable, random layouts never start a piece near its spot, slide scrambles get the true best solution, the server's seed matches the built-in puzzles, and more
 
 # backend (venv active, PostgreSQL running)
 cd backend
-python manage.py test   # 40 tests: API, play stats, dashboard pages and puzzle builder, game-rule checks
+python manage.py test   # 41 tests: API, play stats, dashboard pages and puzzle builder, game-rule checks
 ```
 
 ---

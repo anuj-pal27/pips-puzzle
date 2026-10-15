@@ -10,6 +10,7 @@ import { jigsawStars, nearHome, pieceMargin, piecePath, slotPath, startTurns, tr
 import { canFlip, flipCard, memoryDone, memoryStars, newMemory, pairResult, seededRandom, settle } from '../memory.ts';
 import { nearestSlot, pickDecoy, shadowStars, trayOrder } from '../shadow.ts';
 import { BLANK, canSlide, isSolvable, isSolved, neighbours, scrambleSlide, slidePar, slideStars, slideTile, solvedBoard } from '../slide.ts';
+import { guess, LESSONS, lessonOpen, likeness, teachOrder, teachStars, THINGS, type Example } from '../teach.ts';
 import { initTracks, isTrack, openings, SCENERY, scrambleTracks, solvedTracks, tapPiece, traceTracks, tracksPar, tracksStars } from '../tracks.ts';
 import type { Cell, Dir, MazeConfig, MazeState } from '../maze.ts';
 import { findTile, gateIsOpen, initMaze, leverGate, monkeyCell, stepMaze, tileAt } from '../maze.ts';
@@ -422,6 +423,50 @@ test('slide: a new scramble every play, solvable, about as hard as the set par, 
     starts.add(s.start.join());
   }
   assert.ok(starts.size > 15, 'scrambles repeat');
+});
+
+// ---------------------------------------------------------------- teach the robot
+for (const lesson of LESSONS) {
+  test(`teach ${lesson.id}: taught right, Bit sorts every new picture right${lesson.muddle ? ' (after getting muddled first)' : ''}`, () => {
+    for (const b of lesson.baskets) assert.ok(THINGS[b.icon], `basket icon ${b.icon}`);
+    const examples: Example[] = [];
+    lesson.rounds.forEach((round, r) => {
+      for (const item of [...(round.presorted ?? []), ...round.teach]) {
+        assert.ok(THINGS[item.thing], `unknown thing ${item.thing}`);
+        assert.ok(item.answer >= 0 && item.answer < lesson.baskets.length);
+        examples.push({ thing: item.thing, basket: item.answer });
+      }
+      const results = round.test.map((t) => ({ ...t, g: guess(examples, t.thing) }));
+      for (const t of results) {
+        if (t.g.basket !== null) assert.equal(examples.find((e) => e.thing === t.g.because)?.basket, t.g.basket, 'Bit points at the wrong example');
+      }
+      const wrong = results.filter((t) => t.g.basket !== t.answer).map((t) => t.thing);
+      if (lesson.muddle && r === 0) assert.deepEqual(wrong, ['redball'], 'the muddle round should only get the red ball wrong');
+      else assert.deepEqual(wrong, [], `round ${r + 1}: Bit got ${wrong.join(', ')} wrong`);
+      // A picture Bit is tested on is never one it was already shown (except fixing the muddle).
+      for (const t of round.test) if (!lesson.muddle) assert.ok(!examples.some((e) => e.thing === t.thing), `${t.thing} was already taught`);
+    });
+  });
+}
+test('teach: Bit copies the child\'s mistakes, and isn\'t sure when nothing looks alike', () => {
+  const lesson = LESSONS[0];
+  const flipped: Example[] = lesson.rounds[0].teach.map((t) => ({ thing: t.thing, basket: 1 - t.answer }));
+  for (const t of lesson.rounds[0].test) assert.equal(guess(flipped, t.thing).basket, 1 - t.answer);
+  assert.deepEqual(guess([{ thing: 'apple', basket: 0 }], 'snowman'), { basket: null, because: null });
+  assert.equal(guess([{ thing: 'apple', basket: 0 }, { thing: 'cherry', basket: 1 }], 'mango').basket, null); // a draw
+  assert.equal(likeness(THINGS.apple, THINGS.cherry), 5);
+  assert.equal(likeness(THINGS.apple, THINGS.redball), 3);
+});
+test('teach: new order every play, stars, and lessons open one after another', () => {
+  const rand = seededRandom(4);
+  const orders = new Set<string>();
+  for (let i = 0; i < 20; i++) orders.add(teachOrder(LESSONS[0].rounds[0], rand).map((t) => t.thing).join());
+  assert.ok(orders.size > 10);
+  assert.deepEqual([teachStars(0), teachStars(1), teachStars(4)], [3, 2, 1]);
+  assert.ok(lessonOpen(0, {}));
+  assert.ok(!lessonOpen(1, {}));
+  assert.ok(lessonOpen(1, { 'lab-1': 2 }));
+  assert.equal(new Set(LESSONS.map((l) => l.id)).size, LESSONS.length);
 });
 
 // ---------------------------------------------------------------- puzzles from the server

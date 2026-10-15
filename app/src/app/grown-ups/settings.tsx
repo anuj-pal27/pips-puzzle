@@ -7,6 +7,7 @@ import { API_URL } from '@/api/client';
 import { CircleButton } from '@/components/Buttons';
 import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
+import { LESSONS } from '@/game/teach';
 import { useCatalog, type CatalogSource } from '@/state/catalog';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
@@ -50,7 +51,7 @@ function ToggleRow({ label, help, value, onChange, last }: { label: string; help
 }
 
 export default function GrownUpsSettings() {
-  const { settings, updateSettings, resetProgress, totalStars } = useProgress();
+  const { settings, updateSettings, resetProgress, totalStars, labStars } = useProgress();
   const { refresh, source, puzzles } = useCatalog();
   const [server, setServer] = useState<'checking' | 'ok' | 'offline'>('checking');
 
@@ -62,10 +63,10 @@ export default function GrownUpsSettings() {
   const confirmReset = () => {
     const doReset = () => resetProgress();
     if (Platform.OS === 'web') {
-      if (globalThis.confirm?.('Reset all stars and locks? This cannot be undone.')) doReset();
+      if (globalThis.confirm?.("Reset all stars, locks and Bit's lessons? This cannot be undone.")) doReset();
       return;
     }
-    Alert.alert('Reset progress?', 'All stars are cleared and Medium and Hard lock again. This cannot be undone.', [
+    Alert.alert('Reset progress?', "All stars are cleared, Medium and Hard lock again, and Bit's lessons start over. This cannot be undone.", [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Reset', style: 'destructive', onPress: doReset },
     ]);
@@ -101,6 +102,23 @@ export default function GrownUpsSettings() {
             onChange={(shareStats) => updateSettings({ shareStats })}
             last
           />
+        </Section>
+
+        <Section title="What your child learned with Bit">
+          {LESSONS.map((l, i) => {
+            const done = (labStars[l.id] ?? 0) > 0;
+            return (
+              <View key={l.id} style={[styles.row, i < LESSONS.length - 1 && styles.divider]} accessible accessibilityLabel={`${l.title}: ${done ? 'learned' : 'not yet'}. ${l.card.line}`}>
+                <View style={[styles.learnDot, done && { backgroundColor: colors.green }]}>
+                  {done ? <Icon name="check" size={16} color={colors.white} /> : null}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Txt size={17} weight="semibold">{l.title}</Txt>
+                  <Txt weight="regular" size={14} color={colors.inkSoft}>{l.card.line}</Txt>
+                </View>
+              </View>
+            );
+          })}
         </Section>
 
         <Section title="Progress">
@@ -150,5 +168,6 @@ const styles = StyleSheet.create({
   card: { paddingHorizontal: 18, borderRadius: 22, backgroundColor: colors.white },
   row: { minHeight: 64, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   divider: { borderBottomWidth: 1, borderBottomColor: '#E6EDF4' },
+  learnDot: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: '#D5DEEA', alignItems: 'center', justifyContent: 'center' },
   statusDot: { width: 14, height: 14, borderRadius: 7 },
 });

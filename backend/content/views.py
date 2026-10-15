@@ -34,4 +34,4 @@ class PrivacyView(TemplateView):
     """The public privacy policy page (the app's grown-ups settings and the store listings link here)."""
 
     template_name = "content/privacy.html"
-    extra_context = {"updated": date(2026, 10, 14), "owner": settings.PRIVACY_OWNER, "email": settings.PRIVACY_EMAIL}
+    extra_context = {"updated": date(2026, 10, 15), "owner": settings.PRIVACY_OWNER, "email": settings.PRIVACY_EMAIL}

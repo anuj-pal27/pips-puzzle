@@ -39,6 +39,17 @@ export const fonts = {
   extrabold: 'Baloo2_800ExtraBold',
 } as const;
 
+/** Learn with Bit's robot lab: mint and teal, so it feels like its own place. */
+export const LAB = {
+  bg: '#E6F7F3',
+  card: '#FFFFFF',
+  line: '#BFE7DF',
+  teal: '#3CCFB4',
+  tealShadow: '#1F8F7C',
+  tealDark: '#0B5446',
+  locked: '#CFE9E3',
+} as const;
+
 /** The chunky "pressable toy" edge under buttons and cards. */
 export function chunkyShadow(color: string, depth = 5) {
   return { boxShadow: `0px ${depth}px 0px ${color}` } as const;

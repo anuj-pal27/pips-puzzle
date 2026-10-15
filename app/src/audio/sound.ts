@@ -23,10 +23,15 @@ const SOUNDS = {
   star2: require('@/assets/sounds/star2.wav'),
   star3: require('@/assets/sounds/star3.wav'),
   cheer: require('@/assets/sounds/cheer.wav'),
+  drop: require('@/assets/sounds/drop.wav'),
+  bitThink: require('@/assets/sounds/bit-think.wav'),
+  bitYes: require('@/assets/sounds/bit-yes.wav'),
+  bitOops: require('@/assets/sounds/bit-oops.wav'),
 } as const;
 
 const MUSIC = {
   town: require('@/assets/sounds/music-town.m4a'),
+  lab: require('@/assets/sounds/music-lab.m4a'),
 } as const;
 
 export type SoundName = keyof typeof SOUNDS;

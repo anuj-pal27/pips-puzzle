@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.models import ChildProfile, User
 from analytics import stats
-from analytics.models import PlayEvent
+from analytics.models import LAB_LESSONS, PlayEvent
 from content import builders
 from content.management.commands.seed_puzzles import SEED_FILE
 from content.models import Puzzle, Tier
@@ -37,6 +37,14 @@ def _common(request, days: str) -> dict:
 # ---------------------------------------------------------------- overview
 
 
+def _with_lab_titles(events):
+    """Learn with Bit plays have no Puzzle row: give them their lesson's name for the feed."""
+    events = list(events)
+    for e in events:
+        e.lab_title = LAB_LESSONS.get(e.puzzle_slug)
+    return events
+
+
 @staff_member_required
 def overview(request):
     days = _range(request)
@@ -56,7 +64,8 @@ def overview(request):
         "hardest": stats.hardest(rows),
         "funnel": stats.funnel(w),
         "platforms": stats.platforms(w),
-        "recent": PlayEvent.objects.select_related("puzzle")[:12],
+        "recent": _with_lab_titles(PlayEvent.objects.select_related("puzzle")[:12]),
+        "lab": stats.lab_lessons(w),
         "accounts": {
             "parents": User.objects.filter(is_staff=False).count(),
             "children": ChildProfile.objects.count(),

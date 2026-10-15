@@ -14,10 +14,11 @@ export type Settings = {
   shareStats: boolean; // send anonymous play stats to the game server (src/state/playStats.ts)
 };
 
-type Saved = { version: 1; stars: Record<string, number>; settings: Settings };
+/** `lab`: stars from Learn with Bit, kept apart from the puzzle stars (they don't count on the puzzle map). */
+type Saved = { version: 1; stars: Record<string, number>; lab: Record<string, number>; settings: Settings };
 
 const STORAGE_KEY = 'pips-puzzles/progress';
-const DEFAULTS: Saved = { version: 1, stars: {}, settings: { sound: true, music: true, pictureHint: true, shareStats: true } };
+const DEFAULTS: Saved = { version: 1, stars: {}, lab: {}, settings: { sound: true, music: true, pictureHint: true, shareStats: true } };
 
 type ProgressApi = {
   ready: boolean;
@@ -26,6 +27,9 @@ type ProgressApi = {
   settings: Settings;
   /** Keeps the best result: replaying a puzzle never lowers its stars. */
   recordStars: (puzzleId: string, stars: number) => void;
+  labStars: Record<string, number>;
+  /** Same for a Learn with Bit lesson. */
+  recordLab: (lessonId: string, stars: number) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   resetProgress: () => void;
 };
@@ -41,7 +45,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       .then((raw) => {
         if (!raw) return;
         const parsed = JSON.parse(raw) as Partial<Saved>;
-        setSaved({ ...DEFAULTS, ...parsed, settings: { ...DEFAULTS.settings, ...parsed.settings } });
+        setSaved({ ...DEFAULTS, ...parsed, lab: { ...parsed.lab }, settings: { ...DEFAULTS.settings, ...parsed.settings } });
       })
       .catch(() => {
         // Corrupt or unreadable save: start fresh rather than crash.
@@ -74,8 +78,14 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       const best = Math.max(saved.stars[puzzleId] ?? 0, stars);
       save({ ...saved, stars: { ...saved.stars, [puzzleId]: best } });
     },
+    labStars: saved.lab,
+    recordLab: (lessonId, stars) => {
+      playFinished(lessonId, stars);
+      const best = Math.max(saved.lab[lessonId] ?? 0, stars);
+      save({ ...saved, lab: { ...saved.lab, [lessonId]: best } });
+    },
     updateSettings: (patch) => save({ ...saved, settings: { ...saved.settings, ...patch } }),
-    resetProgress: () => save({ ...saved, stars: {} }),
+    resetProgress: () => save({ ...saved, stars: {}, lab: {} }),
   };
 
   return <ProgressContext.Provider value={api}>{children}</ProgressContext.Provider>;

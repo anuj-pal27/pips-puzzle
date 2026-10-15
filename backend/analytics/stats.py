@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from content.models import TIER_RANK, Puzzle, Tier
 
-from .models import DEMO_PREFIX, PlayEvent
+from .models import DEMO_PREFIX, LAB_LESSONS, LAB_PREFIX, PlayEvent
 
 START, FINISH, QUIT = PlayEvent.Type.START, PlayEvent.Type.FINISH, PlayEvent.Type.QUIT
 RANGES = {"7": 7, "30": 30, "90": 90}  # ?days=... on the dashboard; anything else means all time
@@ -30,9 +30,13 @@ class Window:
             return None
         return Window(self.days, self.start - timedelta(days=self.days), self.start)
 
-    def events(self):
+    def all_events(self):
         qs = PlayEvent.objects.filter(played_at__lt=self.end)
         return qs.filter(played_at__gte=self.start) if self.start else qs
+
+    def events(self):
+        """Puzzle plays only (Learn with Bit lessons are counted separately, in lab_lessons)."""
+        return self.all_events().exclude(puzzle_slug__startswith=LAB_PREFIX)
 
 
 def window(days: str | int | None, now: datetime | None = None) -> Window:
@@ -175,7 +179,7 @@ def funnel(w: Window) -> list[dict]:
 
 
 def platforms(w: Window) -> list[dict]:
-    rows = w.events().values("platform").annotate(devices=Count("device", distinct=True)).order_by("-devices")
+    rows = w.all_events().values("platform").annotate(devices=Count("device", distinct=True)).order_by("-devices")
     names = {"android": "Android", "ios": "iOS", "web": "Web"}
     return [{"platform": names.get(r["platform"], r["platform"] or "Unknown"), "devices": r["devices"]} for r in rows]
 
@@ -196,3 +200,23 @@ def demo_events() -> int:
 
 def last_event_at() -> datetime | None:
     return PlayEvent.objects.order_by("-played_at").values_list("played_at", flat=True).first()
+
+
+def lab_lessons(w: Window) -> list[dict]:
+    """Learn with Bit: starts, finishes, players and average stars for each lesson."""
+    qs = w.all_events().filter(puzzle_slug__startswith=LAB_PREFIX)
+    found = {
+        r["puzzle_slug"]: r
+        for r in qs.values("puzzle_slug").annotate(
+            starts=Count("id", filter=Q(type=START)),
+            finishes=Count("id", filter=Q(type=FINISH)),
+            players=Count("device", distinct=True),
+            avg_stars=Avg("stars", filter=Q(type=FINISH)),
+        )
+    }
+    rows = []
+    for slug, title in LAB_LESSONS.items():
+        r = found.get(slug, {})
+        starts, finishes = r.get("starts", 0), r.get("finishes", 0)
+        rows.append({"slug": slug, "title": title, "starts": starts, "finishes": finishes, "players": r.get("players", 0), "avg_stars": r.get("avg_stars"), "completion": _rate(finishes, starts)})
+    return rows

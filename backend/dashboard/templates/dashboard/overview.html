@@ -80,6 +80,14 @@
   </section>
 </div>
 
+<section class="card">
+  <header><div><h2>Learn with Bit</h2><p class="muted small">Teach the Robot lessons (built into the app, version 1.2 and later). Not counted in the puzzle numbers above.</p></div></header>
+  <table>
+    <thead><tr><th>Lesson</th><th class="r">Started</th><th class="r">Finished</th><th class="r">Finish %</th><th class="r">Children</th><th class="r">Avg stars</th></tr></thead>
+    <tbody>{% for l in lab %}<tr><td>{{ forloop.counter }}. {{ l.title }}</td><td class="r num">{{ l.starts|compact }}</td><td class="r num">{{ l.finishes|compact }}</td><td class="r num">{{ l.completion|pct }}</td><td class="r num">{{ l.players|compact }}</td><td class="r num">{{ l.avg_stars|one_decimal }}</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+
 <div class="grid grid-3">
   <section class="card">
     <header><h2>By tier</h2></header>
@@ -112,7 +120,7 @@
     {% for e in recent %}
     <li><time datetime="{{ e.played_at|date:'c' }}">{{ e.played_at|date:"j M, H:i" }}</time>
       <span>Phone <code>{{ e.device|slice:":6" }}</code> {% if e.type == "finish" %}finished{% elif e.type == "quit" %}left{% else %}started{% endif %}
-      {% if e.puzzle %}<a href="{% url 'dashboard:puzzle' e.puzzle.slug %}">{{ e.puzzle.title }}</a>{% else %}{{ e.puzzle_slug }} <span class="faint">(deleted)</span>{% endif %}
+      {% if e.puzzle %}<a href="{% url 'dashboard:puzzle' e.puzzle.slug %}">{{ e.puzzle.title }}</a>{% elif e.lab_title %}Learn with Bit: {{ e.lab_title }}{% else %}{{ e.puzzle_slug }} <span class="faint">(deleted)</span>{% endif %}
       {% if e.type == "finish" %}with {{ e.stars }} star{{ e.stars|pluralize }}{% endif %}{% if e.seconds is not None and e.type != "start" %} after {{ e.seconds|duration }}{% endif %}
       {% if e.is_demo %}<span class="chip chip-demo">demo</span>{% endif %}</span></li>
     {% endfor %}

@@ -6,14 +6,16 @@ import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, w
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { playSound } from '@/audio/sound';
+import { playSound, useMusic } from '@/audio/sound';
 import { Pill } from '@/components/Buttons';
+import { Diya, ThemeBackdrop } from '@/components/Festive';
 import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
 import { FRIEND_ART, FRIEND_RATIO } from '@/data/art';
 import { FRIEND_NAMES, type FriendId } from '@/data/games';
 import type { ShadowPuzzle } from '@/data/puzzles';
+import { themeFor } from '@/data/themes';
 import { pickDecoy, shadowStars, trayOrder } from '@/game/shadow';
 import { usePuzzle } from '@/state/catalog';
 import { usePlayStats } from '@/state/playStats';
@@ -53,6 +55,9 @@ function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
   const friends = game.friends;
   const finish = useFinish(puzzle.id);
   const { width } = useWindowDimensions();
+  const theme = themeFor(puzzle.tier);
+  useMusic(theme.music);
+  const night = theme.id === 'diwali';
 
   const cols = game.cols;
   const rows = Math.ceil(friends.length / cols);
@@ -118,10 +123,11 @@ function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
   };
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]} edges={['top', 'left', 'right', 'bottom']}>
+      <ThemeBackdrop theme={theme} />
       <View style={styles.root}>
         <GameHeader
-          title="Who's That Shadow?"
+          title={puzzle.title || "Who's That Shadow?"}
           tier={puzzle.tier}
           right={
             <Pill>
@@ -134,7 +140,13 @@ function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
         />
 
         {/* the wall of shadows */}
-        <View style={[styles.panel, { width: panelW }]} onLayout={measure(setPanel)}>
+        <View style={[styles.panel, { width: panelW }, night && styles.lamplight]} onLayout={measure(setPanel)}>
+          {night ? (
+            <>
+              <View style={[styles.cornerDiya, { left: -16 }]}><Diya size={44} /></View>
+              <View style={[styles.cornerDiya, { right: -16 }]}><Diya size={44} /></View>
+            </>
+          ) : null}
           <View style={{ height: rows * (slotH + LABEL) + (rows - 1) * GAP }}>
             {gridCentres(friends.length, cols, slotW, slotH + LABEL, GAP, GAP).map((p, k) => {
               const friend = friends[k];
@@ -166,7 +178,7 @@ function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
         <TipBubble text={tip.text} tone={tip.tone} />
 
         {/* friends wait here */}
-        <View style={styles.tray} onLayout={measure(setTray)} />
+        <View style={[styles.tray, { backgroundColor: theme.tray }]} onLayout={measure(setTray)} />
 
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
           {panel && tray
@@ -313,6 +325,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#A8E6FF',
     boxShadow: `0px 6px 0px ${colors.skyShadow}`,
   },
+  // Diwali Night: shadows on a wall glowing with lamplight.
+  cornerDiya: { position: 'absolute', bottom: -18, zIndex: 2 },
+  lamplight: { backgroundColor: '#FFD98A', boxShadow: '0px 6px 0px #D99A2B, 0px 0px 40px rgba(255, 201, 60, 0.45)' },
   slot: { borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.55)', alignItems: 'center', justifyContent: 'flex-end', overflow: 'hidden' },
   slotDone: { backgroundColor: '#E3F8D6' },
   nameTag: { marginTop: 4, minWidth: 34, paddingHorizontal: 10, borderRadius: 999, backgroundColor: colors.white, alignItems: 'center' },

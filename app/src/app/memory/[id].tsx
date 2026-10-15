@@ -4,14 +4,16 @@ import { Image, Pressable, StyleSheet, useWindowDimensions, View } from 'react-n
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { playSound } from '@/audio/sound';
+import { playSound, useMusic } from '@/audio/sound';
 import { Pill } from '@/components/Buttons';
+import { ThemeBackdrop } from '@/components/Festive';
 import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
 import { GAPPU_FACE, SNACK_ART } from '@/data/art';
 import { SNACK_NAMES, type SnackId } from '@/data/games';
 import type { MemoryPuzzle } from '@/data/puzzles';
+import { themeFor, type Theme } from '@/data/themes';
 import { flipCard, memoryDone, memoryStars, newMemory, pairResult, settle, type MemoryState } from '@/game/memory';
 import { usePuzzle } from '@/state/catalog';
 import { usePlayStats } from '@/state/playStats';
@@ -34,6 +36,8 @@ function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
   usePlayStats(puzzle.id);
   const game = puzzle; // snacks and cols
   const pairs = game.snacks.length;
+  const theme = themeFor(puzzle.tier);
+  useMusic(theme.music);
   const finish = useFinish(puzzle.id);
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -103,9 +107,10 @@ function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
   const foundPairs = state.matched.length / 2;
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]} edges={['top', 'left', 'right', 'bottom']}>
+      <ThemeBackdrop theme={theme} />
       <GameHeader
-        title="Snack Snap"
+        title={puzzle.title || 'Snack Snap'}
         tier={puzzle.tier}
         right={
           <Pill>
@@ -136,7 +141,7 @@ function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
         <TipBubble text={tip.text} tone={tip.tone} />
       </View>
 
-      <Picnic eaten={eaten} total={pairs} />
+      <Picnic eaten={eaten} total={pairs} theme={theme} />
     </SafeAreaView>
   );
 }
@@ -201,7 +206,7 @@ function Card({
 }
 
 /** Gappu's picnic at the bottom: he hops for joy and every snack pair found lands on his plate. */
-function Picnic({ eaten, total }: { eaten: SnackId[]; total: number }) {
+function Picnic({ eaten, total, theme }: { eaten: SnackId[]; total: number; theme: Theme }) {
   const hop = useSharedValue(0);
   useEffect(() => {
     if (eaten.length) hop.set(withSequence(withTiming(-22, { duration: 160 }), withSpring(0, { damping: 6 })));
@@ -210,7 +215,7 @@ function Picnic({ eaten, total }: { eaten: SnackId[]; total: number }) {
   const done = eaten.length === total;
   const size = total > 4 ? 30 : 38;
   return (
-    <View style={styles.picnic} accessible accessibilityLabel={`Gappu's plate: ${eaten.length ? eaten.map((s) => SNACK_NAMES[s]).join(', ') : 'empty'}`}>
+    <View style={[styles.picnic, { backgroundColor: theme.tray }]} accessible accessibilityLabel={`Gappu's plate: ${eaten.length ? eaten.map((s) => SNACK_NAMES[s]).join(', ') : 'empty'}`}>
       <View style={{ alignItems: 'center' }}>
         <View style={styles.speech}>
           <Txt weight="extrabold" size={14}>{done ? 'So full!' : eaten.length ? 'Yum yum!' : "I'm hungry!"}</Txt>

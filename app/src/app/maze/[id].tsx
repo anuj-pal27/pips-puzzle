@@ -4,18 +4,24 @@ import { AccessibilityInfo, Image, Pressable, StyleSheet, useWindowDimensions, V
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { playSound } from '@/audio/sound';
+import { playSound, useMusic } from '@/audio/sound';
 import { ChunkyButton, CircleButton, Pill } from '@/components/Buttons';
+import { ChapterParty, useChapterFinale } from '@/components/ChapterParty';
+import { Diya, ThemeBackdrop } from '@/components/Festive';
 import { Icon, type IconName } from '@/components/Icon';
 import { GateTile, HouseTile, LeverTile, RailTile, SwitchTile } from '@/components/MazeParts';
 import { Stars } from '@/components/Stars';
 import { Txt } from '@/components/Txt';
 import { getTier, type MazePuzzle } from '@/data/puzzles';
+import { themeFor } from '@/data/themes';
 import {
+  findTile,
   gateIsOpen,
   initMaze,
+  lanternLit,
   leverGate,
   mazeMessage,
   mazeStars,
@@ -53,7 +59,15 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
   const { puzzleAfter } = useCatalog();
   const tier = getTier(puzzle.tier);
   const { stars, recordStars } = useProgress();
-  const [state, setState] = useState<MazeState>(() => initMaze(cfg));
+  const theme = themeFor(puzzle.tier);
+  useMusic(theme.music);
+  // Lantern Walk (Diwali Night): the maze is dark; Gappu's lantern lights the squares near him, and he
+  // leaves a diya on every square he walks, so the way he came stays lit.
+  const night = theme.id === 'diwali';
+  const finale = useChapterFinale(puzzle.tier);
+  const fresh = () => ({ maze: initMaze(cfg), trail: [findTile(cfg, 'S').join(',')] });
+  const [game, setGame] = useState<{ maze: MazeState; trail: string[] }>(fresh);
+  const state = game.maze;
   const recorded = useRef(false);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -64,10 +78,15 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
   const availH = height - insets.top - insets.bottom - 72 - 56 - 196 - 48;
   const cell = Math.floor(Math.max(26, Math.min((Math.min(width, 480) - 44) / cols, availH / rows, 50)));
 
-  const move = (dir: Dir) => setState((s) => stepMaze(cfg, s, dir));
+  const move = (dir: Dir) =>
+    setGame((g) => {
+      const maze = stepMaze(cfg, g.maze, dir);
+      const here = maze.pos.join(',');
+      return { maze, trail: g.trail.includes(here) ? g.trail : [...g.trail, here] };
+    });
   const restart = () => {
     recorded.current = false;
-    setState(initMaze(cfg));
+    setGame(fresh());
   };
 
   // Sounds follow what each move did: a step, a bump, a laddoo, a lever, or the jalebis at last.
@@ -107,11 +126,19 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
   const next = puzzleAfter(puzzle.id, { ...stars, [puzzle.id]: Math.max(stars[puzzle.id] ?? 0, state.won ? 1 : 0) });
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]} edges={['top', 'left', 'right', 'bottom']}>
+      <ThemeBackdrop theme={theme} />
       <View style={styles.header}>
         <CircleButton icon="back" label="Back to puzzles" onPress={() => router.back()} />
         <View style={{ alignItems: 'center', gap: 2 }}>
-          <Txt weight="display" size={26} accessibilityRole="header">Jalebi Hunt</Txt>
+          <Txt
+            weight="display"
+            size={26}
+            accessibilityRole="header"
+            color={theme.text}
+            style={night ? { textShadowColor: 'rgba(5, 8, 30, 0.9)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } } : undefined}>
+            {puzzle.title || 'Jalebi Hunt'}
+          </Txt>
           <View style={[styles.tierBadge, { backgroundColor: tier.color }]}>
             <Txt weight="extrabold" size={13}>{tier.name}</Txt>
           </View>
@@ -128,7 +155,7 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
             accessible
             accessibilityLabel="Town maze. Use the arrow buttons to move Gappu."
             style={{ width: cols * cell, height: rows * cell, borderRadius: 14, overflow: 'hidden', backgroundColor: colors.road }}>
-            <Board cfg={cfg} state={state} cell={cell} />
+            <Board cfg={cfg} state={state} cell={cell} lit={night ? lanternLit(cfg, state.pos, game.trail) : null} trail={night ? game.trail : []} />
           </View>
         </GestureDetector>
       </View>
@@ -182,6 +209,7 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
           </Animated.View>
         </View>
       ) : null}
+      {state.won && finale.show ? <ChapterParty tier={puzzle.tier} onClose={finale.close} /> : null}
     </SafeAreaView>
   );
 }
@@ -199,7 +227,7 @@ function PadButton({ icon, label, onPress }: { icon: IconName; label: string; on
 }
 
 /** Everything drawn on the maze board, tile by tile, plus Gappu and the monkeys on top. */
-function Board({ cfg, state, cell }: { cfg: MazeConfig; state: MazeState; cell: number }) {
+function Board({ cfg, state, cell, lit, trail }: { cfg: MazeConfig; state: MazeState; cell: number; lit: Set<string> | null; trail: string[] }) {
   const tiles: ReactNode[] = [];
   let house = 0;
   const switchGates = Object.keys(cfg.gates).filter((G) => cfg.gates[G].openWhen !== undefined);
@@ -249,8 +277,54 @@ function Board({ cfg, state, cell }: { cfg: MazeConfig; state: MazeState; cell: 
         const [c, r] = monkeyCell(cfg, m, i);
         return <Token key={`monkey-${i}`} source={IMG.chunnu} x={c * cell} y={r * cell} size={cell} />;
       })}
+      {lit ? (
+        <>
+          {trail.map((k) => {
+            const [c, r] = k.split(',').map(Number);
+            return (
+              <View key={`diya-${k}`} pointerEvents="none" style={{ position: 'absolute', left: c * cell, top: r * cell, width: cell, height: cell, alignItems: 'center', justifyContent: 'center' }}>
+                <Diya size={cell * 0.62} still />
+              </View>
+            );
+          })}
+          {cfg.map.flatMap((row, r) =>
+            row.split('').map((_, c) =>
+              lit.has(`${c},${r}`) ? null : (
+                <View key={`dark-${c},${r}`} pointerEvents="none" style={{ position: 'absolute', left: c * cell, top: r * cell, width: cell, height: cell, backgroundColor: 'rgba(14, 19, 40, 0.93)' }} />
+              ),
+            ),
+          )}
+          <Lantern x={state.pos[0] * cell} y={state.pos[1] * cell} cell={cell} />
+        </>
+      ) : null}
       <Token source={IMG.gappu} x={state.pos[0] * cell} y={state.pos[1] * cell} size={cell} shake={state.bump} />
     </>
+  );
+}
+
+/** The warm glow of Gappu's lantern, following him around the dark maze. */
+function Lantern({ x, y, cell }: { x: number; y: number; cell: number }) {
+  const tx = useSharedValue(x);
+  const ty = useSharedValue(y);
+  useEffect(() => {
+    tx.set(withTiming(x, { duration: 180 }));
+    ty.set(withTiming(y, { duration: 180 }));
+  }, [x, y, tx, ty]);
+  const size = cell * 5;
+  const style = useAnimatedStyle(() => ({ transform: [{ translateX: tx.get() - size / 2 + cell / 2 }, { translateY: ty.get() - size / 2 + cell / 2 }] }));
+  return (
+    <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: 0, width: size, height: size }, style]}>
+      <Svg width={size} height={size} viewBox="-50 -50 100 100">
+        <Defs>
+          <RadialGradient id="lantern" cx="0" cy="0" r="50" gradientUnits="userSpaceOnUse">
+            <Stop offset="0" stopColor="#FFD86B" stopOpacity="0.45" />
+            <Stop offset="0.6" stopColor="#FFB13B" stopOpacity="0.12" />
+            <Stop offset="1" stopColor="#FFB13B" stopOpacity="0" />
+          </RadialGradient>
+        </Defs>
+        <Circle r={50} fill="url(#lantern)" />
+      </Svg>
+    </Animated.View>
   );
 }
 

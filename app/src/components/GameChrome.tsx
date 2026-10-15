@@ -3,6 +3,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 
 import { getTier, type TierId } from '@/data/puzzles';
+import { themeFor } from '@/data/themes';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 import { CircleButton } from './Buttons';
@@ -11,11 +12,18 @@ import { Txt } from './Txt';
 /** Top bar shared by the games: back button, game name with its tier, and a counter on the right. */
 export function GameHeader({ title, tier, right }: { title: string; tier: TierId; right?: ReactNode }) {
   const t = getTier(tier);
+  const theme = themeFor(tier);
   return (
     <View style={styles.header}>
       <CircleButton icon="back" label="Back to puzzles" onPress={() => (router.canGoBack() ? router.back() : router.replace('/map'))} />
       <View style={styles.title}>
-        <Txt weight="display" size={title.length > 14 ? 21 : 26} numberOfLines={1} accessibilityRole="header">
+        <Txt
+          weight="display"
+          size={title.length > 14 ? 21 : 26}
+          numberOfLines={1}
+          accessibilityRole="header"
+          color={theme.text}
+          style={theme.dark ? { textShadowColor: 'rgba(5, 8, 30, 0.9)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } } : undefined}>
           {title}
         </Txt>
         <View style={[styles.tierBadge, { backgroundColor: t.color }]}>

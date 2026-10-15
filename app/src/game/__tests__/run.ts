@@ -13,7 +13,7 @@ import { BLANK, canSlide, isSolvable, isSolved, neighbours, scrambleSlide, slide
 import { guess, LESSONS, lessonOpen, likeness, teachOrder, teachStars, THINGS, type Example } from '../teach.ts';
 import { initTracks, isTrack, openings, SCENERY, scrambleTracks, solvedTracks, tapPiece, traceTracks, tracksPar, tracksStars } from '../tracks.ts';
 import type { Cell, Dir, MazeConfig, MazeState } from '../maze.ts';
-import { findTile, gateIsOpen, initMaze, leverGate, monkeyCell, stepMaze, tileAt } from '../maze.ts';
+import { findTile, gateIsOpen, initMaze, lanternLit, leverGate, monkeyCell, stepMaze, tileAt } from '../maze.ts';
 
 let passed = 0;
 function test(name: string, fn: () => void) {
@@ -315,6 +315,24 @@ test('snack snap: matched and face-up cards cannot be flipped again', () => {
   assert.equal(memoryStars(3, 7), 1);
 });
 
+test('lantern walk: Gappu sees two steps around him, one around each diya he left, and always the jalebis', () => {
+  const cfg = MAZES.medium;
+  const start = findTile(cfg, 'S');
+  const lit = lanternLit(cfg, start, []);
+  assert.ok(lit.has(`${start[0]},${start[1]}`));
+  const goal = findTile(cfg, 'J');
+  assert.ok(lit.has(`${goal[0]},${goal[1]}`));
+  for (const k of lit) {
+    const [c, r] = k.split(',').map(Number);
+    const near = Math.abs(c - start[0]) + Math.abs(r - start[1]) <= 2;
+    assert.ok(near || (c === goal[0] && r === goal[1]), `${k} should be dark`);
+  }
+  const far = [0, 0] as Cell;
+  const withTrail = lanternLit(cfg, start, ['0,0']);
+  assert.ok(withTrail.has('0,0') && withTrail.has('1,0') && withTrail.has('0,1'));
+  assert.ok(lanternLit(cfg, far, []).size < cfg.map.length * cfg.map[0].length / 2);
+});
+
 // ---------------------------------------------------------------- who's that shadow?
 test("shadow: friends never start under their own shadow; drops find the closest shadow", () => {
   for (let n = 2; n <= 6; n++) {
@@ -471,12 +489,18 @@ test('teach: new order every play, stars, and lessons open one after another', (
 
 // ---------------------------------------------------------------- puzzles from the server
 const KNOWN = {
-  pictures: ['gappu', 'mithu', 'tillu', 'chunnu', 'shop', 'station'],
+  pictures: ['gappu', 'mithu', 'tillu', 'chunnu', 'shop', 'station', 'diwali-shop'],
   friends: Object.keys(FRIEND_NAMES),
   snacks: Object.keys(SNACK_NAMES),
 };
 const SEED = JSON.parse(readFileSync(new URL('../../../../backend/content/seed.json', import.meta.url), 'utf8'));
 
+test('server seed: an older app (before Diwali Night) safely skips the two puzzles it has no pictures for', () => {
+  const old = { pictures: KNOWN.pictures.filter((p) => p !== 'diwali-shop'), friends: KNOWN.friends, snacks: ['jalebi', 'laddoo', 'samosa', 'chai', 'kulfi', 'mango'] };
+  const { puzzles, skipped } = readServerPuzzles(SEED, old);
+  assert.deepEqual(skipped.map((s) => s.slug).sort(), ['medium-1', 'medium-4']);
+  assert.equal(puzzles.length, 13);
+});
 test("server seed: all 15 puzzles read cleanly, and match the app's built-in settings", () => {
   const { puzzles, skipped } = readServerPuzzles(SEED, KNOWN);
   assert.deepEqual(skipped, []);

@@ -7,13 +7,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { playSound } from '@/audio/sound';
+import { playSound, useMusic } from '@/audio/sound';
 import { ChunkyButton, CircleButton, Pill } from '@/components/Buttons';
 import { TipBubble } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
+import { ThemeBackdrop } from '@/components/Festive';
 import { PieceArt } from '@/components/PieceArt';
 import { Txt } from '@/components/Txt';
 import { getTier, type JigsawPuzzle } from '@/data/puzzles';
+import { themeFor } from '@/data/themes';
 import { jigsawStars, pieceMargin, piecePath, slotPath, startTurns, trayLayout, type JigsawGrid } from '@/game/jigsaw';
 import { newSeed, seededRandom } from '@/game/random';
 import { useCatalog, usePuzzle } from '@/state/catalog';
@@ -37,6 +39,8 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
   const { settings, recordStars } = useProgress();
   const picture = useCatalog().getPicture(puzzle.picture);
   const tier = getTier(puzzle.tier);
+  const theme = themeFor(puzzle.tier);
+  useMusic(theme.music);
   const { width } = useWindowDimensions();
 
   // Board size follows the screen width; pieces follow the board.
@@ -110,7 +114,8 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
   const boardY = (panel?.y ?? 0) + PANEL_PAD;
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]} edges={['top', 'left', 'right', 'bottom']}>
+      <ThemeBackdrop theme={theme} />
       <View style={styles.root}>
         {/* top bar */}
         <View style={styles.header}>
@@ -178,10 +183,10 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
         {spin && !done ? <TipBubble text={tip} /> : null}
 
         {/* tray: pieces start here */}
-        <View style={styles.tray} onLayout={measure(setTray)}>
+        <View style={[styles.tray, { backgroundColor: theme.tray }]} onLayout={measure(setTray)}>
           {done ? (
             <View style={styles.doneBox}>
-              <Txt weight="display" size={44}>Great job!</Txt>
+              <Txt weight="display" size={44} color={theme.text}>Great job!</Txt>
             </View>
           ) : null}
         </View>

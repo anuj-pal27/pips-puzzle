@@ -7,11 +7,14 @@ import Svg, { Path } from 'react-native-svg';
 
 import { playSound, starSound } from '@/audio/sound';
 import { ChunkyButton, CircleButton } from '@/components/Buttons';
+import { ChapterParty, useChapterFinale } from '@/components/ChapterParty';
+import { Fireworks } from '@/components/Festive';
 import { OutlinedText } from '@/components/OutlinedText';
 import { Star } from '@/components/Stars';
 import { Txt } from '@/components/Txt';
 import { FRIEND_ART, FRIEND_RATIO, SNACK_ART, TRAIN_ART } from '@/data/art';
 import type { Puzzle } from '@/data/puzzles';
+import { themeFor } from '@/data/themes';
 import { openPuzzle } from '@/navigation';
 import { useCatalog, usePuzzle } from '@/state/catalog';
 import { useProgress } from '@/state/progress';
@@ -103,17 +106,40 @@ export default function Complete() {
   const { puzzleAfter } = useCatalog();
   const puzzle = usePuzzle(id);
   // Shorter phones get a smaller photo and tighter spacing, so the buttons always fit.
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const compact = height < 820;
   const photoW = compact ? Math.max(190, Math.min(300, Math.round(height * 0.3))) : 300;
   if (!puzzle || puzzle.kind === 'maze') return <Redirect href="/map" />;
+  return <Celebration puzzle={puzzle} starsParam={starsParam} next={puzzleAfter(puzzle.id, stars)} compact={compact} photoW={photoW} width={width} height={height} />;
+}
+
+/** The finish screen itself: cheer, stars, the finished picture, Pip's fact and what to do next. */
+function Celebration({
+  puzzle,
+  starsParam,
+  next,
+  compact,
+  photoW,
+  width,
+  height,
+}: {
+  puzzle: Puzzle;
+  starsParam?: string;
+  next: Puzzle | undefined;
+  compact: boolean;
+  photoW: number;
+  width: number;
+  height: number;
+}) {
+  const theme = themeFor(puzzle.tier);
+  const night = theme.id === 'diwali';
+  const finale = useChapterFinale(puzzle.tier);
 
   const count = Math.min(3, Math.max(1, Number(starsParam) || 3));
-  const next = puzzleAfter(puzzle.id, stars);
 
   return (
-    <View style={styles.screen}>
-      <Sunburst />
+    <View style={[styles.screen, night && { backgroundColor: theme.bg }]}>
+      {night ? <Fireworks width={width} height={height} count={5} /> : <Sunburst />}
       <SafeAreaView style={styles.safe}>
         <View style={[styles.title, compact && { marginTop: 10 }]}>
           <OutlinedText size={puzzle.cheer.length > 12 ? 40 : 52}>{puzzle.cheer}</OutlinedText>
@@ -125,7 +151,7 @@ export default function Complete() {
               key={i}
               entering={ZoomIn.delay(150 + i * 250).springify()}
               style={i === 1 ? null : { transform: [{ translateY: 18 }, { rotate: i === 0 ? '-14deg' : '14deg' }] }}>
-              <Star filled={i < count} size={(i === 1 ? 96 : 74) * (compact ? 0.78 : 1)} outline={colors.ink} />
+              <Star filled={i < count} size={(i === 1 ? 96 : 74) * (compact ? 0.78 : 1)} outline={colors.ink} onDark={night} />
             </Animated.View>
           ))}
         </View>
@@ -163,6 +189,7 @@ export default function Complete() {
         </View>
       </SafeAreaView>
       {puzzle.fact ? null : <Image source={PIP} style={styles.pip} accessibilityElementsHidden />}
+      {finale.show ? <ChapterParty tier={puzzle.tier} onClose={finale.close} /> : null}
     </View>
   );
 }

@@ -33,7 +33,7 @@ export const MAZES: Record<'easy' | 'medium' | 'hard', MazeConfig> = {
   // 8 x 10: two railways, two colour-matched levers, two monkeys
   medium: {
     id: 'medium',
-    intro: 'Two gates this time! Find the yellow lever first.',
+    intro: "It's dark! Two gates this time. Find the yellow lever first.",
     map: [
       'o..#...J',
       '.#...#.#',

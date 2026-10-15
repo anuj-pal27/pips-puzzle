@@ -112,6 +112,21 @@ class PuzzleApiTests(APITestCase):
         self.assertTrue(Puzzle.objects.filter(slug="easy-6").exists())
 
 
+class DiwaliMigrationTests(TestCase):
+    def test_old_medium_puzzles_become_diwali_night_unless_edited(self):
+        import importlib
+
+        from django.apps import apps
+
+        diwali = importlib.import_module("content.migrations.0006_medium_becomes_diwali_night")
+        Puzzle.objects.create(slug="medium-4", tier="medium", order=4, kind="memory", title="Snack Snap", config={"snacks": ["jalebi", "laddoo", "samosa", "chai"], "cols": 4})
+        Puzzle.objects.create(slug="medium-1", tier="medium", order=1, kind="jigsaw", title="My own shop", picture="shop", cols=4, rows=3)
+        diwali.to_diwali(apps, None)
+        snap = Puzzle.objects.get(slug="medium-4")
+        self.assertEqual((snap.title, snap.config["snacks"]), ("Mithai Snap", ["laddoo", "jalebi", "kajukatli", "gulabjamun"]))
+        self.assertEqual(Puzzle.objects.get(slug="medium-1").picture, "shop")  # renamed in the dashboard: left alone
+
+
 class BuilderTests(TestCase):
     """The server's copies of the game rules (content/builders.py)."""
 

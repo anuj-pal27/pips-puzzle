@@ -8,21 +8,33 @@ PICTURES = {
     "tillu": "Tillu the Tortoise",
     "chunnu": "Chunnu the Monkey",
     "shop": "Gappu's Jalebi Shop",
+    "diwali-shop": "Gappu's Diwali Shop",
     "station": "All Aboard at Jalebi Junction",
 }
 FRIENDS = {"gappu": "Gappu", "mithu": "Mithu", "tillu": "Tillu", "chunnu": "Chunnu", "gauri": "Gauri", "pip": "Pip"}
-SNACKS = {"jalebi": "Jalebi", "laddoo": "Laddoo", "samosa": "Samosa", "chai": "Chai", "kulfi": "Kulfi", "mango": "Mango"}
+SNACKS = {
+    "jalebi": "Jalebi",
+    "laddoo": "Laddoo",
+    "samosa": "Samosa",
+    "chai": "Chai",
+    "kulfi": "Kulfi",
+    "mango": "Mango",
+    "kajukatli": "Kaju katli",
+    "gulabjamun": "Gulab jamun",
+    "barfi": "Barfi",
+}
 
 # Map thumbnails for the kinds that don't show a picture, by tier (the app's src/data/art.ts THUMBS).
 _THUMBS = {
     "maze": "maze-thumb",
+    "maze-medium": "maze-night-thumb",
     "slide": "slide-thumb",
     "shadow-easy": "shadow-easy-thumb",
-    "shadow-medium": "shadow-medium-thumb",
+    "shadow-medium": "shadow-night-thumb",
     "memory-easy": "snap-easy-thumb",
-    "memory-medium": "snap-medium-thumb",
+    "memory-medium": "snap-night-thumb",
     "memory-hard": "snap-hard-thumb",
-    "tracks-medium": "tracks-medium-thumb",
+    "tracks-medium": "tracks-night-thumb",
     "tracks-hard": "tracks-hard-thumb",
 }
 

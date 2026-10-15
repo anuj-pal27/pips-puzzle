@@ -111,6 +111,12 @@ def effects():
     save("bit-oops", mix((sweep(660, 520, 0.18, decay=8), 0, 1), (sweep(500, 330, 0.3, decay=6), 0.16, 1)), peak=0.4)
     save("drop", mix((noise(0.05, decay=60, smooth=10), 0, 0.6), (marimba(hz("C5"), 0.2), 0.01, 0.8)), peak=0.45)
 
+    # Diwali Night: a lamp lighting up, and a soft sparkly firework (no bangs).
+    save("light", mix((bell(hz("A6"), 0.35, decay=9), 0, 0.8), (bell(hz("E7"), 0.3, decay=12), 0.05, 0.4)), peak=0.4)
+    whoosh = noise(0.5, decay=4, smooth=20) * np.linspace(0.2, 1, int(0.5 * SR))
+    sparkle = mix(*[(bell(hz(n), 0.25, decay=16), 0.5 + i * 0.045, 0.5) for i, n in enumerate(["E7", "C7", "G7", "D7", "A7", "E7", "B7", "G7"])])
+    save("firework", mix((whoosh, 0, 0.6), (sparkle, 0, 1), (noise(0.4, decay=10, smooth=2), 0.5, 0.12)), peak=0.45)
+
 
 def music_town(path, bars=16, bpm=100):
     """A gentle looping tune: marimba melody, soft plucked chords, bass, no drums. Loops seamlessly."""
@@ -200,10 +206,76 @@ def music_lab(path, bars=16, bpm=96):
     wav.unlink()
 
 
+def music_diwali(path, bars=16, bpm=92):
+    """Diwali Night: a tanpura-style drone, a plucked melody, temple bells and a soft dholak. Loops seamlessly."""
+    beat = 60 / bpm
+    bar = 4 * beat
+    total = int(bars * bar * SR)
+    out = np.zeros(total)
+
+    def add(sig, at, gain):
+        i = int(at * SR) % total
+        n = len(sig)
+        first = min(n, total - i)
+        out[i : i + first] += sig[:first] * gain
+        if n > first:
+            out[: n - first] += sig[first:] * gain
+
+    def pluck(f, length=0.6):
+        x = t(length)
+        bend = 1 + 0.012 * np.exp(-x * 30)  # a little sitar-like slide into the note
+        ph = 2 * np.pi * np.cumsum(f * bend) / SR
+        return env(x, attack=0.002, decay=6) * (np.sin(ph) + 0.5 * np.sin(2 * ph) * np.exp(-x * 8) + 0.3 * np.sin(3.01 * ph) * np.exp(-x * 12))
+
+    def drone(f, length):
+        x = t(length)
+        e = np.minimum(1, x / 0.3) * np.minimum(1, (length - x) / 0.3)
+        return e * (np.sin(2 * np.pi * f * x) + 0.5 * np.sin(2 * np.pi * 2 * f * x) + 0.3 * np.sin(2 * np.pi * 3.002 * f * x)) * (1 + 0.15 * np.sin(2 * np.pi * 0.7 * x))
+
+    def dha():
+        x = t(0.35)
+        f = 70 + 60 * np.exp(-x * 25)
+        return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x * 9)
+
+    def na():
+        return noise(0.08, decay=60, smooth=3) * 0.6 + marimba(hz("A5"), 0.08) * 0.5
+
+    # Sa-Re-Ga-Pa-Dha (a bright pentatonic), phrases of two bars.
+    phrases = [
+        [(0, "C5"), (1, "D5"), (2, "E5"), (3, "G5"), (4, "E5"), (5, "D5"), (6, "C5")],
+        [(0, "E5"), (1, "G5"), (2, "A5"), (3, "G5"), (4.5, "E5"), (5, "D5"), (6, "E5")],
+        [(0, "G5"), (1, "A5"), (1.5, "G5"), (2, "E5"), (3, "D5"), (4, "E5"), (5, "G5"), (6, "A5")],
+        [(0, "C6"), (1, "A5"), (2, "G5"), (3, "E5"), (4, "D5"), (5, "D5"), (6, "C5")],
+    ]
+    for k in range(bars):
+        t0 = k * bar
+        if k % 2 == 0:
+            add(drone(hz("C3"), 2 * bar + 0.3), t0, 0.06)
+            add(drone(hz("G3"), 2 * bar + 0.3), t0 + beat * 0.5, 0.035)
+            for b, n in phrases[(k // 2) % 4]:
+                add(pluck(hz(n)), t0 + b * beat, 0.3)
+            add(bell(hz("C7"), 1.2, decay=3), t0, 0.08)
+        # dholak: dha on 1 and 3, na on the off-beats
+        for b in (0, 2):
+            add(dha(), t0 + b * beat, 0.45)
+        for b in (1, 1.5, 3, 3.5):
+            add(na(), t0 + b * beat, 0.16)
+    out = out / np.abs(out).max() * 0.6
+    wav = OUT / "_music.wav"
+    with wave.open(str(wav), "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(SR)
+        w.writeframes((out * 32767).astype("<i2").tobytes())
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(wav), "-c:a", "aac", "-b:a", "64k", str(path)], check=True)
+    wav.unlink()
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     effects()
     music_town(OUT / "music-town.m4a")
     music_lab(OUT / "music-lab.m4a")
+    music_diwali(OUT / "music-diwali.m4a")
     for f in sorted(OUT.iterdir()):
         print(f"{f.name:22s} {f.stat().st_size // 1024:5d} KB")

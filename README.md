@@ -298,7 +298,7 @@ Install the new build, open **Grown-ups**: *Game server* should say **Connected*
 |---|---|
 | `app/` | Screens (Expo Router: every file is a screen) |
 | `app/index.tsx` | Home: two doors, **Puzzles** (Pip) and **Learn with Bit** (the robot) |
-| `app/map.tsx` | Puzzle map: Easy / Medium / Hard, 5 each, with unlocking |
+| `app/map.tsx` | Puzzle map: Easy / Medium (the **Diwali Night** chapter) / Hard, 5 each, with unlocking |
 | `app/puzzle/[id].tsx` | Drag-and-drop jigsaw (6 / 12 / 20 pieces; "spin" jigsaws: tap a piece to turn it) |
 | `app/shadow/[id].tsx` | Who's That Shadow? (drag friends onto their shadows) |
 | `app/memory/[id].tsx` | Snack Snap memory game |
@@ -313,7 +313,8 @@ Install the new build, open **Grown-ups**: *Game server* should say **Connected*
 | `data/catalog.ts` | Reads and checks the server's puzzle list; play order and unlock rules (no React, unit-tested) |
 | `data/games.ts` | Settings for shadows, Snack Snap, track maps and the slide puzzle |
 | `data/mazes.ts` | The three maze maps (Easy, Medium, Hard) |
-| `data/art.ts` | Friend cut-outs, snacks, train set and map thumbnails |
+| `data/art.ts` | Friend cut-outs, snacks and sweets, train set and map thumbnails |
+| `data/themes.ts` | Chapter looks per tier: Medium is Diwali Night (night colours, its own music); Easy and Hard are the daytime town |
 | `game/jigsaw.ts` | Piece shapes, board guides, tray layout, spin turns, stars |
 | `game/maze.ts` | Maze rules: levers, gates, the switch, monkeys, laddoos |
 | `game/tracks.ts`, `memory.ts`, `slide.ts`, `shadow.ts` | Rules for the other games, including the random layouts (no React, unit-tested) |
@@ -325,6 +326,7 @@ Install the new build, open **Grown-ups**: *Game server* should say **Connected*
 | `state/progress.tsx` | Stars + settings, saved on the phone |
 | `api/client.ts` | Calls to the Django API |
 | `components/` | Buttons, icons, stars, jigsaw pieces, maze tiles, Bit (`Bit.tsx`) and the lesson pictures (`ThingArt.tsx`), all drawn in code |
+| `components/Festive.tsx`, `ChapterParty.tsx` | Diwali decorations drawn in code (diyas, twinkling lights, night sky, fireworks) and the chapter finale |
 
 **Unlocking:** Medium opens once 5 Easy puzzles have at least one star (all of them, if Easy has fewer than 5); Hard opens the same way after Medium. Adding more puzzles to a tier never locks a tier a child has already opened.
 **Stars** (always at least 1 for finishing):
@@ -336,6 +338,10 @@ Install the new build, open **Grown-ups**: *Game server* should say **Connected*
 - Slide: 3 within 10 moves of the fewest possible (10), 2 within a generous margin.
 - Maze: 1 per laddoo collected.
 - Learn with Bit: 3 if Bit sorts everything right the first time, 2 after one re-teach, 1 after that. Lessons open one after another; the lab itself is always open.
+
+**Diwali Night (Medium):** the same five kinds of puzzle, retold for Diwali at night: Gappu's Diwali Shop (jigsaw), Diwali Express (each track piece lights a diya as it joins the line), Lamplight Shadows, Mithai Snap (kaju katli, gulab jamun, laddoo, jalebi) and Lantern Walk (a dark maze: Gappu's lantern lights two steps around him and he leaves a diya on every square he walks). Finishing all five plays a one-time "Happy Diwali!" fireworks finale. Older app versions that don't have the new pictures simply skip those two puzzles.
+
+**New art** drawn as SVG lives in `app/scripts/art/` and is rendered to `app/assets/images/game/` with `bash scripts/make-art.sh` (needs `rsvg-convert`). SVGs can use the existing pictures by file name, e.g. the Diwali shop is the day shop plus decorations.
 
 **How Bit learns** (`game/teach.ts`): each picture has a few things you can see (colour, shape, wings, wheels, a stem…). For a new picture Bit finds the taught example that shares the most, colour counting less than shape, and copies its basket. So Bit really does copy the child's mistakes. Lesson 4 is set up so Bit first learns from red fruits only and wrongly calls a red ball a fruit; the logic tests check every lesson works out the way the story needs.
 
@@ -360,11 +366,11 @@ Sign-in returns JWT tokens; send `Authorization: Bearer <access>` on the other c
 cd app
 npm run typecheck
 npx expo lint
-npm run test:logic      # 66 checks: every maze and track map is solvable, random layouts never start a piece near its spot, slide scrambles get the true best solution, the server's seed matches the built-in puzzles, and more
+npm run test:logic      # 68 checks: every maze and track map is solvable, random layouts never start a piece near its spot, slide scrambles get the true best solution, the server's seed matches the built-in puzzles, and more
 
 # backend (venv active, PostgreSQL running)
 cd backend
-python manage.py test   # 41 tests: API, play stats, dashboard pages and puzzle builder, game-rule checks
+python manage.py test   # 42 tests: API, play stats, dashboard pages and puzzle builder, game-rule checks
 ```
 
 ---

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360">
+<!-- Diwali Night map thumbnail: shadow-medium-thumb.png after dark. -->
+<defs><radialGradient id="glow"><stop offset="0" stop-color="#FFE48A" stop-opacity="0.9"/><stop offset="0.5" stop-color="#FFB13B" stop-opacity="0.3"/><stop offset="1" stop-color="#FF9F1C" stop-opacity="0"/></radialGradient></defs>
+<image href="shadow-medium-thumb.png" width="360" height="360"/>
+<rect width="360" height="360" fill="#1B2155" opacity="0.42"/>
+<g transform="translate(310 318) scale(1.1)"><circle r="40" fill="url(#glow)"/><path d="M-22,4 Q0,26 22,4 Z" fill="#C8662F"/><path d="M0,3 C-8,-6 -4,-18 0,-26 C4,-18 8,-6 0,3 Z" fill="#FF8A1C"/><path d="M0,0 C-4,-5 -2,-12 0,-17 C2,-12 4,-5 0,0 Z" fill="#FFE48A"/></g>
+<path d="M0,26 Q180.0,70 360,26" stroke="#0B1030" stroke-width="3" fill="none"/>
+<circle cx="36.0" cy="42.9" r="14" fill="#FF7A59" opacity="0.35"/>
+<ellipse cx="36.0" cy="42.9" rx="5" ry="7" fill="#FF7A59"/>
+<circle cx="72.0" cy="49.1" r="14" fill="#7CF3FF" opacity="0.35"/>
+<ellipse cx="72.0" cy="49.1" rx="5" ry="7" fill="#7CF3FF"/>
+<circle cx="108.0" cy="53.5" r="14" fill="#FF4F79" opacity="0.35"/>
+<ellipse cx="108.0" cy="53.5" rx="5" ry="7" fill="#FF4F79"/>
+<circle cx="144.0" cy="56.1" r="14" fill="#7ED957" opacity="0.35"/>
+<ellipse cx="144.0" cy="56.1" rx="5" ry="7" fill="#7ED957"/>
+<circle cx="180.0" cy="57.0" r="14" fill="#FFD43B" opacity="0.35"/>
+<ellipse cx="180.0" cy="57.0" rx="5" ry="7" fill="#FFD43B"/>
+<circle cx="216.0" cy="56.1" r="14" fill="#FF7A59" opacity="0.35"/>
+<ellipse cx="216.0" cy="56.1" rx="5" ry="7" fill="#FF7A59"/>
+<circle cx="252.0" cy="53.5" r="14" fill="#7CF3FF" opacity="0.35"/>
+<ellipse cx="252.0" cy="53.5" rx="5" ry="7" fill="#7CF3FF"/>
+<circle cx="288.0" cy="49.1" r="14" fill="#FF4F79" opacity="0.35"/>
+<ellipse cx="288.0" cy="49.1" rx="5" ry="7" fill="#FF4F79"/>
+<circle cx="324.0" cy="42.9" r="14" fill="#7ED957" opacity="0.35"/>
+<ellipse cx="324.0" cy="42.9" rx="5" ry="7" fill="#7ED957"/>
+</svg>

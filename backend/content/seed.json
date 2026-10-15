@@ -112,11 +112,11 @@
     "tier": "medium",
     "order": 1,
     "kind": "jigsaw",
-    "title": "Gappu's Jalebi Shop",
-    "cheer": "You did it!",
-    "blurb": "Watch out, Chunnu is sneaking a jalebi!",
-    "fact": "Jalebis are made by swirling batter into hot oil, then dipping them in sugar syrup.",
-    "picture": "shop",
+    "title": "Gappu's Diwali Shop",
+    "cheer": "Happy Diwali!",
+    "blurb": "Diyas, lights and a marigold garland!",
+    "fact": "Diwali is the festival of lights. Families light little clay lamps called diyas.",
+    "picture": "diwali-shop",
     "cols": 4,
     "rows": 3,
     "config": {}
@@ -126,10 +126,10 @@
     "tier": "medium",
     "order": 2,
     "kind": "tracks",
-    "title": "Fix the Tracks",
+    "title": "Diwali Express",
     "cheer": "Choo choo!",
-    "blurb": "The jalebi train made it to the stall.",
-    "fact": "India has one of the biggest railway networks in the whole world.",
+    "blurb": "The lamps lit up all the way to the stall.",
+    "fact": "At Diwali, homes and streets twinkle with lights.",
     "config": {
       "map": [
         "T|HFT",
@@ -154,10 +154,10 @@
     "tier": "medium",
     "order": 3,
     "kind": "shadow",
-    "title": "Who's That Shadow?",
+    "title": "Lamplight Shadows",
     "cheer": "Super spotting!",
-    "blurb": "Gappu and Gauri look alike in the dark!",
-    "fact": "A shadow appears when something blocks the light.",
+    "blurb": "Everyone found their shadow in the lamplight.",
+    "fact": "A lamp makes shadows. The closer you stand to it, the bigger your shadow!",
     "config": {
       "friends": [
         "gappu",
@@ -174,16 +174,16 @@
     "tier": "medium",
     "order": 4,
     "kind": "memory",
-    "title": "Snack Snap",
-    "cheer": "Snack Snap!",
-    "blurb": "Four pairs found. Time for chai!",
-    "fact": "Chai is tea cooked with milk and spices like ginger and cardamom.",
+    "title": "Mithai Snap",
+    "cheer": "Mithai time!",
+    "blurb": "Four pairs of Diwali sweets. Gappu says yum!",
+    "fact": "Kaju katli is a Diwali sweet made from cashew nuts.",
     "config": {
       "snacks": [
-        "jalebi",
         "laddoo",
-        "samosa",
-        "chai"
+        "jalebi",
+        "kajukatli",
+        "gulabjamun"
       ],
       "cols": 4
     }
@@ -193,13 +193,13 @@
     "tier": "medium",
     "order": 5,
     "kind": "maze",
-    "title": "Jalebi Hunt",
+    "title": "Lantern Walk",
     "cheer": "Yum!",
-    "blurb": "Gappu found the jalebis!",
-    "fact": "Laddoos are made by rolling a sweet mixture into little balls.",
+    "blurb": "Gappu lit the way to the jalebis!",
+    "fact": "A kandil is a paper lantern that many families hang outside their homes at Diwali.",
     "maze": {
       "id": "medium",
-      "intro": "Two gates this time! Find the yellow lever first.",
+      "intro": "It's dark! Two gates this time. Find the yellow lever first.",
       "map": [
         "o..#...J",
         ".#...#.#",

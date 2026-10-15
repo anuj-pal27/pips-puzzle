@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360">
+<!-- Lantern Walk map thumbnail: the maze in the dark, lit only around Gappu's lantern. -->
+<defs><radialGradient id="glow"><stop offset="0" stop-color="#FFE48A" stop-opacity="0.9"/><stop offset="0.5" stop-color="#FFB13B" stop-opacity="0.3"/><stop offset="1" stop-color="#FF9F1C" stop-opacity="0"/></radialGradient></defs>
+<defs><radialGradient id="dark" cx="64" cy="318" r="150" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0E1328" stop-opacity="0"/><stop offset="0.55" stop-color="#0E1328" stop-opacity="0.15"/><stop offset="1" stop-color="#0E1328" stop-opacity="0.88"/></radialGradient></defs>
+<image href="maze-thumb.png" width="360" height="360"/>
+<rect width="360" height="360" fill="url(#dark)"/>
+<g transform="translate(150 330) scale(0.8)"><circle r="40" fill="url(#glow)"/><path d="M-22,4 Q0,26 22,4 Z" fill="#C8662F"/><path d="M0,3 C-8,-6 -4,-18 0,-26 C4,-18 8,-6 0,3 Z" fill="#FF8A1C"/><path d="M0,0 C-4,-5 -2,-12 0,-17 C2,-12 4,-5 0,0 Z" fill="#FFE48A"/></g>
+<g transform="translate(250 330) scale(0.8)"><circle r="40" fill="url(#glow)"/><path d="M-22,4 Q0,26 22,4 Z" fill="#C8662F"/><path d="M0,3 C-8,-6 -4,-18 0,-26 C4,-18 8,-6 0,3 Z" fill="#FF8A1C"/><path d="M0,0 C-4,-5 -2,-12 0,-17 C2,-12 4,-5 0,0 Z" fill="#FFE48A"/></g>
+<g transform="translate(322 230) scale(0.8)"><circle r="40" fill="url(#glow)"/><path d="M-22,4 Q0,26 22,4 Z" fill="#C8662F"/><path d="M0,3 C-8,-6 -4,-18 0,-26 C4,-18 8,-6 0,3 Z" fill="#FF8A1C"/><path d="M0,0 C-4,-5 -2,-12 0,-17 C2,-12 4,-5 0,0 Z" fill="#FFE48A"/></g>
+<g fill="#FFE7C2"><circle cx="40" cy="40" r="2.5"/><circle cx="120" cy="22" r="2"/><circle cx="210" cy="56" r="2"/><circle cx="280" cy="30" r="2.5"/></g>
+</svg>

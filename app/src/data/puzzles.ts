@@ -34,6 +34,7 @@ export const PICTURES: Record<string, Picture> = {
   tillu: { id: 'tillu', title: 'Tillu the Tortoise', image: require('@/assets/images/game/tillu.png'), width: 330, height: 220 },
   chunnu: { id: 'chunnu', title: 'Chunnu the Monkey', image: require('@/assets/images/game/chunnu.png'), width: 330, height: 220 },
   shop: { id: 'shop', title: "Gappu's Jalebi Shop", image: require('@/assets/images/game/shop.png'), width: 328, height: 246 },
+  'diwali-shop': { id: 'diwali-shop', title: "Gappu's Diwali Shop", image: require('@/assets/images/game/diwali-shop.png'), width: 328, height: 246 },
   station: { id: 'station', title: 'All Aboard at Jalebi Junction', image: require('@/assets/images/game/station.png'), width: 330, height: 264 },
 };
 
@@ -83,11 +84,11 @@ export const PUZZLES: Puzzle[] = [
   { id: 'easy-4', tier: 'easy', order: 4, kind: 'jigsaw', picture: 'chunnu', cols: 3, rows: 2, title: 'Chunnu the Monkey', cheer: 'You made Chunnu!', blurb: 'The cheekiest monkey in town.', fact: 'Monkeys use their long tails to help them balance in the trees.' },
   { id: 'easy-5', tier: 'easy', order: 5, ...maze('easy'), fact: 'Cows sleep for only about four hours a day.' },
 
-  { id: 'medium-1', tier: 'medium', order: 1, kind: 'jigsaw', picture: 'shop', cols: 4, rows: 3, title: "Gappu's Jalebi Shop", cheer: 'You did it!', blurb: 'Watch out, Chunnu is sneaking a jalebi!', fact: 'Jalebis are made by swirling batter into hot oil, then dipping them in sugar syrup.' },
-  { id: 'medium-2', tier: 'medium', order: 2, ...tracks('medium'), title: 'Fix the Tracks', cheer: 'Choo choo!', blurb: 'The jalebi train made it to the stall.', fact: 'India has one of the biggest railway networks in the whole world.' },
-  { id: 'medium-3', tier: 'medium', order: 3, ...shadow('medium'), title: "Who's That Shadow?", cheer: 'Super spotting!', blurb: 'Gappu and Gauri look alike in the dark!', fact: 'A shadow appears when something blocks the light.' },
-  { id: 'medium-4', tier: 'medium', order: 4, ...snap('medium'), title: 'Snack Snap', cheer: 'Snack Snap!', blurb: 'Four pairs found. Time for chai!', fact: 'Chai is tea cooked with milk and spices like ginger and cardamom.' },
-  { id: 'medium-5', tier: 'medium', order: 5, ...maze('medium'), fact: 'Laddoos are made by rolling a sweet mixture into little balls.' },
+  { id: 'medium-1', tier: 'medium', order: 1, kind: 'jigsaw', picture: 'diwali-shop', cols: 4, rows: 3, title: "Gappu's Diwali Shop", cheer: 'Happy Diwali!', blurb: 'Diyas, lights and a marigold garland!', fact: 'Diwali is the festival of lights. Families light little clay lamps called diyas.' },
+  { id: 'medium-2', tier: 'medium', order: 2, ...tracks('medium'), title: 'Diwali Express', cheer: 'Choo choo!', blurb: 'The lamps lit up all the way to the stall.', fact: 'At Diwali, homes and streets twinkle with lights.' },
+  { id: 'medium-3', tier: 'medium', order: 3, ...shadow('medium'), title: 'Lamplight Shadows', cheer: 'Super spotting!', blurb: 'Everyone found their shadow in the lamplight.', fact: 'A lamp makes shadows. The closer you stand to it, the bigger your shadow!' },
+  { id: 'medium-4', tier: 'medium', order: 4, ...snap('medium'), title: 'Mithai Snap', cheer: 'Mithai time!', blurb: 'Four pairs of Diwali sweets. Gappu says yum!', fact: 'Kaju katli is a Diwali sweet made from cashew nuts.' },
+  { id: 'medium-5', tier: 'medium', order: 5, ...maze('medium'), title: 'Lantern Walk', cheer: 'Yum!', blurb: 'Gappu lit the way to the jalebis!', fact: 'A kandil is a paper lantern that many families hang outside their homes at Diwali.' },
 
   { id: 'hard-1', tier: 'hard', order: 1, kind: 'jigsaw', picture: 'station', cols: 5, rows: 4, spin: true, title: 'All Aboard at Jalebi Junction', cheer: 'All aboard!', blurb: 'Twenty pieces, all the right way up!', fact: 'Old steam trains ran on coal and water, and puffed out big clouds of steam.' },
   { id: 'hard-2', tier: 'hard', order: 2, kind: 'slide', picture: slidePicture, size, start, par, title: "Tillu's Slide Puzzle", cheer: 'You fixed Tillu!', blurb: 'Slow and steady, just like Tillu.', fact: 'Some tortoises live for more than 100 years!' },

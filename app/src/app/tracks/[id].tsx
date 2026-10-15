@@ -4,13 +4,15 @@ import { Image, Pressable, StyleSheet, useWindowDimensions, View } from 'react-n
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { playSound } from '@/audio/sound';
+import { playSound, useMusic } from '@/audio/sound';
 import { Pill } from '@/components/Buttons';
+import { Diya, ThemeBackdrop } from '@/components/Festive';
 import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
 import { Txt } from '@/components/Txt';
 import { SceneryArt, TrackArt } from '@/components/TrackParts';
 import { TRAIN_ART } from '@/data/art';
 import type { TracksPuzzle } from '@/data/puzzles';
+import { themeFor } from '@/data/themes';
 import { initTracks, scrambleTracks, tapPiece, traceTracks, tracksPar, tracksStars, type TrackPiece, type TrackState } from '@/game/tracks';
 import { usePuzzle } from '@/state/catalog';
 import { usePlayStats } from '@/state/playStats';
@@ -33,6 +35,10 @@ function TracksGame({ puzzle }: { puzzle: TracksPuzzle }) {
   // A new scramble every play: the same map, but the pieces start turned differently.
   const [cfg] = useState(() => scrambleTracks(puzzle.tracks, Math.random));
   const finish = useFinish(puzzle.id);
+  const theme = themeFor(puzzle.tier);
+  useMusic(theme.music);
+  // Diwali Night: the board is dark, and each piece lights up (with a diya) as it joins the line.
+  const night = theme.id === 'diwali';
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const [state, setState] = useState<TrackState>(() => initTracks(cfg));
@@ -72,6 +78,7 @@ function TracksGame({ puzzle }: { puzzle: TracksPuzzle }) {
     setState(next);
     playSound('click');
     const t = traceTracks(cfg, next);
+    if (night && t.cells.length > trace.cells.length) playSound('light', 0.8);
     if (t.reached) {
       playSound('train');
       // All aboard: drive the train down the line, then celebrate.
@@ -97,9 +104,10 @@ function TracksGame({ puzzle }: { puzzle: TracksPuzzle }) {
 
   let house = 0;
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]} edges={['top', 'left', 'right', 'bottom']}>
+      <ThemeBackdrop theme={theme} />
       <GameHeader
-        title="Fix the Tracks"
+        title={puzzle.title || 'Fix the Tracks'}
         tier={puzzle.tier}
         right={
           <Pill>
@@ -113,14 +121,14 @@ function TracksGame({ puzzle }: { puzzle: TracksPuzzle }) {
         <View style={styles.frame}>
           <View style={{ width: cols * cell, height: rows * cell + 2 * strip }}>
             {/* station strip */}
-            <View style={[styles.strip, { top: 0, height: strip, width: cols * cell }]} />
+            <View style={[styles.strip, { top: 0, height: strip, width: cols * cell }, night && styles.stripNight]} />
             <Image source={TRAIN_ART.station} style={{ position: 'absolute', left: stationCol * cell + (cell - strip) / 2, top: 0, width: strip, height: strip }} accessibilityLabel="Station" />
             <View style={{ position: 'absolute', left: cfg.start * cell, top: 0, opacity: 0.9 }}>
               <TrackArt kind="straight" size={cell} lit />
             </View>
 
             {/* the grid */}
-            <View style={[styles.grass, { top: strip, width: cols * cell, height: rows * cell }]} />
+            <View style={[styles.grass, { top: strip, width: cols * cell, height: rows * cell }, night && styles.grassNight]} />
             {cfg.map.map((row, r) =>
               row.split('').map((ch, c) => {
                 const piece = state.pieces[r][c];
@@ -137,8 +145,23 @@ function TracksGame({ puzzle }: { puzzle: TracksPuzzle }) {
               }),
             )}
 
+            {night
+              ? cfg.map.map((row, r) =>
+                  row.split('').map((_, c) => {
+                    const at = { position: 'absolute' as const, left: c * cell, top: strip + r * cell, width: cell, height: cell };
+                    return lit.has(`${c},${r}`) ? (
+                      <View key={`n${c},${r}`} pointerEvents="none" style={[at, { alignItems: 'flex-end' }]}>
+                        <Diya size={cell * 0.6} />
+                      </View>
+                    ) : (
+                      <View key={`n${c},${r}`} pointerEvents="none" style={[at, styles.dark]} />
+                    );
+                  }),
+                )
+              : null}
+
             {/* stall strip */}
-            <View style={[styles.strip, { top: strip + rows * cell, height: strip, width: cols * cell }]} />
+            <View style={[styles.strip, { top: strip + rows * cell, height: strip, width: cols * cell }, night && styles.stripNight]} />
             <View style={{ position: 'absolute', left: cfg.goal * cell, top: strip + rows * cell, opacity: 0.9 }}>
               <TrackArt kind="straight" size={cell} lit={won} />
             </View>
@@ -230,5 +253,8 @@ const styles = StyleSheet.create({
   frame: { alignSelf: 'center', padding: 10, borderRadius: 24, backgroundColor: colors.white, boxShadow: `0px 6px 0px ${colors.sandShadow}` },
   strip: { position: 'absolute', left: 0, backgroundColor: '#FFF3E0', borderRadius: 10 },
   grass: { position: 'absolute', left: 0, backgroundColor: '#A8E07F', borderRadius: 12 },
+  grassNight: { backgroundColor: '#5E9A55' },
+  stripNight: { backgroundColor: '#C9B98F' },
+  dark: { backgroundColor: 'rgba(10, 14, 46, 0.5)' },
   plate: { position: 'absolute', left: 2, top: 2, right: 2, bottom: 2, borderRadius: 10 },
 });

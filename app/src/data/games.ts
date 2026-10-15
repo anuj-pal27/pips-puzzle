@@ -4,7 +4,7 @@ import type { TrackConfig } from '../game/tracks';
 // and the backend seed file can read it too. Pictures for these ids live in src/data/art.ts.
 
 export type FriendId = 'gappu' | 'mithu' | 'tillu' | 'chunnu' | 'gauri' | 'pip';
-export type SnackId = 'jalebi' | 'laddoo' | 'samosa' | 'chai' | 'kulfi' | 'mango';
+export type SnackId = 'jalebi' | 'laddoo' | 'samosa' | 'chai' | 'kulfi' | 'mango' | 'kajukatli' | 'gulabjamun' | 'barfi';
 
 export const FRIEND_NAMES: Record<FriendId, string> = {
   gappu: 'Gappu',
@@ -22,6 +22,9 @@ export const SNACK_NAMES: Record<SnackId, string> = {
   chai: 'Chai',
   kulfi: 'Kulfi',
   mango: 'Mango',
+  kajukatli: 'Kaju katli',
+  gulabjamun: 'Gulab jamun',
+  barfi: 'Barfi',
 };
 
 // Who's That Shadow?  Medium mixes in look-alikes: Gappu the goat and Gauri the cow.
@@ -31,11 +34,11 @@ export const SHADOW_GAMES: Record<'easy' | 'medium', ShadowGame> = {
   medium: { id: 'medium', friends: ['gappu', 'chunnu', 'gauri', 'mithu', 'tillu'], cols: 3 },
 };
 
-// Snack Snap (memory).
+// Snack Snap (memory). Medium is Mithai Snap: Diwali sweets.
 export type SnapGame = { id: string; snacks: SnackId[]; cols: number };
 export const SNAP_GAMES: Record<'easy' | 'medium' | 'hard', SnapGame> = {
   easy: { id: 'easy', snacks: ['jalebi', 'laddoo', 'samosa'], cols: 3 },
-  medium: { id: 'medium', snacks: ['jalebi', 'laddoo', 'samosa', 'chai'], cols: 4 },
+  medium: { id: 'medium', snacks: ['laddoo', 'jalebi', 'kajukatli', 'gulabjamun'], cols: 4 },
   hard: { id: 'hard', snacks: ['jalebi', 'laddoo', 'samosa', 'chai', 'kulfi', 'mango'], cols: 4 },
 };
 

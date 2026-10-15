@@ -27,12 +27,18 @@ const SOUNDS = {
   bitThink: require('@/assets/sounds/bit-think.wav'),
   bitYes: require('@/assets/sounds/bit-yes.wav'),
   bitOops: require('@/assets/sounds/bit-oops.wav'),
+  light: require('@/assets/sounds/light.wav'),
+  firework: require('@/assets/sounds/firework.wav'),
 } as const;
 
 const MUSIC = {
   town: require('@/assets/sounds/music-town.m4a'),
   lab: require('@/assets/sounds/music-lab.m4a'),
+  diwali: require('@/assets/sounds/music-diwali.m4a'),
 } as const;
+
+/** The tunes aren't equally loud; this evens them out. */
+const MUSIC_LEVEL: Record<keyof typeof MUSIC, number> = { town: 1, lab: 0.6, diwali: 1 };
 
 export type SoundName = keyof typeof SOUNDS;
 export type MusicName = keyof typeof MUSIC;
@@ -101,7 +107,7 @@ function updateMusic() {
       musicLoaded = wanted;
     }
     music.loop = true;
-    music.volume = MUSIC_VOLUME;
+    music.volume = MUSIC_VOLUME * MUSIC_LEVEL[wanted!];
     music.play();
   } catch {
     // Music is a nice extra; carry on without it.

@@ -1,16 +1,18 @@
 import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type ImageSourcePropType } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { playSound } from '@/audio/sound';
 import { CircleButton, Pill } from '@/components/Buttons';
+import { StringLights } from '@/components/Festive';
 import { Icon } from '@/components/Icon';
 import { Stars } from '@/components/Stars';
 import { Txt } from '@/components/Txt';
 import { THUMBS } from '@/data/art';
 import { KIND_LABEL, TIERS, type Picture, type Puzzle, type Tier } from '@/data/puzzles';
+import { DIWALI, themeFor } from '@/data/themes';
 import { openPuzzle } from '@/navigation';
 import { useCatalog } from '@/state/catalog';
 import { useProgress } from '@/state/progress';
@@ -27,7 +29,7 @@ function thumbFor(p: Puzzle, getPicture: (id: string) => Picture) {
 const chipFor = (p: Puzzle) => (p.kind === 'jigsaw' ? (p.spin ? 'Spin' : null) : KIND_LABEL[p.kind]);
 const describe = (p: Puzzle) => `${p.title}${p.kind === 'jigsaw' ? ' jigsaw' : ''}`;
 
-function PuzzleTile({ puzzle, size, stars, isNext }: { puzzle: Puzzle; size: number; stars: number; isNext: boolean }) {
+function PuzzleTile({ puzzle, size, stars, isNext, night }: { puzzle: Puzzle; size: number; stars: number; isNext: boolean; night: boolean }) {
   const pulse = useSharedValue(1);
   useEffect(() => {
     if (isNext) pulse.set(withRepeat(withSequence(withTiming(1.06, { duration: 800 }), withTiming(1, { duration: 800 })), -1));
@@ -49,6 +51,7 @@ function PuzzleTile({ puzzle, size, stars, isNext }: { puzzle: Puzzle; size: num
           style={({ pressed }) => [
             styles.tile,
             { width: size, height: size },
+            night && styles.tileNight,
             isNext ? styles.tileNext : null,
             pressed && { transform: [{ translateY: 3 }] },
           ]}>
@@ -65,7 +68,7 @@ function PuzzleTile({ puzzle, size, stars, isNext }: { puzzle: Puzzle; size: num
           ) : null}
         </Pressable>
       </Animated.View>
-      <Stars count={stars} size={20} />
+      <Stars count={stars} size={20} onDark={night} />
     </View>
   );
 }
@@ -81,7 +84,7 @@ function LockedTier({ tier, previous }: { tier: Tier; previous: Tier }) {
           <View style={[styles.badge, { backgroundColor: tier.color }]}>
             <Txt weight="display" size={20}>{tier.name}</Txt>
           </View>
-          <Txt size={15} color={colors.inkBrown}>{tier.tagline}</Txt>
+          <Txt size={15} color={colors.inkBrown}>{themeFor(tier.id).chapter ? `${themeFor(tier.id).chapter} is next!` : tier.tagline}</Txt>
         </View>
         <Icon name="lock" size={24} />
       </View>
@@ -107,6 +110,7 @@ export default function PuzzleMap() {
   const cardInner = Math.min(width, 480) - 40 - 28;
   const tile = Math.min(104, Math.floor((cardInner - 22) / 3));
   const next = nextPuzzle(stars);
+  const [nightW, setNightW] = useState(0); // width of the Diwali Night card, for its string of lights
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
@@ -125,20 +129,27 @@ export default function PuzzleMap() {
           if (!puzzles.length) return null; // the server has none in this tier right now
           if (!isTierUnlocked(tier.id, stars)) return <LockedTier key={tier.id} tier={tier} previous={TIERS[i - 1]} />;
           const done = puzzles.filter((p) => (stars[p.id] ?? 0) > 0).length;
+          const theme = themeFor(tier.id);
+          const night = theme.id === 'diwali';
           return (
-            <View key={tier.id} style={styles.card}>
-              <View style={styles.tierHead}>
+            <View key={tier.id} style={[styles.card, night && styles.cardNight]} onLayout={night ? (e) => setNightW(e.nativeEvent.layout.width) : undefined}>
+              {night && nightW ? (
+                <View pointerEvents="none" style={styles.cardLights}>
+                  <StringLights width={nightW} y={2} sag={10} />
+                </View>
+              ) : null}
+              <View style={[styles.tierHead, night && { marginTop: 18 }]}>
                 <View style={styles.tierHeadLeft}>
                   <View style={[styles.badge, { backgroundColor: tier.color }]}>
                     <Txt weight="display" size={20} accessibilityRole="header">{tier.name}</Txt>
                   </View>
-                  <Txt size={15} color={colors.inkSoft}>{tier.tagline}</Txt>
+                  <Txt size={15} weight={night ? 'extrabold' : 'regular'} color={night ? theme.text : colors.inkSoft}>{theme.chapter ?? tier.tagline}</Txt>
                 </View>
-                <Txt weight="extrabold" size={16}>{done} of {puzzles.length} done</Txt>
+                <Txt weight="extrabold" size={16} color={night ? theme.text : colors.ink}>{done} of {puzzles.length} done</Txt>
               </View>
               <View style={styles.tiles}>
                 {puzzles.map((p) => (
-                  <PuzzleTile key={p.id} puzzle={p} size={tile} stars={stars[p.id] ?? 0} isNext={next?.id === p.id} />
+                  <PuzzleTile key={p.id} puzzle={p} size={tile} stars={stars[p.id] ?? 0} isNext={next?.id === p.id} night={night} />
                 ))}
               </View>
             </View>
@@ -159,6 +170,9 @@ const styles = StyleSheet.create({
   tierHeadLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   badge: { paddingHorizontal: 14, paddingVertical: 2, borderRadius: 999 },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 11, rowGap: 10 },
+  cardNight: { backgroundColor: DIWALI.bg, boxShadow: '0px 6px 0px #0E1235', overflow: 'hidden' },
+  cardLights: { position: 'absolute', left: 0, right: 0, top: 0 },
+  tileNight: { backgroundColor: '#2E377A', boxShadow: '0px 4px 0px #0E1235' },
   tile: { padding: 5, borderRadius: 22, backgroundColor: colors.sand, boxShadow: `0px 4px 0px ${colors.sandShadow}` },
   tileNext: { backgroundColor: colors.sun, boxShadow: `0px 0px 0px 4px ${colors.white}, 0px 0px 0px 6px ${colors.sun}, 0px 8px 0px ${colors.sunShadow}` },
   thumb: { width: '100%', height: '100%', borderRadius: 17 },

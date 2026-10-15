@@ -118,7 +118,7 @@ class Puzzle(models.Model):
 
 
 FRIENDS = {"gappu", "mithu", "tillu", "chunnu", "gauri", "pip"}
-SNACKS = {"jalebi", "laddoo", "samosa", "chai", "kulfi", "mango"}
+SNACKS = {"jalebi", "laddoo", "samosa", "chai", "kulfi", "mango", "kajukatli", "gulabjamun", "barfi"}
 TRACK_TILES = set("|-abcd.THPF")
 
 

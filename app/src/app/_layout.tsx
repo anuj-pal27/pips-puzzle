@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { useMusic } from '@/audio/sound';
 import { CatalogProvider } from '@/state/catalog';
 import { ProgressProvider } from '@/state/progress';
 
@@ -26,6 +27,7 @@ export default function RootLayout() {
     Baloo2_800ExtraBold,
     LilitaOne_400Regular,
   });
+  useMusic('town'); // the background tune (silent when grown-ups switched music off)
 
   useEffect(() => {
     if (loaded || error) SplashScreen.hideAsync();

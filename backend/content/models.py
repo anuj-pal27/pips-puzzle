@@ -46,6 +46,7 @@ class Puzzle(models.Model):
     title = models.CharField(max_length=80, help_text="Shown on the map and on the finish screen's name card.")
     cheer = models.CharField(max_length=40, blank=True, help_text='Big headline on the finish screen, e.g. "You made Gappu!".')
     blurb = models.CharField(max_length=120, blank=True, help_text="One short line under the name card on the finish screen.")
+    fact = models.CharField(max_length=160, blank=True, help_text="Pip's fact: one short, true fun fact shown on the finish screen.")
     picture = models.CharField(
         max_length=40,
         blank=True,

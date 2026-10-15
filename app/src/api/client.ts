@@ -16,6 +16,7 @@ export type RemotePuzzle = {
   title: string;
   cheer: string;
   blurb: string;
+  fact?: string; // Pip's fact (servers before v1.1 don't send it)
   picture: string; // id of a picture bundled in the app
   image: string | null; // or the full address of a picture uploaded on the server
   image_width: number | null;

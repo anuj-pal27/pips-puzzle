@@ -7,6 +7,7 @@
     "title": "Gappu the Goat",
     "cheer": "You made Gappu!",
     "blurb": "Always hungry, always grinning.",
+    "fact": "Goats are great climbers. Some even climb trees!",
     "picture": "gappu",
     "cols": 3,
     "rows": 2,
@@ -20,6 +21,7 @@
     "title": "Who's That Shadow?",
     "cheer": "Found them all!",
     "blurb": "Mithu, Tillu and Pip came out of the shadows.",
+    "fact": "Your shadow is shortest at lunchtime, when the sun is high in the sky.",
     "config": {
       "friends": [
         "mithu",
@@ -37,6 +39,7 @@
     "title": "Snack Snap",
     "cheer": "Snack Snap!",
     "blurb": "Three pairs of snacks. Gappu says yum!",
+    "fact": "A samosa has three corners, just like a triangle!",
     "config": {
       "snacks": [
         "jalebi",
@@ -54,6 +57,7 @@
     "title": "Chunnu the Monkey",
     "cheer": "You made Chunnu!",
     "blurb": "The cheekiest monkey in town.",
+    "fact": "Monkeys use their long tails to help them balance in the trees.",
     "picture": "chunnu",
     "cols": 3,
     "rows": 2,
@@ -67,6 +71,7 @@
     "title": "Jalebi Hunt",
     "cheer": "Yum!",
     "blurb": "Gappu found the jalebis!",
+    "fact": "Cows sleep for only about four hours a day.",
     "maze": {
       "id": "easy",
       "intro": "Help Gappu find the jalebis!",
@@ -110,6 +115,7 @@
     "title": "Gappu's Jalebi Shop",
     "cheer": "You did it!",
     "blurb": "Watch out, Chunnu is sneaking a jalebi!",
+    "fact": "Jalebis are made by swirling batter into hot oil, then dipping them in sugar syrup.",
     "picture": "shop",
     "cols": 4,
     "rows": 3,
@@ -123,6 +129,7 @@
     "title": "Fix the Tracks",
     "cheer": "Choo choo!",
     "blurb": "The jalebi train made it to the stall.",
+    "fact": "India has one of the biggest railway networks in the whole world.",
     "config": {
       "map": [
         "T|HFT",
@@ -150,6 +157,7 @@
     "title": "Who's That Shadow?",
     "cheer": "Super spotting!",
     "blurb": "Gappu and Gauri look alike in the dark!",
+    "fact": "A shadow appears when something blocks the light.",
     "config": {
       "friends": [
         "gappu",
@@ -169,6 +177,7 @@
     "title": "Snack Snap",
     "cheer": "Snack Snap!",
     "blurb": "Four pairs found. Time for chai!",
+    "fact": "Chai is tea cooked with milk and spices like ginger and cardamom.",
     "config": {
       "snacks": [
         "jalebi",
@@ -187,6 +196,7 @@
     "title": "Jalebi Hunt",
     "cheer": "Yum!",
     "blurb": "Gappu found the jalebis!",
+    "fact": "Laddoos are made by rolling a sweet mixture into little balls.",
     "maze": {
       "id": "medium",
       "intro": "Two gates this time! Find the yellow lever first.",
@@ -245,6 +255,7 @@
     "title": "All Aboard at Jalebi Junction",
     "cheer": "All aboard!",
     "blurb": "Twenty pieces, all the right way up!",
+    "fact": "Old steam trains ran on coal and water, and puffed out big clouds of steam.",
     "picture": "station",
     "cols": 5,
     "rows": 4,
@@ -260,6 +271,7 @@
     "title": "Tillu's Slide Puzzle",
     "cheer": "You fixed Tillu!",
     "blurb": "Slow and steady, just like Tillu.",
+    "fact": "Some tortoises live for more than 100 years!",
     "picture": "tillu",
     "config": {
       "size": 3,
@@ -285,6 +297,7 @@
     "title": "Fix the Tracks",
     "cheer": "Choo choo!",
     "blurb": "You found the one line that works!",
+    "fact": "The first train in India ran more than 170 years ago, in 1853.",
     "config": {
       "map": [
         "|Tb-cH",
@@ -314,6 +327,7 @@
     "title": "Snack Snap",
     "cheer": "Snack feast!",
     "blurb": "Six pairs! Nobody remembers snacks like you.",
+    "fact": "The mango is the national fruit of India.",
     "config": {
       "snacks": [
         "jalebi",
@@ -334,6 +348,7 @@
     "title": "Jalebi Hunt",
     "cheer": "Yum!",
     "blurb": "Gappu found the jalebis!",
+    "fact": "Monkeys eat fruit, leaves, seeds and even insects.",
     "maze": {
       "id": "hard",
       "intro": "The switch opens one gate and shuts the other. Think first!",

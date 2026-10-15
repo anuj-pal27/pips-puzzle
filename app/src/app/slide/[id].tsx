@@ -4,11 +4,12 @@ import { Image, Pressable, StyleSheet, useWindowDimensions, View, type ImageSour
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { playSound } from '@/audio/sound';
 import { Pill } from '@/components/Buttons';
 import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
 import { Txt } from '@/components/Txt';
 import type { SlidePuzzle } from '@/data/puzzles';
-import { BLANK, canSlide, isSolved, slideStars, slideTile } from '@/game/slide';
+import { BLANK, canSlide, isSolved, scrambleSlide, slideStars, slideTile } from '@/game/slide';
 import { useCatalog, usePuzzle } from '@/state/catalog';
 import { usePlayStats } from '@/state/playStats';
 import { colors } from '@/theme';
@@ -29,7 +30,9 @@ function SlideGame({ puzzle }: { puzzle: SlidePuzzle }) {
   const n = game.size;
   const finish = useFinish(puzzle.id);
   const { width } = useWindowDimensions();
-  const [board, setBoard] = useState<number[]>(game.start);
+  // A new scramble every play, about as hard as the puzzle's set par (falls back to its own start).
+  const [setup] = useState(() => scrambleSlide(n, game.par, Math.random) ?? { start: game.start, par: game.par });
+  const [board, setBoard] = useState<number[]>(setup.start);
   const [moves, setMoves] = useState(0);
   const [nudge, setNudge] = useState<{ tile: number; count: number }>({ tile: -1, count: 0 });
 
@@ -42,13 +45,15 @@ function SlideGame({ puzzle }: { puzzle: SlidePuzzle }) {
   const tap = (spot: number) => {
     if (solved) return;
     if (!canSlide(board, n, spot)) {
+      playSound('bump', 0.6);
       setNudge((v) => ({ tile: board[spot], count: v.count + 1 }));
       return;
     }
     const next = slideTile(board, n, spot);
+    playSound('slide');
     setBoard(next);
     setMoves(moves + 1);
-    if (isSolved(next)) finish(slideStars(moves + 1, game.par), 1300);
+    if (isSolved(next)) finish(slideStars(moves + 1, setup.par), 1300);
   };
 
   const gap = board.indexOf(BLANK);

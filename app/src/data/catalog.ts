@@ -150,6 +150,7 @@ function readOne(item: RemotePuzzle, known: KnownIds, pictures: Record<string, P
     title: typeof item.title === 'string' ? item.title : '',
     cheer: item.cheer || CHEER[item.kind],
     blurb: item.blurb || '',
+    fact: typeof item.fact === 'string' ? item.fact.slice(0, 200) : '',
   };
 
   switch (item.kind) {

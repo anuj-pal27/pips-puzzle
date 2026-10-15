@@ -8,17 +8,9 @@ export type MemoryState = {
   mismatches: number;
 };
 
-/** Small seeded random generator, so tests (and replays, if wanted) can deal the same table. */
-export function seededRandom(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+// Re-exported for older imports; the helpers live in random.ts now. (The .ts extension lets the logic
+// tests run these files in plain Node.)
+export { seededRandom } from './random.ts';
 
 /** Two cards of every snack, shuffled. A pair is never left lying side by side in the same row. */
 export function deal(snacks: string[], rand: () => number, cols: number): string[] {

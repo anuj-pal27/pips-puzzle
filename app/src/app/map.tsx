@@ -4,6 +4,7 @@ import { Image, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, ty
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { playSound } from '@/audio/sound';
 import { CircleButton, Pill } from '@/components/Buttons';
 import { Icon } from '@/components/Icon';
 import { Stars } from '@/components/Stars';
@@ -41,7 +42,10 @@ function PuzzleTile({ puzzle, size, stars, isNext }: { puzzle: Puzzle; size: num
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Puzzle ${puzzle.order}: ${describe(puzzle)}${stars ? `, ${stars} stars` : isNext ? '. Play next' : ''}`}
-          onPress={() => openPuzzle(puzzle)}
+          onPress={() => {
+            playSound('tap');
+            openPuzzle(puzzle);
+          }}
           style={({ pressed }) => [
             styles.tile,
             { width: size, height: size },

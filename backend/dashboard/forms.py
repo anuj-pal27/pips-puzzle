@@ -48,6 +48,7 @@ class PuzzleForm(forms.Form):
     order = forms.IntegerField(min_value=1, max_value=99, required=False, help_text="Leave blank to add it at the end of the tier.")
     cheer = forms.CharField(max_length=40, required=False, help_text='Big headline when it\'s done, e.g. "You made Mithu!"')
     blurb = forms.CharField(max_length=120, required=False, help_text="One short line under the picture on the finish screen.")
+    fact = forms.CharField(max_length=160, required=False, label="Pip's fact", help_text="One short, true fun fact for children, shown on the finish screen.")
     is_published = forms.BooleanField(required=False, initial=True, label="Published (phones get it next time the game opens)")
 
     # Jigsaw and slide: a picture from the app, or an uploaded one.
@@ -87,6 +88,7 @@ class PuzzleForm(forms.Form):
             "order": p.order,
             "cheer": p.cheer,
             "blurb": p.blurb,
+            "fact": p.fact,
             "is_published": p.is_published,
             "picture": UPLOAD if p.image else (p.picture or "gappu"),
             "cols": p.cols or 3,
@@ -185,6 +187,7 @@ class PuzzleForm(forms.Form):
         p = self.instance or Puzzle()
         p.kind, p.title, p.tier = data["kind"], data["title"], data["tier"]
         p.cheer, p.blurb, p.is_published = data.get("cheer", ""), data.get("blurb", ""), data.get("is_published", False)
+        p.fact = data.get("fact", "")
         p.order = data.get("order") or next_free_order(p.tier, exclude=p.pk)
         for field, value in self.settings.items():
             setattr(p, field, value)

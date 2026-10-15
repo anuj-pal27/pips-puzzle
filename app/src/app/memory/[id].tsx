@@ -4,6 +4,7 @@ import { Image, Pressable, StyleSheet, useWindowDimensions, View } from 'react-n
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { playSound } from '@/audio/sound';
 import { Pill } from '@/components/Buttons';
 import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
@@ -38,7 +39,9 @@ function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
   const insets = useSafeAreaInsets();
   // A new deal every time the game opens.
   const [state, setState] = useState<MemoryState>(() => newMemory(game.snacks, Math.random, game.cols));
-  const [tip, setTip] = useState<Tip>({ text: 'Find two of the same snack!', tone: 'plain' });
+  // Easy: show every card for a moment first, so little ones get a head start.
+  const [peeking, setPeeking] = useState(puzzle.tier === 'easy');
+  const [tip, setTip] = useState<Tip>({ text: peeking ? 'Look! Remember where the snacks are…' : 'Find two of the same snack!', tone: 'plain' });
   const [eaten, setEaten] = useState<SnackId[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -49,6 +52,15 @@ function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
     [],
   );
 
+  useEffect(() => {
+    if (!peeking) return;
+    const t = setTimeout(() => {
+      setPeeking(false);
+      setTip({ text: 'Find two of the same snack!', tone: 'plain' });
+    }, 2200);
+    return () => clearTimeout(t);
+  }, [peeking]);
+
   const gap = 10;
   const rows = Math.ceil(state.cards.length / game.cols);
   const availH = height - insets.top - insets.bottom - 72 - 60 - 150 - 70;
@@ -58,8 +70,10 @@ function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
   const cardH = Math.round(cardW * 1.22);
 
   const tap = (i: number) => {
+    if (peeking) return;
     const next = flipCard(state, i);
     if (next === state) return;
+    playSound('flip');
     setState(next);
     const result = pairResult(next);
     if (!result) return;
@@ -69,6 +83,7 @@ function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
         const settled = settle(next);
         setState(settled);
         if (result === 'match') {
+          playSound('match');
           setEaten((e) => [...e, snack]);
           if (memoryDone(settled)) {
             setTip({ text: 'All the snacks are found!', tone: 'good' });
@@ -77,6 +92,7 @@ function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
             setTip({ text: `Yum! Two ${plural(snack)}!`, tone: 'good' });
           }
         } else {
+          playSound('flip', 0.6);
           setTip({ text: 'Not a pair. Remember where they are!', tone: 'oops' });
         }
       },
@@ -110,7 +126,7 @@ function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
               snack={snack as SnackId}
               w={cardW}
               h={cardH}
-              faceUp={state.up.includes(i) || state.matched.includes(i)}
+              faceUp={peeking || state.up.includes(i) || state.matched.includes(i)}
               matched={state.matched.includes(i)}
               onPress={() => tap(i)}
             />

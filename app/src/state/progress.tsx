@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
+import { setMusicOn, setSoundOn } from '@/audio/sound';
+
 import { playFinished, setPlayStatsEnabled } from './playStats';
 
 // Everything the game remembers, saved on the phone (no account, works offline).
@@ -50,6 +52,12 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setPlayStatsEnabled(saved.settings.shareStats);
   }, [saved.settings.shareStats]);
+
+  // Grown-ups' switches. Wait for the saved settings, so music never starts for a moment when it's off.
+  useEffect(() => {
+    setSoundOn(saved.settings.sound);
+    setMusicOn(ready && saved.settings.music);
+  }, [ready, saved.settings.sound, saved.settings.music]);
 
   const save = (next: Saved) => {
     setSaved(next);

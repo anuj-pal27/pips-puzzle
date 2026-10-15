@@ -4,13 +4,14 @@ import { Image, Pressable, StyleSheet, useWindowDimensions, View } from 'react-n
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { playSound } from '@/audio/sound';
 import { Pill } from '@/components/Buttons';
 import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
 import { Txt } from '@/components/Txt';
 import { SceneryArt, TrackArt } from '@/components/TrackParts';
 import { TRAIN_ART } from '@/data/art';
 import type { TracksPuzzle } from '@/data/puzzles';
-import { initTracks, tapPiece, traceTracks, tracksPar, tracksStars, type TrackPiece, type TrackState } from '@/game/tracks';
+import { initTracks, scrambleTracks, tapPiece, traceTracks, tracksPar, tracksStars, type TrackPiece, type TrackState } from '@/game/tracks';
 import { usePuzzle } from '@/state/catalog';
 import { usePlayStats } from '@/state/playStats';
 import { colors } from '@/theme';
@@ -29,7 +30,8 @@ type Point = { x: number; y: number };
 
 function TracksGame({ puzzle }: { puzzle: TracksPuzzle }) {
   usePlayStats(puzzle.id);
-  const cfg = puzzle.tracks;
+  // A new scramble every play: the same map, but the pieces start turned differently.
+  const [cfg] = useState(() => scrambleTracks(puzzle.tracks, Math.random));
   const finish = useFinish(puzzle.id);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -68,8 +70,10 @@ function TracksGame({ puzzle }: { puzzle: TracksPuzzle }) {
     if (won) return;
     const next = tapPiece(state, c, r);
     setState(next);
+    playSound('click');
     const t = traceTracks(cfg, next);
     if (t.reached) {
+      playSound('train');
       // All aboard: drive the train down the line, then celebrate.
       const total = t.cells.length + 2;
       let step = 0;

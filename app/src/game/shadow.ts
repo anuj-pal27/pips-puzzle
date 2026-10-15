@@ -1,10 +1,24 @@
 // Who's That Shadow?: drag each friend onto their shadow. Pure helpers, no React.
 
-/** Friends wait in the tray in a mixed-up order: nobody starts right below their own shadow. */
-export function trayOrder<T>(items: T[]): T[] {
-  if (items.length < 2) return items.slice();
-  const shift = items.length >= 4 ? 2 : 1;
-  return [...items.slice(shift), ...items.slice(0, shift)];
+import { shuffled } from './random.ts';
+
+/**
+ * Friends wait in the tray in a new mixed-up order every play: nobody starts in the tray spot below
+ * their own shadow. Extra friends (decoys with no shadow) go anywhere.
+ */
+export function trayOrder<T>(friends: T[], rand: () => number, decoys: T[] = []): T[] {
+  const all = [...friends, ...decoys];
+  if (friends.length < 2) return shuffled(all, rand);
+  for (;;) {
+    const order = shuffled(all, rand);
+    if (friends.every((f, i) => order[i] !== f)) return order;
+  }
+}
+
+/** For Medium and Hard: one extra friend who has no shadow on the wall, to make the child look carefully. */
+export function pickDecoy<T>(friends: T[], everyone: T[], rand: () => number): T | undefined {
+  const others = everyone.filter((f) => !friends.includes(f));
+  return others.length ? others[Math.floor(rand() * others.length)] : undefined;
 }
 
 /** Index of the slot whose centre is closest to (x, y) within `radius`, or -1. */

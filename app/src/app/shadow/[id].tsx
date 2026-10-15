@@ -6,6 +6,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, w
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { playSound } from '@/audio/sound';
 import { Pill } from '@/components/Buttons';
 import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
@@ -13,7 +14,7 @@ import { Txt } from '@/components/Txt';
 import { FRIEND_ART, FRIEND_RATIO } from '@/data/art';
 import { FRIEND_NAMES, type FriendId } from '@/data/games';
 import type { ShadowPuzzle } from '@/data/puzzles';
-import { shadowStars, trayOrder } from '@/game/shadow';
+import { pickDecoy, shadowStars, trayOrder } from '@/game/shadow';
 import { usePuzzle } from '@/state/catalog';
 import { usePlayStats } from '@/state/playStats';
 import { colors } from '@/theme';
@@ -27,6 +28,7 @@ type Point = { x: number; y: number };
 const PAD = 14;
 const GAP = 10;
 const LABEL = 26;
+const NOWHERE = { x: -10000, y: -10000 }; // the decoy friend has no shadow to land on
 
 export default function ShadowScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -62,9 +64,17 @@ function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
 
   const [found, setFound] = useState<FriendId[]>([]);
   const [misses, setMisses] = useState(0);
-  const [tip, setTip] = useState<Tip>({ text: 'Drag each friend onto their shadow!', tone: 'plain' });
+  const [tip, setTip] = useState<Tip>({
+    text: puzzle.tier === 'easy' ? 'Drag each friend onto their shadow!' : 'Drag each friend onto their shadow. One friend has no shadow!',
+    tone: 'plain',
+  });
   const [panel, setPanel] = useState<Rect | null>(null);
   const [tray, setTray] = useState<Rect | null>(null);
+  // A new tray order every play. Medium and Hard add one friend who has no shadow on the wall.
+  const [{ order, decoy }] = useState(() => {
+    const decoy = puzzle.tier === 'easy' ? undefined : pickDecoy(friends, Object.keys(FRIEND_NAMES) as FriendId[], Math.random);
+    return { decoy, order: trayOrder(friends, Math.random, decoy ? [decoy] : []) };
+  });
 
   const measure = (set: (r: Rect) => void) => (e: LayoutChangeEvent) => {
     const { x, y, width: w, height: h } = e.nativeEvent.layout;
@@ -78,17 +88,17 @@ function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
   }));
 
   // Tray spots: rows of up to 3, friends shrunk a little if the tray is short.
-  const order = trayOrder(friends);
-  const tcols = Math.min(3, friends.length);
-  const trows = Math.ceil(friends.length / tcols);
+  const tcols = Math.min(3, order.length);
+  const trows = Math.ceil(order.length / tcols);
   const cellW = (tray?.w ?? 1) / tcols;
   const cellH = (tray?.h ?? 1) / trows;
   // Friends can wait a little bigger than their shadows when there's room; they shrink to size when picked up.
   const trayScale = Math.min(1.3, (cellW * 0.9) / artW, (cellH * 0.8) / artH);
-  const trayCentres = gridCentres(friends.length, tcols, cellW, cellH, 0, 0).map((p) => ({ x: (tray?.x ?? 0) + p.x, y: (tray?.y ?? 0) + p.y }));
+  const trayCentres = gridCentres(order.length, tcols, cellW, cellH, 0, 0).map((p) => ({ x: (tray?.x ?? 0) + p.x, y: (tray?.y ?? 0) + p.y }));
 
   const placed = (friend: FriendId) => {
     if (found.includes(friend)) return;
+    playSound('snap');
     const next = [...found, friend];
     setFound(next);
     if (next.length === friends.length) {
@@ -99,8 +109,12 @@ function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
     }
   };
   const missed = (friend: FriendId) => {
+    playSound('miss');
     setMisses((m) => m + 1);
-    setTip({ text: `Hmm, that's not ${FRIEND_NAMES[friend]}'s shadow. Try another one!`, tone: 'oops' });
+    setTip({
+      text: friend === decoy ? `${FRIEND_NAMES[friend]} has no shadow here. Look again!` : `Hmm, that's not ${FRIEND_NAMES[friend]}'s shadow. Try another one!`,
+      tone: 'oops',
+    });
   };
 
   return (
@@ -168,7 +182,7 @@ function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
                     h={artH}
                     home={trayCentres[k]}
                     scale={trayScale}
-                    target={slotCentres[own]}
+                    target={own >= 0 ? slotCentres[own] : NOWHERE}
                     others={slotCentres.filter((_, i) => i !== own && !found.includes(friends[i]))}
                     radius={slotW * 0.6}
                     onPlaced={placed}
@@ -237,6 +251,7 @@ function FriendPiece({
       startY.set(y.get());
     })
     .onStart(() => {
+      scheduleOnRN(playSound, 'pick');
       z.set(100);
       s.set(withTiming(1, { duration: 120 }));
     })

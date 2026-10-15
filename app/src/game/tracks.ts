@@ -113,3 +113,25 @@ export function tracksStars(taps: number, par: number): 1 | 2 | 3 {
   if (extra <= par + 12) return 2;
   return 1;
 }
+
+/**
+ * A new scramble for one play: every piece on the train's route starts turned the wrong way (curves
+ * by 1 to 3 quarter-turns, straight pieces by one), and the decoy pieces off the route get any turn.
+ * Returns the puzzle with new `taps`; tracksPar() of the result is the fewest taps for this play.
+ */
+export function scrambleTracks(cfg: TrackConfig, rand: () => number): TrackConfig {
+  const solved = solvedTracks(cfg);
+  const route = new Set(traceTracks(cfg, solved).cells.map(([c, r]) => `${c},${r}`));
+  const taps = cfg.map.map((row, r) =>
+    row
+      .split('')
+      .map((ch, c) => {
+        const p = solved.pieces[r][c];
+        if (!p) return '0';
+        if (route.has(`${c},${r}`)) return String(p.kind === 'straight' ? 1 : 1 + Math.floor(rand() * 3));
+        return String(Math.floor(rand() * 4));
+      })
+      .join(''),
+  );
+  return { ...cfg, taps };
+}

@@ -6,11 +6,11 @@ import { readFileSync } from 'node:fs';
 import { isTierUnlocked, nextPuzzle, puzzleAfter, readServerPuzzles, unlockNeed } from '../../data/catalog.ts';
 import { FRIEND_NAMES, SHADOW_GAMES, SLIDE_GAMES, SNACK_NAMES, SNAP_GAMES, TRACK_GAMES } from '../../data/games.ts';
 import { MAZES } from '../../data/mazes.ts';
-import { jigsawStars, pieceMargin, piecePath, slotPath, startTurns, trayLayout } from '../jigsaw.ts';
+import { jigsawStars, nearHome, pieceMargin, piecePath, slotPath, startTurns, trayLayout } from '../jigsaw.ts';
 import { canFlip, flipCard, memoryDone, memoryStars, newMemory, pairResult, seededRandom, settle } from '../memory.ts';
-import { nearestSlot, shadowStars, trayOrder } from '../shadow.ts';
-import { BLANK, canSlide, isSolvable, isSolved, neighbours, slideStars, slideTile, solvedBoard } from '../slide.ts';
-import { initTracks, isTrack, openings, SCENERY, solvedTracks, tapPiece, traceTracks, tracksPar, tracksStars } from '../tracks.ts';
+import { nearestSlot, pickDecoy, shadowStars, trayOrder } from '../shadow.ts';
+import { BLANK, canSlide, isSolvable, isSolved, neighbours, scrambleSlide, slidePar, slideStars, slideTile, solvedBoard } from '../slide.ts';
+import { initTracks, isTrack, openings, SCENERY, scrambleTracks, solvedTracks, tapPiece, traceTracks, tracksPar, tracksStars } from '../tracks.ts';
 import type { Cell, Dir, MazeConfig, MazeState } from '../maze.ts';
 import { findTile, gateIsOpen, initMaze, leverGate, monkeyCell, stepMaze, tileAt } from '../maze.ts';
 
@@ -36,22 +36,36 @@ for (const g of [
       assert.ok(Math.max(...nums) <= Math.max(g.pw, g.ph) + 2 * m, 'outline goes past the right/bottom');
     }
   });
-  test(`jigsaw ${n} pieces: tray holds every piece exactly once`, () => {
-    const spots = trayLayout(g, 390, 380);
-    assert.equal(spots.length, n);
-    assert.deepEqual(new Set(spots.map((s) => s.id)).size, n);
-    assert.ok(slotPath(g).startsWith('M 0 0'));
-  });
+  for (const style of ['grid', 'pile'] as const) {
+    test(`jigsaw ${n} pieces, ${style}: every piece once, inside the tray, never near its own spot, new mix each play`, () => {
+      const rand = seededRandom(n);
+      const firsts = new Set<string>();
+      for (let play = 0; play < 40; play++) {
+        const spots = trayLayout(g, 390, 380, rand, style);
+        assert.equal(spots.length, n);
+        assert.equal(new Set(spots.map((s) => s.id)).size, n);
+        for (const s of spots) {
+          assert.ok(s.cx > 0 && s.cx < 390 && s.cy > 0 && s.cy < 380, 'piece outside the tray');
+          const home = { x: ((s.id % g.cols) + 0.5) / g.cols, y: (Math.floor(s.id / g.cols) + 0.5) / g.rows };
+          assert.ok(Math.hypot(home.x - s.cx / 390, home.y - s.cy / 380) >= nearHome(g), `piece ${s.id} starts near its spot`);
+        }
+        firsts.add(spots.map((s) => s.id).join());
+      }
+      assert.ok(firsts.size > 30, 'the tray order hardly changes between plays');
+    });
+  }
+  test(`jigsaw ${n} pieces: board outline`, () => assert.ok(slotPath(g).startsWith('M 0 0')));
 }
 test('jigsaw stars', () => {
   assert.equal(jigsawStars(false, 0), 3);
   assert.equal(jigsawStars(true, 0), 2);
   assert.equal(jigsawStars(true, 20), 1);
 });
-test('spin jigsaw: most pieces start turned, some upright, always the same', () => {
+test('spin jigsaw: most pieces start turned, some upright, different each play', () => {
+  const rand = seededRandom(5);
   for (const n of [6, 12, 20]) {
-    const turns = startTurns(n);
-    assert.deepEqual(turns, startTurns(n));
+    const turns = startTurns(n, rand);
+    assert.notDeepEqual(turns, startTurns(n, rand));
     assert.ok(turns.every((t) => Number.isInteger(t) && t >= 0 && t <= 3));
     const turned = turns.filter(Boolean).length;
     assert.ok(turned >= n * 0.5 && turned < n, `${turned} of ${n} turned`);
@@ -186,6 +200,21 @@ for (const cfg of Object.values(TRACK_GAMES)) {
     assert.ok(traceTracks(cfg, s).reached);
     assert.equal(s.taps, tracksPar(cfg));
   });
+  test(`tracks ${cfg.id}: random scrambles start broken, differ each play, and fix in exactly par taps`, () => {
+    const rand = seededRandom(21);
+    const seen = new Set<string>();
+    for (let play = 0; play < 50; play++) {
+      const play_ = scrambleTracks(cfg, rand);
+      assert.deepEqual(play_.map, cfg.map);
+      assert.ok(!traceTracks(play_, initTracks(play_)).reached, 'starts already fixed');
+      let s = initTracks(play_);
+      for (const [c, r] of route) for (let k = 0; k < Number(play_.taps[r][c]) % period(cfg.map[r][c]); k++) s = tapPiece(s, c, r);
+      assert.ok(traceTracks(play_, s).reached);
+      assert.equal(s.taps, tracksPar(play_));
+      seen.add(play_.taps.join());
+    }
+    assert.ok(seen.size > 40, 'scrambles repeat');
+  });
   test(`tracks ${cfg.id}: taps turn pieces clockwise and leave scenery alone`, () => {
     const s = initTracks(cfg);
     cfg.map.forEach((row, r) =>
@@ -289,10 +318,22 @@ test('snack snap: matched and face-up cards cannot be flipped again', () => {
 test("shadow: friends never start under their own shadow; drops find the closest shadow", () => {
   for (let n = 2; n <= 6; n++) {
     const items = Array.from({ length: n }, (_, i) => i);
-    const order = trayOrder(items);
-    assert.deepEqual([...order].sort(), items);
-    order.forEach((v, i) => assert.notEqual(v, i, `size ${n}: item ${v} in its own spot`));
+    const rand = seededRandom(n);
+    const seen = new Set<string>();
+    for (let play = 0; play < 30; play++) {
+      const order = trayOrder(items, rand);
+      assert.deepEqual([...order].sort(), items);
+      order.forEach((v, i) => assert.notEqual(v, i, `size ${n}: item ${v} in its own spot`));
+      seen.add(order.join());
+      const decoy = pickDecoy(items, [...items, 99], rand)!;
+      assert.equal(decoy, 99);
+      const withDecoy = trayOrder(items, rand, [decoy]);
+      assert.equal(withDecoy.length, n + 1);
+      items.forEach((v, i) => assert.notEqual(withDecoy[i], v));
+    }
+    if (n >= 3) assert.ok(seen.size > 1, `size ${n}: always the same order`);
   }
+  assert.equal(pickDecoy([1, 2], [1, 2], Math.random), undefined);
   for (const game of Object.values(SHADOW_GAMES)) assert.equal(new Set(game.friends).size, game.friends.length);
   const slots = [{ x: 0, y: 0 }, { x: 100, y: 0 }];
   assert.equal(nearestSlot(slots, 70, 10, 50), 1);
@@ -357,6 +398,32 @@ test('slide: only tiles next to the gap move; solvability check agrees with real
   assert.deepEqual([slideStars(10, 10), slideStars(25, 10), slideStars(90, 10)], [3, 2, 1]);
 });
 
+test('slide: the solver finds the true best solution (checked against a full search)', () => {
+  const rand = seededRandom(9);
+  for (let k = 0; k < 25; k++) {
+    let x = solvedBoard(3);
+    for (let m = 0; m < 25; m++) {
+      const options = neighbours(3, x.indexOf(BLANK));
+      x = slideTile(x, 3, options[Math.floor(rand() * options.length)]);
+    }
+    assert.equal(slidePar(x, 3), slideDistance(x, 3));
+  }
+  assert.equal(slidePar(solvedBoard(3), 3), 0);
+});
+test('slide: a new scramble every play, solvable, about as hard as the set par, with the right par', () => {
+  const rand = seededRandom(3);
+  const starts = new Set<string>();
+  for (let play = 0; play < 20; play++) {
+    const s = scrambleSlide(3, 10, rand)!;
+    assert.ok(s, 'no scramble');
+    assert.ok(isSolvable(s.start, 3) && !isSolved(s.start));
+    assert.ok(s.par >= 8 && s.par <= 13, `par ${s.par} far from 10`);
+    assert.equal(slideDistance(s.start, 3), s.par);
+    starts.add(s.start.join());
+  }
+  assert.ok(starts.size > 15, 'scrambles repeat');
+});
+
 // ---------------------------------------------------------------- puzzles from the server
 const KNOWN = {
   pictures: ['gappu', 'mithu', 'tillu', 'chunnu', 'shop', 'station'],
@@ -375,6 +442,7 @@ test("server seed: all 15 puzzles read cleanly, and match the app's built-in set
   );
   for (const p of puzzles) {
     assert.ok(p.cheer && p.blurb && p.title, `${p.id} is missing its finish-screen text`);
+    assert.ok(p.fact && p.fact.length <= 160, `${p.id} needs a Pip's fact (160 letters at most)`);
     const tier = p.tier as 'easy' | 'medium' | 'hard';
     if (p.kind === 'shadow') assert.deepEqual([p.friends, p.cols], [SHADOW_GAMES[tier as 'easy'].friends, SHADOW_GAMES[tier as 'easy'].cols]);
     if (p.kind === 'memory') assert.deepEqual([p.snacks, p.cols], [SNAP_GAMES[tier].snacks, SNAP_GAMES[tier].cols]);

@@ -14,6 +14,7 @@ class PuzzleSerializer(serializers.ModelSerializer):
             "title",
             "cheer",
             "blurb",
+            "fact",
             "picture",
             "image",
             "image_width",

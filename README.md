@@ -353,18 +353,18 @@ Sign-in returns JWT tokens; send `Authorization: Bearer <access>` on the other c
 cd app
 npm run typecheck
 npx expo lint
-npm run test:logic      # 49 checks: every maze and track map is solvable, the slide puzzle's best solution, card deals, the server's seed matches the built-in puzzles, and more
+npm run test:logic      # 59 checks: every maze and track map is solvable, random layouts never start a piece near its spot, slide scrambles get the true best solution, the server's seed matches the built-in puzzles, and more
 
 # backend (venv active, PostgreSQL running)
 cd backend
-python manage.py test   # 39 tests: API, play stats, dashboard pages and puzzle builder, game-rule checks
+python manage.py test   # 40 tests: API, play stats, dashboard pages and puzzle builder, game-rule checks
 ```
 
 ---
 
 ## Good next steps
 
-- **Sound:** add `expo-audio` with snap, cheer and click sounds; the Sound and Music switches are already saved.
+- **More sound:** effects and the background tune are made by `app/scripts/make-sounds.py` (`python3 scripts/make-sounds.py` regenerates them into `app/assets/sounds/`); add a tune per chapter as new areas arrive.
 - **Parent sign-in screen:** the API calls already exist in `api/client.ts`; add a screen under Grown-ups to use them.
 - **Privacy policy:** live at `/privacy/` on the backend (`backend/content/templates/content/privacy.html`; the contact comes from `PRIVACY_OWNER` and `PRIVACY_EMAIL`). The app links to it from Grown-ups → About. Update the page and its date whenever the game starts collecting something new.
 - **Real builds:** `npx eas-cli@latest build -p android` makes an installable app in the cloud (no Android Studio needed).

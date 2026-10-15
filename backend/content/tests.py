@@ -71,6 +71,10 @@ class PuzzleApiTests(APITestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json(), {"status": "ok"})
 
+    def test_puzzles_carry_their_fact(self):
+        easy1 = next(p for p in self.client.get("/api/puzzles/").json() if p["slug"] == "easy-1")
+        self.assertIn("climb", easy1["fact"])
+
     def test_privacy_policy_is_public(self):
         res = self.client.get("/privacy/")
         self.assertEqual(res.status_code, 200)

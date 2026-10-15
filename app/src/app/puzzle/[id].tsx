@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { playSound } from '@/audio/sound';
 import { ChunkyButton, CircleButton, Pill } from '@/components/Buttons';
 import { TipBubble } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
@@ -14,6 +15,7 @@ import { PieceArt } from '@/components/PieceArt';
 import { Txt } from '@/components/Txt';
 import { getTier, type JigsawPuzzle } from '@/data/puzzles';
 import { jigsawStars, pieceMargin, piecePath, slotPath, startTurns, trayLayout, type JigsawGrid } from '@/game/jigsaw';
+import { newSeed, seededRandom } from '@/game/random';
 import { useCatalog, usePuzzle } from '@/state/catalog';
 import { usePlayStats } from '@/state/playStats';
 import { useProgress } from '@/state/progress';
@@ -54,8 +56,10 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
   const [paused, setPaused] = useState(false);
   const [panel, setPanel] = useState<Rect | null>(null);
   const [tray, setTray] = useState<Rect | null>(null);
+  // A new mix of the tray every play (and on "Start over"); the seed keeps it still while playing.
+  const [seed, setSeed] = useState(newSeed);
   // Spin jigsaws: quarter-turns per piece. Only ever counts up, so pieces always spin the same way.
-  const [turns, setTurns] = useState<number[]>(() => (spin ? startTurns(total) : Array(total).fill(0)));
+  const [turns, setTurns] = useState<number[]>(() => (spin ? startTurns(total, Math.random) : Array(total).fill(0)));
   const [tip, setTip] = useState('Some pieces are turned round. Tap a piece to spin it!');
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const done = placed.length === total;
@@ -75,6 +79,7 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
 
   const place = (pieceId: number) => {
     if (placed.includes(pieceId)) return;
+    playSound('snap');
     const next = [...placed, pieceId];
     setPlaced(next);
     if (next.length === total) {
@@ -89,7 +94,8 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
   };
   const restart = () => {
     setPlaced([]);
-    setTurns(spin ? startTurns(total) : Array(total).fill(0));
+    setTurns(spin ? startTurns(total, Math.random) : Array(total).fill(0));
+    setSeed(newSeed());
     setMisses(0);
     setUsedHint(false);
     setHint(false);
@@ -98,7 +104,8 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
 
   const local = (id: number) => piecePath(grid, Math.floor(id / grid.cols), id % grid.cols, margin, margin);
   const imageOffset = (id: number) => ({ x: margin - (id % grid.cols) * grid.pw, y: margin - Math.floor(id / grid.cols) * grid.ph });
-  const spots = tray ? trayLayout(grid, tray.w, tray.h) : [];
+  // Easy: a loose grid. Medium and Hard: a messy pile.
+  const spots = tray ? trayLayout(grid, tray.w, tray.h, seededRandom(seed), puzzle.tier === 'easy' ? 'grid' : 'pile') : [];
   const boardX = (panel?.x ?? 0) + PANEL_PAD;
   const boardY = (panel?.y ?? 0) + PANEL_PAD;
 
@@ -200,14 +207,23 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
                       rot={s.rot}
                       turn={turns[s.id]}
                       spin={spin}
-                      onSpin={(id) => setTurns((t) => t.map((v, i) => (i === id ? v + 1 : v)))}
-                      onWrongWay={() => setTip('Spin it the right way up first! Tap the piece to turn it.')}
+                      onSpin={(id) => {
+                        playSound('click');
+                        setTurns((t) => t.map((v, i) => (i === id ? v + 1 : v)));
+                      }}
+                      onWrongWay={() => {
+                        playSound('miss');
+                        setTip('Spin it the right way up first! Tap the piece to turn it.');
+                      }}
                       boxW={boxW}
                       boxH={boxH}
                       margin={margin}
                       snap={0.45 * Math.min(grid.pw, grid.ph)}
                       onPlaced={place}
-                      onMiss={() => setMisses((m) => m + 1)}>
+                      onMiss={() => {
+                        playSound('miss', 0.7);
+                        setMisses((m) => m + 1);
+                      }}>
                       <PieceArt
                         clipId={`tray-${puzzle.id}-${s.id}`}
                         d={local(s.id)}
@@ -322,6 +338,7 @@ function TrayPiece({
       startY.set(y.get());
     })
     .onStart(() => {
+      scheduleOnRN(playSound, 'pick');
       z.set(100);
       s.set(withTiming(1, { duration: 120 }));
       r.set(withTiming(turn * 90, { duration: 120 }));

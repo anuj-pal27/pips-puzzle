@@ -6,6 +6,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, w
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { playSound } from '@/audio/sound';
 import { ChunkyButton, CircleButton, Pill } from '@/components/Buttons';
 import { Icon, type IconName } from '@/components/Icon';
 import { GateTile, HouseTile, LeverTile, RailTile, SwitchTile } from '@/components/MazeParts';
@@ -68,6 +69,19 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
     recorded.current = false;
     setState(initMaze(cfg));
   };
+
+  // Sounds follow what each move did: a step, a bump, a laddoo, a lever, or the jalebis at last.
+  const before = useRef(state);
+  useEffect(() => {
+    const was = before.current;
+    before.current = state;
+    if (state === was) return;
+    if (state.won && !was.won) playSound('cheer');
+    else if (state.got.length > was.got.length) playSound('collect');
+    else if (state.bump > was.bump) playSound(state.got.length < was.got.length ? 'miss' : 'bump');
+    else if (Object.keys(state.levers).length > Object.keys(was.levers).length || state.flip !== was.flip) playSound('click');
+    else if (state.pos !== was.pos) playSound('step', 0.8);
+  }, [state]);
 
   const message = mazeMessage(cfg, state);
   useEffect(() => {
@@ -146,7 +160,15 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
             </View>
             <Txt weight="display" size={30} align="center" accessibilityRole="header">Yum! Gappu got the jalebis!</Txt>
             <Stars count={mazeStars(state)} size={42} />
-            <Txt size={15} weight="semibold" color={colors.inkSoft} align="center">Collect all 3 laddoos on the way for 3 stars.</Txt>
+            {mazeStars(state) < 3 ? (
+              <Txt size={15} weight="semibold" color={colors.inkSoft} align="center">Collect all 3 laddoos on the way for 3 stars.</Txt>
+            ) : null}
+            {puzzle.fact ? (
+              <View style={styles.fact} accessible accessibilityLabel={`Pip's fact: ${puzzle.fact}`}>
+                <Txt weight="extrabold" size={12} color={colors.coralShadow}>PIP&apos;S FACT</Txt>
+                <Txt weight="semibold" size={15} align="center">{puzzle.fact}</Txt>
+              </View>
+            ) : null}
             <ChunkyButton
               label="Next"
               icon="next"
@@ -267,6 +289,7 @@ function Token({ source, x, y, size, shake = 0 }: { source: ImageSourcePropType;
 }
 
 const styles = StyleSheet.create({
+  fact: { alignSelf: 'stretch', alignItems: 'center', gap: 2, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: '#FFF6E0', borderWidth: 2, borderColor: colors.coral },
   screen: { flex: 1, backgroundColor: colors.sand },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, gap: 12 },
   tierBadge: { paddingHorizontal: 10, borderRadius: 999 },

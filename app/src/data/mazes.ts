@@ -10,7 +10,7 @@ const BLUE: Omit<GateDef, 'lever' | 'openWhen'> = { name: 'blue', color: '#4FA8F
 const PURPLE: Omit<GateDef, 'lever' | 'openWhen'> = { name: 'purple', color: '#9B7BFF', glyph: 'M6 1.2L10.8 10.2H1.2z' }; // triangle
 const GREEN: Omit<GateDef, 'lever' | 'openWhen'> = { name: 'green', color: '#3DBE7E', glyph: 'M6 0.8L11.2 6L6 11.2L0.8 6z' }; // diamond
 
-export const MAZES: Record<'easy' | 'medium' | 'hard', MazeConfig> = {
+export const MAZES = {
   // 7 x 9: one lever and gate, one monkey, one cow
   easy: {
     id: 'easy',
@@ -28,6 +28,73 @@ export const MAZES: Record<'easy' | 'medium' | 'hard', MazeConfig> = {
     ],
     gates: { A: { ...YELLOW, lever: 'a' } },
     monkeys: [{ axis: 'h', line: 4, min: 0, max: 5, start: 3, dir: 1 }],
+  },
+
+  // 7 x 9 (Punjab): Bholu's dhol is across the railway; one lever, one monkey, a napping cow
+  fields: {
+    id: 'fields',
+    intro: "Bholu's dhol rolled away! Find the yellow lever, then the dhol.",
+    goal: 'dhol',
+    map: [
+      'J..#..o',
+      '.#.#.#.',
+      '.#...#.',
+      '...#.C.',
+      'RRRRARR',
+      '...#...',
+      '.#.#.#o',
+      '.#a..#.',
+      'S..#o..',
+    ],
+    gates: { A: { ...YELLOW, lever: 'a' } },
+    monkeys: [{ axis: 'h', line: 5, min: 4, max: 6, start: 5, dir: 1 }],
+  },
+
+  // 8 x 9 (Rajasthan): a lost puppet at the fair; one lever, two monkeys
+  fair: {
+    id: 'fair',
+    intro: 'A puppet is lost at the fair! The lever is near the start.',
+    goal: 'puppet',
+    map: [
+      '..o#...J',
+      '.#.#.#..',
+      '.#...#C.',
+      '...#....',
+      'RRRRRRAR',
+      'o.......',
+      '.##.#.#.',
+      '.a#...#o',
+      'S..#.#..',
+    ],
+    gates: { A: { ...YELLOW, lever: 'a' } },
+    monkeys: [
+      { axis: 'h', line: 5, min: 1, max: 6, start: 3, dir: 1 },
+      { axis: 'v', line: 4, min: 0, max: 3, start: 1, dir: 1 },
+    ],
+  },
+
+  // 8 x 10 (Mumbai): two railway lines for the local trains, two levers in order, two monkeys, a cow
+  monsoon: {
+    id: 'monsoon',
+    intro: 'Two railway lines! Find the yellow lever, then the blue one.',
+    goal: 'modak',
+    map: [
+      'J..#o..#',
+      '.#....C#',
+      '.#.#....',
+      'RRRRRBRR',
+      '..b#....',
+      '.#.#.#.o',
+      '......#.',
+      'RARRRRRR',
+      '..#.a#..',
+      'S...o...',
+    ],
+    gates: { A: { ...YELLOW, lever: 'a' }, B: { ...BLUE, lever: 'b' } },
+    monkeys: [
+      { axis: 'h', line: 6, min: 0, max: 5, start: 3, dir: 1 },
+      { axis: 'h', line: 1, min: 2, max: 5, start: 4, dir: -1 },
+    ],
   },
 
   // 8 x 10: two railways, two colour-matched levers, two monkeys
@@ -57,6 +124,7 @@ export const MAZES: Record<'easy' | 'medium' | 'hard', MazeConfig> = {
   hard: {
     id: 'hard',
     intro: 'The switch opens one gate and shuts the other. Think first!',
+    goal: 'momos',
     map: [
       'o..#..C.J',
       '.#.......',
@@ -80,4 +148,4 @@ export const MAZES: Record<'easy' | 'medium' | 'hard', MazeConfig> = {
       { axis: 'v', line: 6, min: 8, max: 10, start: 9, dir: 1 },
     ],
   },
-};
+} satisfies Record<string, MazeConfig>;

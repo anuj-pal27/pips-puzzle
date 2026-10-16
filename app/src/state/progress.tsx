@@ -15,7 +15,10 @@ export type Settings = {
 };
 
 /** `lab`: stars from Learn with Bit, kept apart from the puzzle stars (they don't count on the puzzle map). */
-/** `celebrated`: chapters whose finale (e.g. Diwali fireworks) has played, so it only plays once. */
+/**
+ * `celebrated`: one-time moments that have been shown, so they only show once: a level's story card
+ * ('story-3') and a level's finale ('level-3'; 'diwali' for the last level, as before the levels).
+ */
 type Saved = { version: 1; stars: Record<string, number>; lab: Record<string, number>; celebrated: string[]; settings: Settings };
 
 const STORAGE_KEY = 'pips-puzzles/progress';
@@ -32,7 +35,7 @@ type ProgressApi = {
   /** Same for a Learn with Bit lesson. */
   recordLab: (lessonId: string, stars: number) => void;
   celebrated: string[];
-  markCelebrated: (chapter: string) => void;
+  markCelebrated: (key: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   resetProgress: () => void;
 };
@@ -88,8 +91,8 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       save({ ...saved, lab: { ...saved.lab, [lessonId]: best } });
     },
     celebrated: saved.celebrated,
-    markCelebrated: (chapter) => {
-      if (!saved.celebrated.includes(chapter)) save({ ...saved, celebrated: [...saved.celebrated, chapter] });
+    markCelebrated: (key) => {
+      if (!saved.celebrated.includes(key)) save({ ...saved, celebrated: [...saved.celebrated, key] });
     },
     updateSettings: (patch) => save({ ...saved, settings: { ...saved.settings, ...patch } }),
     resetProgress: () => save({ ...saved, stars: {}, lab: {}, celebrated: [] }),

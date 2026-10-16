@@ -25,9 +25,6 @@ export const colors = {
   danger: '#C93D24',
   navyScrim: 'rgba(30, 42, 79, 0.62)',
 
-  tierEasy: '#7ED957',
-  tierMedium: '#FFC93C',
-  tierHard: '#FF7A59',
 } as const;
 
 // Font family names come from the @expo-google-fonts packages loaded in src/app/_layout.tsx.

@@ -2,33 +2,40 @@ import { router } from 'expo-router';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 
-import { getTier, type TierId } from '@/data/puzzles';
-import { themeFor } from '@/data/themes';
+import { themeFor } from '@/data/levels';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 import { CircleButton } from './Buttons';
 import { Txt } from './Txt';
 
-/** Top bar shared by the games: back button, game name with its tier, and a counter on the right. */
-export function GameHeader({ title, tier, right }: { title: string; tier: TierId; right?: ReactNode }) {
-  const t = getTier(tier);
-  const theme = themeFor(tier);
+/** The level a puzzle is in, as a small coloured badge. */
+export function LevelBadge({ level }: { level: number }) {
+  const theme = themeFor(level);
+  return (
+    <View style={[styles.levelBadge, { backgroundColor: theme.accent }]}>
+      <Txt weight="extrabold" size={13} color={colors.ink}>Level {level}</Txt>
+    </View>
+  );
+}
+
+/** Top bar shared by the games: back button, game name with its level, and a counter on the right. */
+export function GameHeader({ title, level, right }: { title: string; level: number; right?: ReactNode }) {
+  const theme = themeFor(level);
   return (
     <View style={styles.header}>
       <CircleButton icon="back" label="Back to puzzles" onPress={() => (router.canGoBack() ? router.back() : router.replace('/map'))} />
       <View style={styles.title}>
         <Txt
           weight="display"
-          size={title.length > 14 ? 21 : 26}
-          numberOfLines={1}
+          size={title.length > 20 ? 18 : title.length > 14 ? 21 : 26}
+          numberOfLines={title.length > 20 ? 2 : 1}
+          align="center"
           accessibilityRole="header"
           color={theme.text}
           style={theme.dark ? { textShadowColor: 'rgba(5, 8, 30, 0.9)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } } : undefined}>
           {title}
         </Txt>
-        <View style={[styles.tierBadge, { backgroundColor: t.color }]}>
-          <Txt weight="extrabold" size={13}>{t.name}</Txt>
-        </View>
+        <LevelBadge level={level} />
       </View>
       {right ?? <View style={{ width: 56 }} />}
     </View>
@@ -75,7 +82,7 @@ export function useFinish(puzzleId: string) {
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, gap: 10 },
   title: { flex: 1, alignItems: 'center', gap: 2 },
-  tierBadge: { paddingHorizontal: 10, borderRadius: 999 },
+  levelBadge: { paddingHorizontal: 10, borderRadius: 999 },
   tipRow: { alignItems: 'center', paddingHorizontal: 16, marginTop: 12, minHeight: 44 },
   tip: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 18, boxShadow: `0px 3px 0px ${colors.sandShadow}`, maxWidth: 440 },
 });

@@ -14,6 +14,11 @@ from content import builders
 from content.models import Puzzle
 
 MEDIA = tempfile.mkdtemp()
+# Uploads in tests always go to a temporary folder, even when .env points media at real cloud storage.
+LOCAL_FILES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 
 
 def png(w=90, h=60) -> SimpleUploadedFile:
@@ -22,10 +27,10 @@ def png(w=90, h=60) -> SimpleUploadedFile:
     return SimpleUploadedFile("new.png", buf.getvalue(), content_type="image/png")
 
 
-BASE = {"title": "New one", "tier": "easy", "order": "", "cheer": "", "blurb": "", "is_published": "on", "cols": "3", "rows": "2", "size": "3", "difficulty": "easy", "shadow_cols": "3"}
+BASE = {"title": "New one", "level": "1", "order": "", "cheer": "", "blurb": "", "is_published": "on", "cols": "3", "rows": "2", "size": "3", "difficulty": "easy", "shadow_cols": "3"}
 
 
-@override_settings(MEDIA_ROOT=MEDIA)
+@override_settings(MEDIA_ROOT=MEDIA, STORAGES=LOCAL_FILES)
 class DashboardTests(TestCase):
     @classmethod
     def tearDownClass(cls):
@@ -51,7 +56,17 @@ class DashboardTests(TestCase):
         self.assertEqual(self.client.get("/dashboard/tools/tracks/").status_code, 302)
 
     def test_pages_render(self):
-        for url in ["/dashboard/", "/dashboard/?days=all", "/dashboard/puzzles/", "/dashboard/puzzles/hard-5/", "/dashboard/puzzles/new/", "/dashboard/puzzles/medium-2/edit/"]:
+        for url in [
+            "/dashboard/",
+            "/dashboard/?days=all",
+            "/dashboard/puzzles/",
+            "/dashboard/puzzles/hard-5/",
+            "/dashboard/puzzles/level-7-2/",
+            "/dashboard/puzzles/new/",
+            "/dashboard/puzzles/new/?level=4",
+            "/dashboard/puzzles/medium-2/edit/",
+            "/dashboard/puzzles/level-3-2/edit/",
+        ]:
             self.assertEqual(self.client.get(url).status_code, 200, url)
 
     # ------------------------------------------------------------ making puzzles
@@ -59,6 +74,7 @@ class DashboardTests(TestCase):
     def test_create_each_kind(self):
         seed = json.loads((Path(builders.__file__).parent / "seed.json").read_text())
         maze = next(p for p in seed if p["slug"] == "easy-5")["maze"]
+        rangoli = next(p for p in seed if p["kind"] == "rangoli")["config"]
         tracks = builders.generate_tracks(5, 5, seed=3)
         cases = {
             "jigsaw": {"picture": "mithu", "spin": "on"},
@@ -66,14 +82,18 @@ class DashboardTests(TestCase):
             "memory": {"snacks": ["chai", "kulfi"]},
             "slide": {"picture": "tillu"},
             "tracks": {"tracks_json": json.dumps(tracks)},
-            "maze": {"maze_json": json.dumps(maze)},
+            "maze": {"maze_json": json.dumps({**maze, "goal": "dhol"})},
+            "rangoli": {"rangoli_json": json.dumps(rangoli)},
         }
         for kind, fields in cases.items():
             res = self.create(kind=kind, **fields)
             self.assertEqual(res.status_code, 302, f"{kind}: {res.context and res.context['form'].errors}")
-        made = {p.kind: p for p in Puzzle.objects.filter(order__gte=6)}
+        made = {p.kind: p for p in Puzzle.objects.filter(level=1, order__gte=7)}
         self.assertEqual(set(made), set(cases))
-        self.assertEqual([p.order for p in Puzzle.objects.filter(tier="easy", order__gte=6).order_by("order")], [6, 7, 8, 9, 10, 11])
+        self.assertEqual([p.order for p in Puzzle.objects.filter(level=1, order__gte=7).order_by("order")], [7, 8, 9, 10, 11, 12, 13])
+        self.assertEqual(made["jigsaw"].slug, "level-1-7")
+        self.assertEqual(made["maze"].maze["goal"], "dhol")
+        self.assertEqual(made["rangoli"].config, rangoli)
         self.assertEqual(made["jigsaw"].config, {"spin": True})
         self.assertEqual(made["shadow"].config, {"friends": ["gappu", "gauri", "pip"], "cols": 3})
         slide = made["slide"].config
@@ -87,9 +107,9 @@ class DashboardTests(TestCase):
     def test_upload_a_picture(self):
         res = self.client.post("/dashboard/puzzles/new/", {**BASE, "kind": "jigsaw", "picture": "upload", "image": png()})
         self.assertEqual(res.status_code, 302)
-        p = Puzzle.objects.get(slug="easy-6")
+        p = Puzzle.objects.get(slug="level-1-7")
         self.assertEqual((p.picture, p.image_width, p.image_height), ("", 90, 60))
-        api = next(x for x in self.client.get("/api/puzzles/").json() if x["slug"] == "easy-6")
+        api = next(x for x in self.client.get("/api/puzzles/").json() if x["slug"] == "level-1-7")
         self.assertTrue(api["image"].startswith("http://testserver/media/puzzles/"))
 
     def test_broken_puzzles_are_refused(self):
@@ -102,18 +122,21 @@ class DashboardTests(TestCase):
             {"kind": "maze", "maze_json": json.dumps(broken_maze)},
             {"kind": "shadow", "friends": ["gappu"]},
             {"kind": "jigsaw", "picture": "upload"},  # nothing uploaded
-            {"kind": "jigsaw", "picture": "mithu", "order": "1"},  # easy 1 is taken
+            {"kind": "jigsaw", "picture": "mithu", "order": "1"},  # level 1, order 1 is taken
+            {"kind": "memory", "snacks": ["jalebi", "laddoo", "samosa", "chai", "kulfi", "mango", "lassi", "dhokla", "modak"]},  # 9 pairs
+            {"kind": "rangoli", "rangoli_json": json.dumps({"style": "kolam", "rings": [{"shape": "disc", "count": 1, "colors": ["red"]}]})},
+            {"kind": "maze", "maze_json": json.dumps({**json.loads(json.dumps(broken_maze)), "map": ["S.o", ".#o", "o.J"], "goal": "unicorn"})},
         ]:
             res = self.create(**fields)
             self.assertEqual(res.status_code, 200, fields)
             self.assertTrue(res.context["form"].errors, fields)
-        self.assertEqual(Puzzle.objects.count(), 15)
+        self.assertEqual(Puzzle.objects.count(), len(json.loads((Path(builders.__file__).parent / "seed.json").read_text())))
 
     def test_edit_keeps_the_id(self):
-        res = self.client.post("/dashboard/puzzles/easy-2/edit/", {**BASE, "kind": "shadow", "title": "Shadows!", "tier": "medium", "order": "", "friends": ["mithu", "pip"]})
+        res = self.client.post("/dashboard/puzzles/easy-2/edit/", {**BASE, "kind": "shadow", "title": "Shadows!", "level": "10", "order": "", "friends": ["mithu", "pip"]})
         self.assertEqual(res.status_code, 302)
         p = Puzzle.objects.get(slug="easy-2")
-        self.assertEqual((p.title, p.tier, p.order, p.config["friends"]), ("Shadows!", "medium", 6, ["mithu", "pip"]))
+        self.assertEqual((p.title, p.level, p.order, p.config["friends"]), ("Shadows!", 10, 7, ["mithu", "pip"]))
 
     def test_edit_form_round_trips_every_seed_puzzle(self):
         """Saving any built-in puzzle unchanged keeps its settings."""
@@ -145,11 +168,11 @@ class DashboardTests(TestCase):
         post("easy-1", "up")  # already first: nothing happens
         self.assertEqual(Puzzle.objects.get(slug="easy-1").order, 1)
         res = post("easy-1", "duplicate")
-        copy = Puzzle.objects.get(slug="easy-6")
-        self.assertRedirects(res, "/dashboard/puzzles/easy-6/edit/", fetch_redirect_response=False)
-        self.assertEqual((copy.picture, copy.is_published), ("gappu", False))
-        post("easy-6", "delete")
-        self.assertFalse(Puzzle.objects.filter(slug="easy-6").exists())
+        copy = Puzzle.objects.get(slug="level-1-7")
+        self.assertRedirects(res, "/dashboard/puzzles/level-1-7/edit/", fetch_redirect_response=False)
+        self.assertEqual((copy.picture, copy.is_published, copy.level), ("gappu", False, 1))
+        post("level-1-7", "delete")
+        self.assertFalse(Puzzle.objects.filter(slug="level-1-7").exists())
         self.assertEqual(self.client.post("/dashboard/puzzles/easy-1/publish/", {"next": "https://evil.example/"}).url, "/dashboard/puzzles/")
 
     def test_tools(self):
@@ -161,4 +184,7 @@ class DashboardTests(TestCase):
         check = lambda kind, value: self.client.post("/dashboard/tools/check/", {"kind": kind, "value": value}, content_type="application/json").json()  # noqa: E731
         self.assertEqual(check("tracks", tracks["config"])["problems"], [])
         self.assertTrue(check("maze", {"map": ["S.J"]})["problems"])  # no laddoos
+        pattern = {"style": "pookalam", "rings": [{"shape": "disc", "count": 1, "colors": ["purple"]}, {"shape": "leaf", "count": 16, "colors": ["green"]}]}
+        self.assertEqual(check("rangoli", pattern)["problems"], [])
+        self.assertTrue(check("rangoli", {**pattern, "style": "graffiti"})["problems"])
         self.assertEqual(self.client.get("/dashboard/events.csv").status_code, 200)

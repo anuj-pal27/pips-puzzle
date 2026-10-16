@@ -1,18 +1,11 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import Case, IntegerField, Value, When
 
 from . import builders
+from .ids import FRIENDS, LAST_LEVEL, LEVELS, SNACKS
 
-
-class Tier(models.TextChoices):
-    EASY = "easy", "Easy"
-    MEDIUM = "medium", "Medium"
-    HARD = "hard", "Hard"
-
-
-TIER_RANK = {Tier.EASY: 0, Tier.MEDIUM: 1, Tier.HARD: 2}
+LEVEL_CHOICES = [(n, f"Level {n}: {place}") for n, place in LEVELS.items()]
 
 
 class PuzzleQuerySet(models.QuerySet):
@@ -20,27 +13,32 @@ class PuzzleQuerySet(models.QuerySet):
         return self.filter(is_published=True)
 
     def in_play_order(self):
-        """Easy -> Medium -> Hard, then 1..5 inside each tier."""
-        rank = Case(*[When(tier=t, then=Value(r)) for t, r in TIER_RANK.items()], output_field=IntegerField())
-        return self.annotate(tier_rank=rank).order_by("tier_rank", "order")
+        """Level 1 to 10, then 1, 2, 3... inside each level."""
+        return self.order_by("level", "order")
 
 
 class Puzzle(models.Model):
-    """One puzzle in the game. `slug` matches the id used in the app (e.g. "easy-3")."""
+    """One puzzle in the game. `slug` matches the id used in the app (e.g. "level-3-2", or "easy-3" for the
+    puzzles from before the levels, which kept their ids so children keep their stars)."""
 
     class Kind(models.TextChoices):
-        JIGSAW = "jigsaw", "Character jigsaw"
-        MAZE = "maze", "Jalebi maze hunt"
+        JIGSAW = "jigsaw", "Jigsaw"
+        MAZE = "maze", "Maze hunt"
         SHADOW = "shadow", "Who's That Shadow?"
         MEMORY = "memory", "Snack Snap (memory)"
         TRACKS = "tracks", "Fix the Tracks"
         SLIDE = "slide", "Slide puzzle"
+        RANGOLI = "rangoli", "Rangoli"
 
     slug = models.SlugField(unique=True)
-    tier = models.CharField(max_length=10, choices=Tier.choices)
+    level = models.PositiveSmallIntegerField(
+        choices=LEVEL_CHOICES,
+        validators=[MinValueValidator(1), MaxValueValidator(LAST_LEVEL)],
+        help_text="Which stop on the journey (STORY.md). A level opens once 4 puzzles of the level before have a star.",
+    )
     order = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(99)],
-        help_text="Position inside the tier: 1 is played first. Add 6, 7, ... to give a tier more puzzles.",
+        help_text="Position inside the level: 1 is played first. Add 7, 8, ... to give a level more puzzles.",
     )
     kind = models.CharField(max_length=10, choices=Kind.choices)
     title = models.CharField(max_length=80, help_text="Shown on the map and on the finish screen's name card.")
@@ -50,7 +48,7 @@ class Puzzle(models.Model):
     picture = models.CharField(
         max_length=40,
         blank=True,
-        help_text="Id of a picture bundled in the app (gappu, mithu, tillu, chunnu, shop, station). Jigsaws and slide puzzles.",
+        help_text="Id of a picture bundled in the app (see content/ids.py: gappu, bholu, kites, big-picture...). Jigsaws and slide puzzles.",
     )
     image = models.ImageField(
         upload_to="puzzles/",
@@ -61,20 +59,21 @@ class Puzzle(models.Model):
     )
     image_width = models.PositiveIntegerField(null=True, blank=True, editable=False)
     image_height = models.PositiveIntegerField(null=True, blank=True, editable=False)
-    cols = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Jigsaw columns (Easy 3, Medium 4, Hard 5).")
-    rows = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Jigsaw rows (Easy 2, Medium 3, Hard 4).")
+    cols = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Jigsaw columns (3 in level 1, up to 6 in level 10).")
+    rows = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Jigsaw rows (2 in level 1, up to 4 in level 10).")
     maze = models.JSONField(
         null=True,
         blank=True,
-        help_text="Maze map, gates and monkeys, in the same format as the app's src/data/mazes.ts.",
+        help_text='Maze map, gates and monkeys, in the same format as the app\'s src/data/mazes.ts. Optional "goal": a snack or gift id instead of jalebis.',
     )
     config = models.JSONField(
         default=dict,
         blank=True,
         help_text=(
-            "Settings for the other kinds, in the same format as the app's src/data/games.ts: "
+            "Settings for the other kinds, in the same format as the app's src/data/puzzles.ts: "
             'shadow {"friends": [...], "cols": 3}; memory {"snacks": [...], "cols": 4}; '
             'tracks {"map": [...], "taps": [...], "start": 0, "goal": 5}; slide {"size": 3, "start": [...], "par": 10}; '
+            'rangoli {"style": "kolam", "rings": [{"shape": "disc", "count": 1, "colors": ["yellow"]}, ...]}; '
             'jigsaw {"spin": true} to start pieces turned round.'
         ),
     )
@@ -85,10 +84,10 @@ class Puzzle(models.Model):
     objects = PuzzleQuerySet.as_manager()
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=["tier", "order"], name="one_puzzle_per_tier_slot")]
+        constraints = [models.UniqueConstraint(fields=["level", "order"], name="one_puzzle_per_level_slot")]
 
     def __str__(self) -> str:
-        return f"{self.get_tier_display()} {self.order}: {self.title}"
+        return f"Level {self.level}.{self.order}: {self.title}"
 
     def clean(self):
         config = self.config or {}
@@ -106,19 +105,21 @@ class Puzzle(models.Model):
             if problems:
                 raise ValidationError(problems)
         elif self.kind == self.Kind.SHADOW:
-            _unique_list(config, "friends", FRIENDS)
+            _unique_list(config, "friends", set(FRIENDS))
         elif self.kind == self.Kind.MEMORY:
-            _unique_list(config, "snacks", SNACKS)
+            _unique_list(config, "snacks", set(SNACKS))
         elif self.kind == self.Kind.TRACKS:
             _check_tracks(config)
         elif self.kind == self.Kind.SLIDE:
             if not (self.picture or self.image):
                 raise ValidationError("A slide puzzle needs a bundled picture id or an uploaded image.")
             _check_slide(config)
+        elif self.kind == self.Kind.RANGOLI:
+            problems = builders.check_rangoli(config)
+            if problems:
+                raise ValidationError(problems)
 
 
-FRIENDS = {"gappu", "mithu", "tillu", "chunnu", "gauri", "pip"}
-SNACKS = {"jalebi", "laddoo", "samosa", "chai", "kulfi", "mango", "kajukatli", "gulabjamun", "barfi"}
 TRACK_TILES = set("|-abcd.THPF")
 
 

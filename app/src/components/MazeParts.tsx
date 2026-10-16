@@ -73,7 +73,7 @@ export function SwitchTile({
   );
 }
 
-const HOUSES = [
+const HOUSES: [string, string][] = [
   ['#FF8FA3', '#E86F8C'],
   ['#3CC6B6', '#2FA39A'],
   ['#FFC93C', '#E6A817'],
@@ -81,9 +81,9 @@ const HOUSES = [
   ['#FF9F43', '#E07A1F'],
 ];
 
-/** Top-down house: a coloured block with a darker roof. */
-export function HouseTile({ size, index }: { size: number; index: number }) {
-  const [wall, roof] = HOUSES[index % HOUSES.length];
+/** Top-down house: a coloured block with a darker roof. Each level can paint its own houses. */
+export function HouseTile({ size, index, colors = HOUSES }: { size: number; index: number; colors?: [string, string][] }) {
+  const [wall, roof] = colors[index % colors.length];
   const inner = size - 6;
   return (
     <View

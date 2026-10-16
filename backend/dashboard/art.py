@@ -1,41 +1,17 @@
-"""The game's own pictures, by id, as the dashboard shows them (served from app/assets/images/game)."""
+"""The game's own pictures, as the dashboard shows them (served from app/assets/images/game)."""
 
 from django.templatetags.static import static
 
-PICTURES = {
-    "gappu": "Gappu the Goat",
-    "mithu": "Mithu the Parrot",
-    "tillu": "Tillu the Tortoise",
-    "chunnu": "Chunnu the Monkey",
-    "shop": "Gappu's Jalebi Shop",
-    "diwali-shop": "Gappu's Diwali Shop",
-    "station": "All Aboard at Jalebi Junction",
-}
-FRIENDS = {"gappu": "Gappu", "mithu": "Mithu", "tillu": "Tillu", "chunnu": "Chunnu", "gauri": "Gauri", "pip": "Pip"}
-SNACKS = {
-    "jalebi": "Jalebi",
-    "laddoo": "Laddoo",
-    "samosa": "Samosa",
-    "chai": "Chai",
-    "kulfi": "Kulfi",
-    "mango": "Mango",
-    "kajukatli": "Kaju katli",
-    "gulabjamun": "Gulab jamun",
-    "barfi": "Barfi",
-}
+from content.ids import FRIENDS, GIFTS, LEVELS, PICTURES, SNACKS  # noqa: F401  (the dashboard lists these)
 
-# Map thumbnails for the kinds that don't show a picture, by tier (the app's src/data/art.ts THUMBS).
+# Pictures for the kinds whose map tile isn't a picture of their own. The app draws these tiles from the
+# puzzle itself (src/components/PuzzleThumb.tsx); the dashboard shows a close picture.
 _THUMBS = {
+    "tracks": "tracks-hard-thumb",
+    "tracks-10": "tracks-night-thumb",
     "maze": "maze-thumb",
-    "maze-medium": "maze-night-thumb",
-    "slide": "slide-thumb",
-    "shadow-easy": "shadow-easy-thumb",
-    "shadow-medium": "shadow-night-thumb",
-    "memory-easy": "snap-easy-thumb",
-    "memory-medium": "snap-night-thumb",
-    "memory-hard": "snap-hard-thumb",
-    "tracks-medium": "tracks-night-thumb",
-    "tracks-hard": "tracks-hard-thumb",
+    "maze-10": "maze-night-thumb",
+    "rangoli": "rangoli-thumb",
 }
 
 
@@ -56,10 +32,14 @@ def snack_url(snack: str) -> str:
 
 
 def thumb_url(puzzle) -> str:
-    """The picture a puzzle has on the game's map (same choice as the app's map screen)."""
-    if puzzle.kind == "jigsaw":
+    """A picture for the puzzle, close to its tile on the game's map."""
+    c = puzzle.config or {}
+    if puzzle.kind in ("jigsaw", "slide"):
         return puzzle.image.url if puzzle.image else picture_url(puzzle.picture)
-    name = _THUMBS.get(f"{puzzle.kind}-{puzzle.tier}") or _THUMBS.get(puzzle.kind)
-    if not name:
-        name = next(v for k, v in _THUMBS.items() if k.startswith(f"{puzzle.kind}-"))
-    return game_art(name)
+    if puzzle.kind == "shadow" and c.get("friends"):
+        return friend_url(c["friends"][0])
+    if puzzle.kind == "memory" and c.get("snacks"):
+        return snack_url(c["snacks"][0])
+    if puzzle.kind == "maze" and (puzzle.maze or {}).get("goal") in {**SNACKS, **GIFTS}:
+        return game_art(puzzle.maze["goal"])
+    return game_art(_THUMBS.get(f"{puzzle.kind}-{puzzle.level}") or _THUMBS.get(puzzle.kind, "maze-thumb"))

@@ -7,15 +7,16 @@ import Svg, { Path } from 'react-native-svg';
 
 import { playSound, starSound } from '@/audio/sound';
 import { ChunkyButton, CircleButton } from '@/components/Buttons';
-import { ChapterParty, useChapterFinale } from '@/components/ChapterParty';
 import { Fireworks } from '@/components/Festive';
+import { LevelParty, useLevelFinale } from '@/components/LevelParty';
 import { OutlinedText } from '@/components/OutlinedText';
+import { RangoliArt } from '@/components/RangoliArt';
 import { Star } from '@/components/Stars';
 import { Txt } from '@/components/Txt';
 import { FRIEND_ART, FRIEND_RATIO, SNACK_ART, TRAIN_ART } from '@/data/art';
+import { themeFor } from '@/data/levels';
 import type { Puzzle } from '@/data/puzzles';
-import { themeFor } from '@/data/themes';
-import { openPuzzle } from '@/navigation';
+import { openPuzzle, useOpenPuzzle } from '@/navigation';
 import { useCatalog, usePuzzle } from '@/state/catalog';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
@@ -70,6 +71,12 @@ function Showcase({ puzzle, width: PHOTO_W }: { puzzle: Puzzle; width: number })
     }
     case 'tracks':
       return row([TRAIN_ART.station, TRAIN_ART.engine, TRAIN_ART.stall], Math.min(92, (PHOTO_W - 16) / 3), undefined, '#A8E07F');
+    case 'rangoli':
+      return (
+        <View style={{ width: PHOTO_W, alignItems: 'center' }}>
+          <RangoliArt cfg={puzzle.rangoli} size={Math.min(PHOTO_W, 200)} done />
+        </View>
+      );
     default:
       return null;
   }
@@ -131,9 +138,10 @@ function Celebration({
   width: number;
   height: number;
 }) {
-  const theme = themeFor(puzzle.tier);
+  const theme = themeFor(puzzle.level);
   const night = theme.id === 'diwali';
-  const finale = useChapterFinale(puzzle.tier);
+  const finale = useLevelFinale(puzzle.level);
+  const open = useOpenPuzzle();
 
   const count = Math.min(3, Math.max(1, Number(starsParam) || 3));
 
@@ -183,13 +191,13 @@ function Celebration({
             height={86}
             width={190}
             fontSize={34}
-            onPress={() => (next ? openPuzzle(next, 'replace') : router.dismissTo('/map'))}
+            onPress={() => (next ? open(next, 'replace') : router.dismissTo('/map'))}
           />
           <CircleButton icon="replay" label="Play again" size={66} shadow="#D9A520" onPress={() => openPuzzle(puzzle, 'replace')} />
         </View>
       </SafeAreaView>
       {puzzle.fact ? null : <Image source={PIP} style={styles.pip} accessibilityElementsHidden />}
-      {finale.show ? <ChapterParty tier={puzzle.tier} onClose={finale.close} /> : null}
+      {finale.show ? <LevelParty level={puzzle.level} onClose={finale.close} /> : null}
     </View>
   );
 }

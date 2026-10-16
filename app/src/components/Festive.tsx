@@ -3,9 +3,10 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Defs, Ellipse, G, Line, Path, RadialGradient, Stop } from 'react-native-svg';
 
-import type { Theme } from '@/data/themes';
+import type { Theme } from '@/data/levels';
 
-// Diwali Night decorations, drawn in code: diyas, twinkling string lights, a starry sky and fireworks.
+// Festival decorations drawn in code: diyas, twinkling string lights, fireworks, and each level's own
+// backdrop (bunting in Punjab, kites in Gujarat, rain in Mumbai...).
 
 const BULBS = ['#FFD43B', '#FF7A59', '#7CF3FF', '#FF4F79', '#7ED957'];
 
@@ -89,19 +90,121 @@ export function StringLights({ width, y = 6, sag = 20 }: { width: number; y?: nu
 // Fixed "random" star positions (fractions of the screen), so the sky doesn't jump around.
 const STARS = [[0.08, 0.16], [0.22, 0.09], [0.37, 0.2], [0.55, 0.12], [0.71, 0.22], [0.88, 0.1], [0.94, 0.3], [0.04, 0.42], [0.15, 0.62], [0.9, 0.55], [0.82, 0.78], [0.1, 0.86], [0.5, 0.94], [0.66, 0.4], [0.3, 0.5]];
 
-/** Behind a Diwali Night screen: stars and a string of lights along the top. Nothing for the daytime town. */
+/** Flags (or mirror-work flags) hung along the top of the screen. */
+function Bunting({ width, colors, mirrors = false }: { width: number; colors: string[]; mirrors?: boolean }) {
+  const n = Math.max(6, Math.round(width / 34));
+  const sag = 8;
+  return (
+    <Svg width={width} height={44}>
+      <Path d={`M0,2 Q${width / 2},${2 + 2 * sag} ${width},2`} stroke="#8A7A9E" strokeWidth={2} fill="none" />
+      {Array.from({ length: n }, (_, i) => {
+        const t = (i + 0.5) / n;
+        const x = t * width;
+        const y = 2 + 4 * sag * t * (1 - t);
+        return (
+          <G key={i}>
+            <Path d={`M${x - 10},${y} L${x + 10},${y} L${x},${y + 22} Z`} fill={colors[i % colors.length]} />
+            {mirrors ? <Circle cx={x} cy={y + 8} r={3} fill="#E8F4FF" /> : null}
+          </G>
+        );
+      })}
+    </Svg>
+  );
+}
+
+/** Marigolds and mango leaves, the way doorways are decorated for festivals in the south. */
+function Toran({ width }: { width: number }) {
+  const n = Math.max(8, Math.round(width / 26));
+  return (
+    <Svg width={width} height={44}>
+      <Path d={`M0,3 Q${width / 2},16 ${width},3`} stroke="#7A4E1E" strokeWidth={2} fill="none" />
+      {Array.from({ length: n }, (_, i) => {
+        const t = (i + 0.5) / n;
+        const x = t * width;
+        const y = 3 + 26 * t * (1 - t);
+        return i % 2 ? (
+          <Path key={i} d={`M${x},${y} q7,11 0,26 q-7,-15 0,-26 Z`} fill={i % 4 === 1 ? '#3E9B4F' : '#58B85E'} />
+        ) : (
+          <G key={i}>
+            <Circle cx={x} cy={y + 6} r={7} fill={i % 4 === 0 ? '#FF9F1C' : '#FFD23F'} />
+            <Circle cx={x} cy={y + 6} r={3} fill="#E07A1F" />
+          </G>
+        );
+      })}
+    </Svg>
+  );
+}
+
+const KITES: [number, number, string, string, number][] = [
+  [0.08, 0.1, '#FF4F79', '#FFD43B', -12],
+  [0.9, 0.08, '#7ED957', '#2E6FD9', 14],
+  [0.82, 0.3, '#9B7BFF', '#FF9F1C', -8],
+  [0.05, 0.42, '#FF9F1C', '#FFFFFF', 10],
+];
+const RAIN = Array.from({ length: 34 }, (_, i) => [((i * 37) % 100) / 100, ((i * 61) % 100) / 100] as const);
+const SNOW = Array.from({ length: 26 }, (_, i) => [((i * 43) % 100) / 100, ((i * 29) % 100) / 100, 1.5 + (i % 3)] as const);
+
+/** Behind a level's screens: a decoration in the level's own style (src/data/levels.ts). Stays out of the way. */
 export function ThemeBackdrop({ theme }: { theme: Theme }) {
   const { width, height } = useWindowDimensions();
-  if (theme.id !== 'diwali') return null;
+  const deco = theme.deco;
+  if (deco === 'none') return null;
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
-        {STARS.map(([x, y], i) => (
-          <Circle key={i} cx={x * width} cy={y * height} r={i % 3 === 0 ? 2.2 : 1.5} fill="#FFF3D6" opacity={0.75} />
-        ))}
-      </Svg>
+      {deco === 'lights' && theme.dark ? (
+        <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+          {STARS.map(([x, y], i) => (
+            <Circle key={i} cx={x * width} cy={y * height} r={i % 3 === 0 ? 2.2 : 1.5} fill="#FFF3D6" opacity={0.75} />
+          ))}
+        </Svg>
+      ) : null}
+      {deco === 'rain' ? (
+        <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+          {RAIN.map(([x, y], i) => (
+            <Line key={i} x1={x * width} y1={y * height} x2={x * width - 6} y2={y * height + 22} stroke="#7FA8C9" strokeWidth={2.5} strokeLinecap="round" opacity={0.35} />
+          ))}
+        </Svg>
+      ) : null}
+      {deco === 'snow' ? (
+        <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+          {SNOW.map(([x, y, r], i) => (
+            <Circle key={i} cx={x * width} cy={y * height} r={r} fill="#FFFFFF" opacity={0.85} />
+          ))}
+        </Svg>
+      ) : null}
+      {deco === 'kites' ? (
+        <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+          {KITES.map(([x, y, a, b, turn], i) => (
+            <G key={i} transform={`translate(${x * width} ${y * height}) rotate(${turn}) scale(0.32)`} opacity={0.55}>
+              <Path d="M0,-60 L44,0 L0,70 L-44,0 Z" fill={a} />
+              <Path d="M0,-60 L44,0 L0,0 Z M0,0 L-44,0 L0,70 Z" fill={b} />
+            </G>
+          ))}
+        </Svg>
+      ) : null}
+      {deco === 'palms' ? (
+        <Svg width={width} height={120} style={{ position: 'absolute', top: 0, left: 0 }}>
+          {[
+            [0, -30, 1],
+            [width, 210, -1],
+          ].map(([x, base, dir], k) =>
+            [0, 1, 2].map((i) => (
+              <Path
+                key={`${k}-${i}`}
+                d="M0,0 Q50,-16 100,10 Q50,-4 0,0 Z"
+                fill={i % 2 ? '#3FAE5A' : '#2F9E4F'}
+                opacity={0.55}
+                transform={`translate(${x} 0) rotate(${(base as number) + i * 22 * (dir as number)}) scale(${0.9 + i * 0.15})`}
+              />
+            )),
+          )}
+        </Svg>
+      ) : null}
       <View style={{ position: 'absolute', top: 0, left: 0 }}>
-        <StringLights width={width} y={-3} sag={4} />
+        {deco === 'lights' ? <StringLights width={width} y={-3} sag={4} /> : null}
+        {deco === 'bunting' ? <Bunting width={width} colors={['#FF6F3C', '#FFD43B', '#FF4F79', '#7ED957', '#9B7BFF']} /> : null}
+        {deco === 'mirrors' ? <Bunting width={width} colors={['#D7263D', '#FFC93C', '#2E6FD9', '#FF4F79']} mirrors /> : null}
+        {deco === 'toran' ? <Toran width={width} /> : null}
       </View>
     </View>
   );

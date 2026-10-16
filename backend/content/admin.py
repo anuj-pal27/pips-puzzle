@@ -5,17 +5,17 @@ from .models import Puzzle
 
 @admin.register(Puzzle)
 class PuzzleAdmin(admin.ModelAdmin):
-    list_display = ["slug", "tier", "order", "kind", "title", "is_published", "updated_at"]
-    list_filter = ["tier", "kind", "is_published"]
+    list_display = ["slug", "level", "order", "kind", "title", "is_published", "updated_at"]
+    list_filter = ["level", "kind", "is_published"]
     list_editable = ["is_published"]
     search_fields = ["slug", "title", "picture"]
     readonly_fields = ["image_width", "image_height", "created_at", "updated_at"]
     fieldsets = [
-        (None, {"fields": ["slug", "title", "tier", "order", "kind", "is_published"]}),
+        (None, {"fields": ["slug", "title", "level", "order", "kind", "is_published"]}),
         ("Finish screen", {"fields": ["cheer", "blurb"]}),
         ("Picture", {"fields": ["picture", "image", "image_width", "image_height", "cols", "rows"], "description": "Jigsaws (and the picture for slide puzzles)."}),
-        ("Maze", {"fields": ["maze"], "description": "Only for Jalebi Hunt mazes."}),
-        ("Settings", {"fields": ["config"], "description": "Shadow, Snack Snap, tracks and slide puzzles; spin for jigsaws."}),
+        ("Maze", {"fields": ["maze"], "description": "Only for mazes."}),
+        ("Settings", {"fields": ["config"], "description": "Shadow, Snack Snap, tracks, slide and rangoli puzzles; spin for jigsaws."}),
         ("History", {"fields": ["created_at", "updated_at"], "classes": ["collapse"]}),
     ]
 

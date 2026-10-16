@@ -15,7 +15,7 @@ import { Txt } from '@/components/Txt';
 import { FRIEND_ART, FRIEND_RATIO } from '@/data/art';
 import { FRIEND_NAMES, type FriendId } from '@/data/games';
 import type { ShadowPuzzle } from '@/data/puzzles';
-import { themeFor } from '@/data/themes';
+import { friendsMet, isGentle, themeFor } from '@/data/levels';
 import { pickDecoy, shadowStars, trayOrder } from '@/game/shadow';
 import { usePuzzle } from '@/state/catalog';
 import { usePlayStats } from '@/state/playStats';
@@ -55,7 +55,7 @@ function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
   const friends = game.friends;
   const finish = useFinish(puzzle.id);
   const { width } = useWindowDimensions();
-  const theme = themeFor(puzzle.tier);
+  const theme = themeFor(puzzle.level);
   useMusic(theme.music);
   const night = theme.id === 'diwali';
 
@@ -70,14 +70,15 @@ function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
   const [found, setFound] = useState<FriendId[]>([]);
   const [misses, setMisses] = useState(0);
   const [tip, setTip] = useState<Tip>({
-    text: puzzle.tier === 'easy' ? 'Drag each friend onto their shadow!' : 'Drag each friend onto their shadow. One friend has no shadow!',
+    text: isGentle(puzzle.level) ? 'Drag each friend onto their shadow!' : 'Drag each friend onto their shadow. One friend has no shadow!',
     tone: 'plain',
   });
   const [panel, setPanel] = useState<Rect | null>(null);
   const [tray, setTray] = useState<Rect | null>(null);
-  // A new tray order every play. Medium and Hard add one friend who has no shadow on the wall.
+  // A new tray order every play. From level 3 there's one more friend (someone already met on the
+  // journey) who has no shadow on the wall.
   const [{ order, decoy }] = useState(() => {
-    const decoy = puzzle.tier === 'easy' ? undefined : pickDecoy(friends, Object.keys(FRIEND_NAMES) as FriendId[], Math.random);
+    const decoy = isGentle(puzzle.level) ? undefined : pickDecoy(friends, friendsMet(puzzle.level), Math.random);
     return { decoy, order: trayOrder(friends, Math.random, decoy ? [decoy] : []) };
   });
 
@@ -128,7 +129,7 @@ function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
       <View style={styles.root}>
         <GameHeader
           title={puzzle.title || "Who's That Shadow?"}
-          tier={puzzle.tier}
+          level={puzzle.level}
           right={
             <Pill>
               <Icon name="check" size={24} color={colors.green} />

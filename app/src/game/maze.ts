@@ -1,7 +1,7 @@
 // Jalebi Hunt maze rules. Pure functions: (config, state, move) -> new state.
 //
 // Map legend:
-//   '#' house   'R' railway   '.' road   'S' start   'J' jalebis (goal)   'o' laddoo   'C' napping cow
+//   '#' house   'R' railway   '.' road   'S' start   'J' the goal (jalebis, or `goal`)   'o' laddoo   'C' napping cow
 //   'A','B',...  gates          'a','b',...  levers (lever 'a' opens gate 'A' for good)
 //   'x'  switch: flips every gate that has `openWhen` (opens some, shuts the others)
 //
@@ -24,6 +24,8 @@ export type MonkeyLane = { axis: 'h' | 'v'; line: number; min: number; max: numb
 export type MazeConfig = {
   id: string;
   intro: string;
+  /** What Gappu is looking for at 'J': a snack or gift id (src/data/games.ts). Jalebis if not set. */
+  goal?: string;
   map: string[];
   gates: Record<string, GateDef>;
   monkeys: MonkeyLane[];

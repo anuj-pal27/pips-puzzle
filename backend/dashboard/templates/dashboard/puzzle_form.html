@@ -37,7 +37,7 @@
           <legend>2. Name and place</legend>
           <div class="field">{{ form.title.label_tag }}{{ form.title }}<span class="help">{{ form.title.help_text }}</span>{{ form.title.errors }}</div>
           <div class="two">
-            <div class="field">{{ form.tier.label_tag }}{{ form.tier }}{{ form.tier.errors }}</div>
+            <div class="field">{{ form.level.label_tag }}{{ form.level }}{{ form.level.errors }}</div>
             <div class="field">{{ form.order.label_tag }}{{ form.order }}<span class="help">{{ form.order.help_text }}</span>{{ form.order.errors }}</div>
           </div>
           <div class="two">
@@ -130,7 +130,7 @@
             <div class="field"><label for="td">Decoy pieces</label><select id="td"><option value="0">None</option><option value="0.2">A few</option><option value="0.35" selected>Some</option><option value="0.55">Lots</option></select></div>
             <button type="button" class="btn" id="gen-tracks">Generate</button>
           </div>
-          <p class="help">Generate makes a new map each time, until you like one. Medium in the game is 5 × 5 with no decoys; Hard is 6 × 6 with decoys.</p>
+          <p class="help">Generate makes a new map each time, until you like one. The game's levels go from 4 × 4 with no decoys (level 2) to 6 × 6 with lots of decoys (level 9).</p>
           <details{% if form.tracks_json.errors %} open{% endif %}>
             <summary class="label">Edit the map by hand</summary>
             <div class="field" style="margin-top:8px">{{ form.tracks_json }}{{ form.tracks_json.errors }}
@@ -143,12 +143,27 @@
         <fieldset>
           <legend>3. Maze</legend>
           <div class="row"><span class="label">Start from</span>
-            {% for tier in builder_data.mazeTemplates %}<button type="button" class="btn btn-small" data-maze-template="{{ tier }}">{{ tier|capfirst }} maze</button>{% endfor %}
+            {% for slug, t in builder_data.mazeTemplates.items %}<button type="button" class="btn btn-small" data-maze-template="{{ slug }}">{{ t.title }}</button>{% endfor %}
           </div>
           <div class="field">{{ form.maze_json }}{{ form.maze_json.errors }}</div>
-          <span class="help">Map: <code>.</code> road, <code>#</code> house, <code>R</code> railway, <code>S</code> start, <code>J</code> jalebis, <code>o</code> laddoo (exactly 3), <code>C</code> sleeping cow,
+          <span class="help">Map: <code>.</code> road, <code>#</code> house, <code>R</code> railway, <code>S</code> start, <code>J</code> the goal, <code>o</code> laddoo (exactly 3), <code>C</code> sleeping cow,
             capital letters are gates and lowercase letters their levers, <code>x</code> is the switch (opens gates with <code>openWhen: true</code>, shuts <code>false</code> ones).
-            Monkeys walk a lane: <code>axis</code> <code>h</code>/<code>v</code>, <code>line</code> (row or column), <code>min</code>…<code>max</code>, <code>start</code>, <code>dir</code> 1 or −1.</span>
+            Monkeys walk a lane: <code>axis</code> <code>h</code>/<code>v</code>, <code>line</code> (row or column), <code>min</code>…<code>max</code>, <code>start</code>, <code>dir</code> 1 or −1.
+            <code>goal</code> (optional) is what Gappu finds at <code>J</code> instead of jalebis: any snack, or a gift (<code>dhol</code>, <code>puppet</code>, <code>kite</code>, <code>flowers</code>, <code>sugarcane</code>).</span>
+        </fieldset>
+      </section>
+
+      <section class="card" data-for="rangoli">
+        <fieldset>
+          <legend>3. Rangoli pattern</legend>
+          <div class="row"><span class="label">Start from</span>
+            {% for slug, t in builder_data.rangoliTemplates.items %}<button type="button" class="btn btn-small" data-rangoli-template="{{ slug }}">{{ t.title }}</button>{% endfor %}
+          </div>
+          <div class="field">{{ form.rangoli_json }}{{ form.rangoli_json.errors }}</div>
+          <span class="help"><code>style</code>: <code>rangoli</code>, <code>kolam</code>, <code>pookalam</code>, <code>alpana</code> or <code>mandana</code> (the floor colour and border).
+            <code>rings</code> go from the centre out: the first is the centre (<code>count</code> 1). Each ring has a <code>shape</code> (<code>disc</code>, <code>petal</code>, <code>drop</code>, <code>dot</code>, <code>diamond</code>, <code>leaf</code>),
+            a <code>count</code> (4 to 32) and one or two <code>colors</code> (two take turns round the ring: use an even count). Colours: red, orange, yellow, green, blue, purple, pink, white.
+            <code>extra</code> adds colour pots that aren't in the picture, to make it trickier.</span>
         </fieldset>
       </section>
 

@@ -32,6 +32,7 @@
     "react-native-worklets": "0.10.1"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@types/react": "~19.2.2",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~57.0.2",
@@ -45,6 +46,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test:logic": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/game/__tests__/run.ts",
+    "art": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/art/build.ts",
+    "seed": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/export-seed.ts",
     "build:apk": "npx eas-cli@latest build -p android --profile preview",
     "build:apk:local": "node scripts/build-apk-local.mjs",
     "build:store": "npx eas-cli@latest build -p android --profile production"

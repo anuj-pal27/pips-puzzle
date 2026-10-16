@@ -14,9 +14,6 @@
   --sun: #ffc93c;
   --sun-edge: #e09e00;
   --sand-edge: #e3b26a;
-  --easy: #7ed957;
-  --medium: #ffc93c;
-  --hard: #ff7a59;
   --series-1: #2a78d6;
   --series-2: #eb6834;
   --series-1-wash: rgba(42, 120, 214, 0.1);
@@ -117,9 +114,16 @@ form.inline { display: inline; margin: 0; }
 .seg a[aria-current="true"] { background: var(--on); color: var(--on-ink); }
 
 .chip { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; background: var(--card-2); color: var(--ink-2); white-space: nowrap; }
-.chip-easy { background: var(--easy); color: #1e2a4f; }
-.chip-medium { background: var(--medium); color: #1e2a4f; }
-.chip-hard { background: var(--hard); color: #1e2a4f; }
+.chip-l1 { background: #7ed957; color: #1e2a4f; }
+.chip-l2 { background: #ffc107; color: #1e2a4f; }
+.chip-l3 { background: #ff7a59; color: #1e2a4f; }
+.chip-l4 { background: #7cc4f0; color: #1e2a4f; }
+.chip-l5 { background: #9dbad6; color: #1e2a4f; }
+.chip-l6 { background: #3fae5a; color: #fff; }
+.chip-l7 { background: #e8574f; color: #fff; }
+.chip-l8 { background: #d7263d; color: #fff; }
+.chip-l9 { background: #a9b6d6; color: #1e2a4f; }
+.chip-l10 { background: #1b2155; color: #ffc93c; }
 .chip-off { background: transparent; border: 1.5px dashed var(--ink-3); color: var(--ink-2); }
 .chip-demo { background: #efe7ff; color: #4a3aa7; }
 
@@ -270,3 +274,4 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); outline:
 .toolbar .field { min-width: 90px; }
 .savebar { position: sticky; bottom: 0; background: linear-gradient(transparent, var(--page) 30%); padding: 18px 0 6px; display: flex; gap: 10px; align-items: center; }
 [hidden] { display: none !important; }
+.rangoli-preview { width: min(100%, 300px); aspect-ratio: 1; display: block; margin: 0 auto; }

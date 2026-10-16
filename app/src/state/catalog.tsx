@@ -4,8 +4,10 @@ import { AppState, Image } from 'react-native';
 
 import { fetchPuzzles } from '@/api/client';
 import * as list from '@/data/catalog';
-import { FRIEND_NAMES, SNACK_NAMES } from '@/data/games';
-import { PICTURES, PUZZLES, type Picture, type Puzzle, type TierId } from '@/data/puzzles';
+import { PICTURES } from '@/data/art';
+import { FRIEND_NAMES, GIFT_NAMES, SNACK_NAMES } from '@/data/games';
+import { LEVEL_COUNT } from '@/data/levels';
+import { PUZZLES, type Picture, type Puzzle } from '@/data/puzzles';
 
 // Which puzzles the game plays. It starts with the last list the server sent (saved on the phone),
 // or the built-in one, then asks the server for a fresh list when the app opens or comes back to the
@@ -20,9 +22,12 @@ type CatalogApi = {
   puzzles: Puzzle[];
   getPuzzle: (id: string) => Puzzle | undefined;
   getPicture: (id: string) => Picture;
-  puzzlesInTier: (tier: TierId) => Puzzle[];
-  unlockNeed: (tier: TierId) => number;
-  isTierUnlocked: (tier: TierId, stars: Record<string, number>) => boolean;
+  /** The levels that have puzzles right now, in order. */
+  levels: number[];
+  puzzlesInLevel: (level: number) => Puzzle[];
+  unlockNeed: (level: number) => number;
+  isLevelUnlocked: (level: number, stars: Record<string, number>) => boolean;
+  isLevelDone: (level: number, stars: Record<string, number>) => boolean;
   nextPuzzle: (stars: Record<string, number>) => Puzzle | undefined;
   puzzleAfter: (id: string, stars: Record<string, number>) => Puzzle | undefined;
   /** Ask the server for its list now. Resolves to false if it couldn't be reached. */
@@ -33,7 +38,13 @@ const STORAGE_KEY = 'pips-puzzles/catalog';
 const PICTURE_TIMEOUT_MS = 20000;
 type Saved = { version: 1; items: unknown[] };
 
-const KNOWN: list.KnownIds = { pictures: Object.keys(PICTURES), friends: Object.keys(FRIEND_NAMES), snacks: Object.keys(SNACK_NAMES) };
+const KNOWN: list.KnownIds = {
+  pictures: Object.keys(PICTURES),
+  friends: Object.keys(FRIEND_NAMES),
+  snacks: Object.keys(SNACK_NAMES),
+  gifts: Object.keys(GIFT_NAMES),
+  levels: LEVEL_COUNT,
+};
 const BUILT_IN: Catalog = { puzzles: PUZZLES, pictures: PICTURES, source: 'built-in' };
 
 type Read = Catalog & { kept: unknown[]; uploads: Picture[] };
@@ -125,9 +136,11 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     puzzles,
     getPuzzle: (id) => puzzles.find((p) => p.id === id),
     getPicture: (id) => pictures[id] ?? PICTURES.gappu,
-    puzzlesInTier: (tier) => list.puzzlesInTier(puzzles, tier),
-    unlockNeed: (tier) => list.unlockNeed(puzzles, tier),
-    isTierUnlocked: (tier, stars) => list.isTierUnlocked(puzzles, tier, stars),
+    levels: list.levelsIn(puzzles),
+    puzzlesInLevel: (level) => list.puzzlesInLevel(puzzles, level),
+    unlockNeed: (level) => list.unlockNeed(puzzles, level),
+    isLevelUnlocked: (level, stars) => list.isLevelUnlocked(puzzles, level, stars),
+    isLevelDone: (level, stars) => list.isLevelDone(puzzles, level, stars),
     nextPuzzle: (stars) => list.nextPuzzle(puzzles, stars),
     puzzleAfter: (id, stars) => list.puzzleAfter(puzzles, id, stars),
     refresh,

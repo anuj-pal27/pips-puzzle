@@ -97,8 +97,8 @@ export const nearHome = (g: JigsawGrid) => Math.min(0.3, 0.9 / Math.max(g.cols, 
 /**
  * Where the pieces wait in the tray at the start: positions are piece centres relative to the tray's
  * top-left corner. A new mix every play (pass a seeded `rand` to repeat one):
- * - "grid" (Easy): a loose grid in a random order, each piece a little turned.
- * - "pile" (Medium, Hard): a messy heap; pieces may overlap a little, and the list order is the stacking order.
+ * - "grid" (levels 1 and 2): a loose grid in a random order, each piece a little turned.
+ * - "pile" (later levels): a messy heap; pieces may overlap a little, and the list order is the stacking order.
  * Either way no piece starts in the part of the tray that matches its spot on the board.
  */
 export function trayLayout(g: JigsawGrid, trayW: number, trayH: number, rand: () => number, style: 'grid' | 'pile' = 'grid'): TraySpot[] {
@@ -122,7 +122,11 @@ export function trayLayout(g: JigsawGrid, trayW: number, trayH: number, rand: ()
   }
 
   // Grid: try random orders until no piece sits near its own spot (keep the best try if none is perfect).
-  const cells = Array.from({ length: n }, (_, k) => ({ x: cellW * ((k % tcols) + 0.5), y: cellH * (Math.floor(k / tcols) + 0.5) }));
+  // Each cell's little wobble is decided first, so the check uses the spot the piece really starts on.
+  const cells = Array.from({ length: n }, (_, k) => ({
+    x: cellW * ((k % tcols) + 0.5) + (rand() - 0.5) * cellW * 0.12,
+    y: cellH * (Math.floor(k / tcols) + 0.5) + (rand() - 0.5) * cellH * 0.12,
+  }));
   let best: number[] = [];
   let bestBad = Infinity;
   for (let attempt = 0; attempt < 200 && bestBad > 0; attempt++) {
@@ -132,8 +136,8 @@ export function trayLayout(g: JigsawGrid, trayW: number, trayH: number, rand: ()
   }
   return best.map((id, k) => ({
     id,
-    cx: cells[k].x + (rand() - 0.5) * cellW * 0.12,
-    cy: cells[k].y + (rand() - 0.5) * cellH * 0.12,
+    cx: cells[k].x,
+    cy: cells[k].y,
     rot: randInt(rand, -15, 15),
     scale: gridScale,
   }));

@@ -9,7 +9,7 @@
       <p class="muted small" style="margin:0"><a href="{% url 'dashboard:puzzles' %}?days={{ days }}">Puzzles</a> / {{ puzzle.slug }}</p>
       <h1>{{ puzzle.title }}</h1>
       <div class="row" style="margin-top:6px">
-        <span class="chip chip-{{ puzzle.tier }}">{{ puzzle.get_tier_display }} {{ puzzle.order }}</span>
+        <span class="chip chip-l{{ puzzle.level }}">Level {{ puzzle.level }}.{{ puzzle.order }}</span>
         <span class="chip">{{ puzzle.get_kind_display }}</span>
         {% if puzzle.is_published %}<span class="status good">Live on phones</span>{% else %}<span class="chip chip-off">Hidden from phones</span>{% endif %}
       </div>

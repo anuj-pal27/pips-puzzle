@@ -161,7 +161,7 @@
         if (ch === '#') cell.classList.add('house');
         else if (ch === 'R') cell.classList.add('rail');
         else if (ch === 'S') cell.append(el('img', { src: art.gappu, alt: 'Start' }));
-        else if (ch === 'J') cell.append(el('img', { src: art.stall, alt: 'Jalebis' }));
+        else if (ch === 'J') cell.append(el('img', { src: (maze.goal && art.goals[maze.goal]) || art.stall, alt: maze.goal || 'Jalebis' }));
         else if (ch === 'o') cell.append(el('img', { src: art.laddoo, alt: 'Laddoo' }));
         else if (ch === 'C') cell.textContent = '🐄';
         else if (ch === 'x') cell.textContent = '🔀';
@@ -233,6 +233,52 @@
     ]));
   }
 
+  // Rangoli: the same drawing as the game (app/src/game/rangoli.ts and src/components/RangoliArt.tsx).
+  const RANGOLI_COLORS = { red: '#E53935', orange: '#FF9F1C', yellow: '#FFD23F', green: '#3FAE5A', blue: '#2E6FD9', purple: '#9C6ADE', pink: '#FF5C8A', white: '#FFFFFF' };
+  const RANGOLI_FLOORS = { rangoli: '#4B2E83', kolam: '#4A3A2E', pookalam: '#8A6248', alpana: '#A93226', mandana: '#9C4A26' };
+  function rangoliShape(shape, w, h) {
+    switch (shape) {
+      case 'disc':
+      case 'dot': {
+        const r = Math.min(w, h);
+        return `M${-r},0 a${r},${r} 0 1,0 ${2 * r},0 a${r},${r} 0 1,0 ${-2 * r},0 Z`;
+      }
+      case 'petal': return `M0,${-h} Q${w * 1.3},0 0,${h} Q${-w * 1.3},0 0,${-h} Z`;
+      case 'leaf': return `M0,${-h} Q${w * 0.9},${-h * 0.1} 0,${h} Q${-w * 0.9},${-h * 0.1} 0,${-h} Z`;
+      case 'drop': return `M0,${-h} C${w * 0.7},${-h * 0.2} ${w},${h * 0.5} 0,${h} C${-w},${h * 0.5} ${-w * 0.7},${-h * 0.2} 0,${-h} Z`;
+      case 'diamond': return `M0,${-h} L${w},0 L0,${h} L${-w},0 Z`;
+      default: return '';
+    }
+  }
+  function renderRangoli(box, cfg) {
+    if (!cfg || !Array.isArray(cfg.rings) || cfg.rings.length < 2) return box.replaceChildren(el('p', { class: 'muted', text: 'Start from one of the patterns.' }));
+    const svg = svgEl('svg', { viewBox: '-100 -100 200 200', class: 'rangoli-preview' });
+    svg.append(svgEl('circle', { r: 99, fill: RANGOLI_FLOORS[cfg.style] || '#4B2E83' }));
+    const band = 92 / (cfg.rings.length - 0.5);
+    cfg.rings.forEach((ring, i) => {
+      const count = Math.max(1, Number(ring.count) || 1);
+      const colors = Array.isArray(ring.colors) && ring.colors.length ? ring.colors : ['white'];
+      const r = band * i;
+      const gap = i ? (2 * Math.PI * r) / count : band;
+      const w = i ? Math.min(band * 0.44, gap * 0.46) : band * 0.5;
+      const h = i ? band * 0.46 : band * 0.5;
+      for (let k = 0; k < count; k++) {
+        const angle = (i % 2 ? 180 / count : 0) + (k * 360) / count;
+        const rad = (angle * Math.PI) / 180;
+        svg.append(svgEl('path', {
+          d: rangoliShape(ring.shape, w, h),
+          fill: RANGOLI_COLORS[colors[k % colors.length]] || '#888',
+          transform: `translate(${(r * Math.sin(rad)).toFixed(2)} ${(-r * Math.cos(rad)).toFixed(2)}) rotate(${angle.toFixed(2)})`,
+        }));
+      }
+    });
+    const pots = [...new Set([...cfg.rings.flatMap((ring) => ring.colors || []), ...(cfg.extra || [])])];
+    box.replaceChildren(el('div', { style: 'display:grid;gap:8px;justify-items:center;width:100%' }, [
+      svg,
+      el('p', { class: 'muted small', style: 'margin:0', text: `Colour pots: ${pots.join(', ')}.` }),
+    ]));
+  }
+
   function renderPreview(box, d, opts = {}) {
     switch (d.kind) {
       case 'jigsaw': return renderJigsaw(box, d.picture, d.cols, d.rows, d.spin);
@@ -241,6 +287,7 @@
       case 'memory': return renderMemory(box, d.snacks || [], d.cols, d.art);
       case 'tracks': return renderTracks(box, d.tracks, d.art, opts.solved);
       case 'maze': return renderMaze(box, d.maze, d.art);
+      case 'rangoli': return renderRangoli(box, d.rangoli);
       default: box.replaceChildren();
     }
   }
@@ -322,6 +369,7 @@
       if (k === 'memory') Object.assign(d, { snacks: checked('snacks'), cols: Number(val('memory_cols')) || null });
       if (k === 'tracks') d.tracks = parse(val('tracks_json')).value;
       if (k === 'maze') d.maze = parse(val('maze_json')).value;
+      if (k === 'rangoli') d.rangoli = parse(val('rangoli_json')).value;
       renderPreview(box, d, { solved });
       localChecks(k, d);
     }
@@ -331,10 +379,10 @@
       if (k === 'jigsaw') setChecks([[!!d.picture, d.picture ? 'Picture chosen' : 'Pick a picture'], [true, `${d.cols * d.rows} pieces`]]);
       if (k === 'slide') setChecks([[!!d.picture, d.picture ? 'Picture chosen' : 'Pick a picture'], [true, d.start ? 'Shuffled: always solvable' : 'Will be shuffled when you save']]);
       if (k === 'shadow') setChecks([[d.friends.length >= 2 && d.friends.length <= 6, `${d.friends.length} friend${d.friends.length === 1 ? '' : 's'} (2 to 6)`]]);
-      if (k === 'memory') setChecks([[d.snacks.length >= 2 && d.snacks.length <= 6, `${d.snacks.length} snack${d.snacks.length === 1 ? '' : 's'} (2 to 6)`]]);
-      if (k === 'tracks' || k === 'maze') {
-        const text = val(k === 'tracks' ? 'tracks_json' : 'maze_json');
-        if (!text.trim()) return setChecks([[false, k === 'tracks' ? 'Press Generate to make a map' : 'Start from a template maze']]);
+      if (k === 'memory') setChecks([[d.snacks.length >= 2 && d.snacks.length <= 8, `${d.snacks.length} snack${d.snacks.length === 1 ? '' : 's'} (2 to 8)`]]);
+      if (k === 'tracks' || k === 'maze' || k === 'rangoli') {
+        const text = val(`${k}_json`);
+        if (!text.trim()) return setChecks([[false, { tracks: 'Press Generate to make a map', maze: 'Start from a template maze', rangoli: 'Start from one of the patterns' }[k]]]);
         const parsed = parse(text);
         if (parsed.error) return setChecks([[false, `Not valid JSON yet: ${parsed.error}`]]);
         setChecks([[true, 'Checking…']]);
@@ -351,9 +399,11 @@
       }).then((r) => r.json()).catch(() => ({ problems: ['Could not reach the server to check it.'] }));
       if (seq !== checkSeq) return; // a newer check is on its way
       if (res.problems.length) return setChecks(res.problems.map((p) => [false, p]));
-      setChecks(k === 'tracks'
-        ? [[true, 'The line joins the station to the stall'], [true, `Fewest taps to fix it: ${res.par}`]]
-        : [[true, 'Gappu can reach the jalebis'], [true, 'All 3 laddoos can be reached']]);
+      setChecks({
+        tracks: [[true, 'The line joins the station to the stall'], [true, `Fewest taps to fix it: ${res.par}`]],
+        maze: [[true, 'Gappu can reach the goal'], [true, 'All 3 laddoos can be reached']],
+        rangoli: [[true, 'The game can draw it'], [true, 'Every shape has a colour from the pots']],
+      }[k]);
     }
 
     // --- tools
@@ -379,7 +429,14 @@
     $$('[data-maze-template]', form).forEach((b) =>
       b.addEventListener('click', () => {
         if (val('maze_json').trim() && !window.confirm('Replace the maze you have with this template?')) return;
-        form.elements.maze_json.value = JSON.stringify(data.mazeTemplates[b.dataset.mazeTemplate], null, 2);
+        form.elements.maze_json.value = JSON.stringify(data.mazeTemplates[b.dataset.mazeTemplate].value, null, 2);
+        draw();
+      }),
+    );
+    $$('[data-rangoli-template]', form).forEach((b) =>
+      b.addEventListener('click', () => {
+        if (val('rangoli_json').trim() && !window.confirm('Replace the pattern you have with this one?')) return;
+        form.elements.rangoli_json.value = JSON.stringify(data.rangoliTemplates[b.dataset.rangoliTemplate].value, null, 2);
         draw();
       }),
     );

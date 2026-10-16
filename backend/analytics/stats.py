@@ -9,7 +9,8 @@ from django.db.models import Avg, Count, Min, Q
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 
-from content.models import TIER_RANK, Puzzle, Tier
+from content.ids import LAST_LEVEL, LEVELS
+from content.models import Puzzle
 
 from .models import DEMO_PREFIX, LAB_LESSONS, LAB_PREFIX, PlayEvent
 
@@ -158,22 +159,23 @@ def hardest(rows: list[dict], min_starts: int = 5, limit: int = 5) -> list[dict]
 
 def funnel(w: Window) -> list[dict]:
     """How far players get: each step counts the devices that reached it, out of everyone who played."""
-    tier_of = dict(Puzzle.objects.values_list("slug", "tier"))
-    started = defaultdict(set)  # tier -> devices
+    level_of = dict(Puzzle.objects.values_list("slug", "level"))
+    started = defaultdict(set)  # level -> devices
     finished_any, played = set(), set()
     for device, slug, kind in w.events().values_list("device", "puzzle_slug", "type"):
         played.add(device)
         if kind == FINISH:
             finished_any.add(device)
-        tier = tier_of.get(slug)
-        if tier:
-            started[tier].add(device)
+        level = level_of.get(slug)
+        if level:
+            started[level].add(device)
     total = len(played)
     steps = [
         ("Played a puzzle", played),
         ("Finished a puzzle", finished_any),
-        ("Reached Medium", started[Tier.MEDIUM]),
-        ("Reached Hard", started[Tier.HARD]),
+        ("Reached level 2", set().union(*(started[n] for n in LEVELS if n >= 2))),
+        ("Reached level 5", set().union(*(started[n] for n in LEVELS if n >= 5))),
+        (f"Reached level {LAST_LEVEL}", started[LAST_LEVEL]),
     ]
     return [{"label": label, "devices": len(devices), "share": _rate(len(devices), total)} for label, devices in steps]
 
@@ -184,13 +186,15 @@ def platforms(w: Window) -> list[dict]:
     return [{"platform": names.get(r["platform"], r["platform"] or "Unknown"), "devices": r["devices"]} for r in rows]
 
 
-def by_tier(rows: list[dict]) -> list[dict]:
-    """Per-puzzle rows rolled up per tier."""
+def by_level(rows: list[dict]) -> list[dict]:
+    """Per-puzzle rows rolled up per level (levels with no puzzles are left out)."""
     out = []
-    for tier in sorted(TIER_RANK, key=TIER_RANK.get):
-        mine = [r for r in rows if r["puzzle"].tier == tier]
+    for level, place in LEVELS.items():
+        mine = [r for r in rows if r["puzzle"].level == level]
+        if not mine:
+            continue
         starts, finishes = sum(r["starts"] for r in mine), sum(r["finishes"] for r in mine)
-        out.append({"tier": tier, "label": Tier(tier).label, "puzzles": len(mine), "starts": starts, "finishes": finishes, "completion": _rate(finishes, starts)})
+        out.append({"level": level, "label": f"{level}. {place}", "puzzles": len(mine), "starts": starts, "finishes": finishes, "completion": _rate(finishes, starts)})
     return out
 
 

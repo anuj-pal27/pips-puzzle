@@ -10,9 +10,9 @@ export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://127.0.0.1:800
 // One puzzle as the server sends it. src/data/catalog.ts checks it and turns it into a game puzzle.
 export type RemotePuzzle = {
   slug: string;
-  tier: 'easy' | 'medium' | 'hard';
-  order: number;
-  kind: 'jigsaw' | 'maze' | 'shadow' | 'memory' | 'tracks' | 'slide';
+  level?: number; // 1 to 10 (STORY.md). Servers from before the levels sent a `tier` instead, and are ignored.
+  order: number; // play order inside the level
+  kind: 'jigsaw' | 'maze' | 'shadow' | 'memory' | 'tracks' | 'slide' | 'rangoli';
   title: string;
   cheer: string;
   blurb: string;
@@ -24,7 +24,7 @@ export type RemotePuzzle = {
   cols: number | null;
   rows: number | null;
   maze: unknown;
-  config: Record<string, unknown>; // settings for the other kinds, same shape as src/data/games.ts
+  config: Record<string, unknown>; // settings for the other kinds, same shape as in src/data/puzzles.ts
   updated_at: string;
 };
 
@@ -51,7 +51,7 @@ async function request<T>(path: string, options: RequestInit & { token?: string 
   }
 }
 
-/** Published puzzles, in tier order. Not checked yet: pass the result to readServerPuzzles(). */
+/** Published puzzles, in play order. Not checked yet: pass the result to readServerPuzzles(). */
 export const fetchPuzzles = () => request<unknown>('/api/puzzles/');
 
 /** Parent sign-in (email + password) -> JWT tokens. */

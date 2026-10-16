@@ -66,7 +66,7 @@ export default function GrownUpsSettings() {
       if (globalThis.confirm?.("Reset all stars, locks and Bit's lessons? This cannot be undone.")) doReset();
       return;
     }
-    Alert.alert('Reset progress?', "All stars are cleared, Medium and Hard lock again, and Bit's lessons start over. This cannot be undone.", [
+    Alert.alert('Reset progress?', "All stars are cleared, levels 2 to 10 lock again, and Bit's lessons start over. This cannot be undone.", [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Reset', style: 'destructive', onPress: doReset },
     ]);

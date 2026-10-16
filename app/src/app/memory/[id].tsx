@@ -11,9 +11,9 @@ import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
 import { GAPPU_FACE, SNACK_ART } from '@/data/art';
-import { SNACK_NAMES, type SnackId } from '@/data/games';
+import { SNACK_NAMES, SNACK_PAIRS, type SnackId } from '@/data/games';
 import type { MemoryPuzzle } from '@/data/puzzles';
-import { themeFor, type Theme } from '@/data/themes';
+import { isGentle, themeFor, type Theme } from '@/data/levels';
 import { flipCard, memoryDone, memoryStars, newMemory, pairResult, settle, type MemoryState } from '@/game/memory';
 import { usePuzzle } from '@/state/catalog';
 import { usePlayStats } from '@/state/playStats';
@@ -30,21 +30,21 @@ export default function MemoryScreen() {
   return <SnackSnap key={puzzle.id} puzzle={puzzle} />;
 }
 
-const plural = (s: SnackId) => (s === 'chai' ? 'cups of chai' : `${SNACK_NAMES[s].toLowerCase()}s`);
+const plural = (s: SnackId) => SNACK_PAIRS[s] ?? `${SNACK_NAMES[s].toLowerCase()}s`;
 
 function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
   usePlayStats(puzzle.id);
   const game = puzzle; // snacks and cols
   const pairs = game.snacks.length;
-  const theme = themeFor(puzzle.tier);
+  const theme = themeFor(puzzle.level);
   useMusic(theme.music);
   const finish = useFinish(puzzle.id);
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   // A new deal every time the game opens.
   const [state, setState] = useState<MemoryState>(() => newMemory(game.snacks, Math.random, game.cols));
-  // Easy: show every card for a moment first, so little ones get a head start.
-  const [peeking, setPeeking] = useState(puzzle.tier === 'easy');
+  // Levels 1 and 2: show every card for a moment first, so little ones get a head start.
+  const [peeking, setPeeking] = useState(isGentle(puzzle.level));
   const [tip, setTip] = useState<Tip>({ text: peeking ? 'Look! Remember where the snacks are…' : 'Find two of the same snack!', tone: 'plain' });
   const [eaten, setEaten] = useState<SnackId[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -111,7 +111,7 @@ function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
       <ThemeBackdrop theme={theme} />
       <GameHeader
         title={puzzle.title || 'Snack Snap'}
-        tier={puzzle.tier}
+        level={puzzle.level}
         right={
           <Pill>
             <Image source={SNACK_ART.jalebi} style={{ width: 32, height: 32 }} />

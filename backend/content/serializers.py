@@ -8,7 +8,7 @@ class PuzzleSerializer(serializers.ModelSerializer):
         model = Puzzle
         fields = [
             "slug",
-            "tier",
+            "level",
             "order",
             "kind",
             "title",

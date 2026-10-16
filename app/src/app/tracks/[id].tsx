@@ -12,7 +12,7 @@ import { Txt } from '@/components/Txt';
 import { SceneryArt, TrackArt } from '@/components/TrackParts';
 import { TRAIN_ART } from '@/data/art';
 import type { TracksPuzzle } from '@/data/puzzles';
-import { themeFor } from '@/data/themes';
+import { themeFor } from '@/data/levels';
 import { initTracks, scrambleTracks, tapPiece, traceTracks, tracksPar, tracksStars, type TrackPiece, type TrackState } from '@/game/tracks';
 import { usePuzzle } from '@/state/catalog';
 import { usePlayStats } from '@/state/playStats';
@@ -35,7 +35,7 @@ function TracksGame({ puzzle }: { puzzle: TracksPuzzle }) {
   // A new scramble every play: the same map, but the pieces start turned differently.
   const [cfg] = useState(() => scrambleTracks(puzzle.tracks, Math.random));
   const finish = useFinish(puzzle.id);
-  const theme = themeFor(puzzle.tier);
+  const theme = themeFor(puzzle.level);
   useMusic(theme.music);
   // Diwali Night: the board is dark, and each piece lights up (with a diya) as it joins the line.
   const night = theme.id === 'diwali';
@@ -108,7 +108,7 @@ function TracksGame({ puzzle }: { puzzle: TracksPuzzle }) {
       <ThemeBackdrop theme={theme} />
       <GameHeader
         title={puzzle.title || 'Fix the Tracks'}
-        tier={puzzle.tier}
+        level={puzzle.level}
         right={
           <Pill>
             <Image source={TRAIN_ART.engine} style={{ width: 34, height: 34 }} />

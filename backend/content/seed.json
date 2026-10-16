@@ -1,7 +1,7 @@
 [
   {
     "slug": "easy-1",
-    "tier": "easy",
+    "level": 1,
     "order": 1,
     "kind": "jigsaw",
     "title": "Gappu the Goat",
@@ -15,12 +15,12 @@
   },
   {
     "slug": "easy-2",
-    "tier": "easy",
+    "level": 1,
     "order": 2,
     "kind": "shadow",
-    "title": "Who's That Shadow?",
+    "title": "Who's Coming Along?",
     "cheer": "Found them all!",
-    "blurb": "Mithu, Tillu and Pip came out of the shadows.",
+    "blurb": "Mithu, Tillu and Pip are coming on the trip!",
     "fact": "Your shadow is shortest at lunchtime, when the sun is high in the sky.",
     "config": {
       "friends": [
@@ -33,12 +33,12 @@
   },
   {
     "slug": "easy-3",
-    "tier": "easy",
+    "level": 1,
     "order": 3,
     "kind": "memory",
-    "title": "Snack Snap",
+    "title": "Pack the Snacks",
     "cheer": "Snack Snap!",
-    "blurb": "Three pairs of snacks. Gappu says yum!",
+    "blurb": "Three pairs of snacks, packed for the train.",
     "fact": "A samosa has three corners, just like a triangle!",
     "config": {
       "snacks": [
@@ -51,12 +51,12 @@
   },
   {
     "slug": "easy-4",
-    "tier": "easy",
+    "level": 1,
     "order": 4,
     "kind": "jigsaw",
     "title": "Chunnu the Monkey",
     "cheer": "You made Chunnu!",
-    "blurb": "The cheekiest monkey in town.",
+    "blurb": "The cheekiest monkey in town wants to come too.",
     "fact": "Monkeys use their long tails to help them balance in the trees.",
     "picture": "chunnu",
     "cols": 3,
@@ -65,15 +65,14 @@
   },
   {
     "slug": "easy-5",
-    "tier": "easy",
+    "level": 1,
     "order": 5,
     "kind": "maze",
     "title": "Jalebi Hunt",
     "cheer": "Yum!",
-    "blurb": "Gappu found the jalebis!",
+    "blurb": "Gappu found the jalebis for the trip!",
     "fact": "Cows sleep for only about four hours a day.",
     "maze": {
-      "id": "easy",
       "intro": "Help Gappu find the jalebis!",
       "map": [
         "##....J",
@@ -104,113 +103,438 @@
           "dir": 1
         }
       ]
-    },
-    "config": {}
+    }
   },
   {
-    "slug": "medium-1",
-    "tier": "medium",
-    "order": 1,
+    "slug": "hard-1",
+    "level": 1,
+    "order": 6,
     "kind": "jigsaw",
-    "title": "Gappu's Diwali Shop",
-    "cheer": "Happy Diwali!",
-    "blurb": "Diyas, lights and a marigold garland!",
-    "fact": "Diwali is the festival of lights. Families light little clay lamps called diyas.",
-    "picture": "diwali-shop",
-    "cols": 4,
+    "title": "All Aboard!",
+    "cheer": "All aboard!",
+    "blurb": "The Jalebi Express is ready to go.",
+    "fact": "Old steam trains ran on coal and water, and puffed out big clouds of steam.",
+    "picture": "station",
+    "cols": 3,
     "rows": 3,
     "config": {}
   },
   {
-    "slug": "medium-2",
-    "tier": "medium",
+    "slug": "level-2-1",
+    "level": 2,
+    "order": 1,
+    "kind": "jigsaw",
+    "title": "Meet Bholu",
+    "cheer": "Hello, Bholu!",
+    "blurb": "Dhum, dhum! Bholu plays the dhol at Baisakhi.",
+    "fact": "Water buffaloes love to cool off by sitting in ponds and mud.",
+    "picture": "bholu",
+    "cols": 3,
+    "rows": 3,
+    "config": {}
+  },
+  {
+    "slug": "level-2-2",
+    "level": 2,
     "order": 2,
-    "kind": "tracks",
-    "title": "Diwali Express",
-    "cheer": "Choo choo!",
-    "blurb": "The lamps lit up all the way to the stall.",
-    "fact": "At Diwali, homes and streets twinkle with lights.",
-    "config": {
-      "map": [
-        "T|HFT",
-        "Ha-cP",
-        "FTbdH",
-        "PHacT",
-        "TFT|F"
-      ],
-      "taps": [
-        "01000",
-        "01120",
-        "00310",
-        "00210",
-        "00010"
-      ],
-      "start": 1,
-      "goal": 3
-    }
-  },
-  {
-    "slug": "medium-3",
-    "tier": "medium",
-    "order": 3,
-    "kind": "shadow",
-    "title": "Lamplight Shadows",
-    "cheer": "Super spotting!",
-    "blurb": "Everyone found their shadow in the lamplight.",
-    "fact": "A lamp makes shadows. The closer you stand to it, the bigger your shadow!",
-    "config": {
-      "friends": [
-        "gappu",
-        "chunnu",
-        "gauri",
-        "mithu",
-        "tillu"
-      ],
-      "cols": 3
-    }
-  },
-  {
-    "slug": "medium-4",
-    "tier": "medium",
-    "order": 4,
     "kind": "memory",
-    "title": "Mithai Snap",
-    "cheer": "Mithai time!",
-    "blurb": "Four pairs of Diwali sweets. Gappu says yum!",
-    "fact": "Kaju katli is a Diwali sweet made from cashew nuts.",
+    "title": "Baisakhi Snap",
+    "cheer": "Balle balle!",
+    "blurb": "Four pairs from a Punjabi harvest feast.",
+    "fact": "Lassi is a cool yoghurt drink from Punjab. It can be sweet or salty!",
     "config": {
       "snacks": [
-        "laddoo",
+        "lassi",
+        "makkiroti",
         "jalebi",
-        "kajukatli",
-        "gulabjamun"
+        "laddoo"
       ],
       "cols": 4
     }
   },
   {
-    "slug": "medium-5",
-    "tier": "medium",
+    "slug": "level-2-3",
+    "level": 2,
+    "order": 3,
+    "kind": "shadow",
+    "title": "Shadows in the Mustard",
+    "cheer": "Super spotting!",
+    "blurb": "Everyone found their shadow in the golden fields.",
+    "fact": "Mustard plants have bright yellow flowers, and their seeds make mustard oil.",
+    "config": {
+      "friends": [
+        "bholu",
+        "gappu",
+        "gauri",
+        "chunnu"
+      ],
+      "cols": 2
+    }
+  },
+  {
+    "slug": "level-2-4",
+    "level": 2,
+    "order": 4,
+    "kind": "tracks",
+    "title": "Train Through the Fields",
+    "cheer": "Choo choo!",
+    "blurb": "The Jalebi Express rolls on through the fields.",
+    "fact": "Baisakhi is a harvest festival. Farmers in Punjab celebrate bringing in the wheat.",
+    "config": {
+      "map": [
+        "FFac",
+        "THH|",
+        "TFbd",
+        "HFac"
+      ],
+      "taps": [
+        "0022",
+        "0001",
+        "0031",
+        "0021"
+      ],
+      "start": 2,
+      "goal": 3
+    }
+  },
+  {
+    "slug": "level-2-5",
+    "level": 2,
     "order": 5,
     "kind": "maze",
-    "title": "Lantern Walk",
-    "cheer": "Yum!",
-    "blurb": "Gappu lit the way to the jalebis!",
-    "fact": "A kandil is a paper lantern that many families hang outside their homes at Diwali.",
+    "title": "Find Bholu's Dhol",
+    "cheer": "Dhum dhum!",
+    "blurb": "Gappu found the dhol. Time to dance the bhangra!",
+    "fact": "A dhol has two sides. It is played with two sticks, one thick and one thin.",
     "maze": {
-      "id": "medium",
-      "intro": "It's dark! Two gates this time. Find the yellow lever first.",
+      "intro": "Bholu's dhol rolled away! Find the yellow lever, then the dhol.",
+      "goal": "dhol",
       "map": [
-        "o..#...J",
-        ".#...#.#",
-        "RRRBRRRR",
-        "o.......",
+        "J..#..o",
+        ".#.#.#.",
+        ".#...#.",
+        "...#.C.",
+        "RRRRARR",
+        "...#...",
+        ".#.#.#o",
+        ".#a..#.",
+        "S..#o.."
+      ],
+      "gates": {
+        "A": {
+          "name": "yellow",
+          "color": "#FFC93C",
+          "glyph": "M1.5 6a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0 -9 0z",
+          "lever": "a"
+        }
+      },
+      "monkeys": [
+        {
+          "axis": "h",
+          "line": 5,
+          "min": 4,
+          "max": 6,
+          "start": 5,
+          "dir": 1
+        }
+      ]
+    }
+  },
+  {
+    "slug": "level-3-1",
+    "level": 3,
+    "order": 1,
+    "kind": "jigsaw",
+    "title": "Meet Kesar",
+    "cheer": "Hello, Kesar!",
+    "blurb": "Kesar loves the fair, and puppet shows most of all.",
+    "fact": "The camel is the state animal of Rajasthan. Camels can walk for days across the desert.",
+    "picture": "kesar",
+    "cols": 3,
+    "rows": 3,
+    "config": {}
+  },
+  {
+    "slug": "level-3-2",
+    "level": 3,
+    "order": 2,
+    "kind": "rangoli",
+    "title": "Mandana Pattern",
+    "cheer": "Beautiful!",
+    "blurb": "White and yellow on red earth, just like in Rajasthan.",
+    "fact": "Mandana is a folk art from Rajasthan, painted with white chalk on red earth floors and walls.",
+    "config": {
+      "style": "mandana",
+      "rings": [
+        {
+          "shape": "disc",
+          "count": 1,
+          "colors": [
+            "yellow"
+          ]
+        },
+        {
+          "shape": "petal",
+          "count": 6,
+          "colors": [
+            "white"
+          ]
+        },
+        {
+          "shape": "dot",
+          "count": 12,
+          "colors": [
+            "yellow"
+          ]
+        },
+        {
+          "shape": "drop",
+          "count": 12,
+          "colors": [
+            "white"
+          ]
+        }
+      ],
+      "extra": [
+        "orange"
+      ]
+    }
+  },
+  {
+    "slug": "level-3-3",
+    "level": 3,
+    "order": 3,
+    "kind": "shadow",
+    "title": "Desert Shadows",
+    "cheer": "Super spotting!",
+    "blurb": "Four friends, and one more who has no shadow!",
+    "fact": "A camel's hump stores fat, not water. It helps the camel go for days without food.",
+    "config": {
+      "friends": [
+        "kesar",
+        "bholu",
+        "mithu",
+        "tillu"
+      ],
+      "cols": 2
+    }
+  },
+  {
+    "slug": "level-3-4",
+    "level": 3,
+    "order": 4,
+    "kind": "memory",
+    "title": "Desert Snack Snap",
+    "cheer": "Snack Snap!",
+    "blurb": "Four pairs of tasty treats from the fair.",
+    "fact": "Ghevar is a round, honeycomb sweet from Rajasthan, made for the rainy-season festival of Teej.",
+    "config": {
+      "snacks": [
+        "ghevar",
+        "dalbaati",
+        "lassi",
+        "jalebi"
+      ],
+      "cols": 4
+    }
+  },
+  {
+    "slug": "level-3-5",
+    "level": 3,
+    "order": 5,
+    "kind": "maze",
+    "title": "Puppet Hunt",
+    "cheer": "Found it!",
+    "blurb": "The puppet show can begin!",
+    "fact": "Kathputli are wooden string puppets from Rajasthan that dance and tell stories.",
+    "maze": {
+      "intro": "A puppet is lost at the fair! The lever is near the start.",
+      "goal": "puppet",
+      "map": [
+        "..o#...J",
         ".#.#.#..",
-        "...#..#b",
-        "RRARRRRR",
-        ".....#Ca",
-        ".#.#.#o.",
-        "S..#...."
+        ".#...#C.",
+        "...#....",
+        "RRRRRRAR",
+        "o.......",
+        ".##.#.#.",
+        ".a#...#o",
+        "S..#.#.."
+      ],
+      "gates": {
+        "A": {
+          "name": "yellow",
+          "color": "#FFC93C",
+          "glyph": "M1.5 6a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0 -9 0z",
+          "lever": "a"
+        }
+      },
+      "monkeys": [
+        {
+          "axis": "h",
+          "line": 5,
+          "min": 1,
+          "max": 6,
+          "start": 3,
+          "dir": 1
+        },
+        {
+          "axis": "v",
+          "line": 4,
+          "min": 0,
+          "max": 3,
+          "start": 1,
+          "dir": 1
+        }
+      ]
+    }
+  },
+  {
+    "slug": "level-4-1",
+    "level": 4,
+    "order": 1,
+    "kind": "jigsaw",
+    "title": "Meet Raja",
+    "cheer": "Hello, Raja!",
+    "blurb": "Raja came all the way from the Gir forest to fly his kite.",
+    "fact": "The Gir forest in Gujarat is the only place in the world where Asiatic lions live in the wild.",
+    "picture": "raja",
+    "cols": 4,
+    "rows": 3,
+    "config": {}
+  },
+  {
+    "slug": "level-4-2",
+    "level": 4,
+    "order": 2,
+    "kind": "tracks",
+    "title": "Kite Day Express",
+    "cheer": "Choo choo!",
+    "blurb": "The train got to the rooftops in time for the kites.",
+    "fact": "At Uttarayan, families in Gujarat go up on their rooftops and fly kites all day long.",
+    "config": {
+      "map": [
+        "acPFF",
+        "bdTHF",
+        "a-cHT",
+        "FbdTP",
+        "bdFPH"
+      ],
+      "taps": [
+        "13000",
+        "23000",
+        "11100",
+        "02100",
+        "33000"
+      ],
+      "start": 0,
+      "goal": 0
+    }
+  },
+  {
+    "slug": "level-4-3",
+    "level": 4,
+    "order": 3,
+    "kind": "memory",
+    "title": "Farsan Snap",
+    "cheer": "Snack feast!",
+    "blurb": "Six pairs of Gujarati snacks. Fafda and jalebi go together!",
+    "fact": "In Gujarat, people love eating crunchy fafda with sweet jalebi on festival mornings.",
+    "config": {
+      "snacks": [
+        "dhokla",
+        "fafda",
+        "jalebi",
+        "samosa",
+        "chai",
+        "mango"
+      ],
+      "cols": 4
+    }
+  },
+  {
+    "slug": "level-4-4",
+    "level": 4,
+    "order": 4,
+    "kind": "shadow",
+    "title": "Rooftop Shadows",
+    "cheer": "Super spotting!",
+    "blurb": "Five friends, and one more who has no shadow!",
+    "fact": "Lions are the only big cats that live together in family groups, called prides.",
+    "config": {
+      "friends": [
+        "raja",
+        "kesar",
+        "bholu",
+        "mithu",
+        "chunnu"
+      ],
+      "cols": 3
+    }
+  },
+  {
+    "slug": "level-4-5",
+    "level": 4,
+    "order": 5,
+    "kind": "slide",
+    "title": "Kites in the Sky",
+    "cheer": "Soaring!",
+    "blurb": "You put the kite festival back together!",
+    "fact": "On Uttarayan, in January, the sky over Gujarat fills with thousands of kites.",
+    "picture": "kites",
+    "config": {
+      "size": 3,
+      "start": [
+        3,
+        0,
+        1,
+        6,
+        -1,
+        2,
+        7,
+        4,
+        5
+      ],
+      "par": 8
+    }
+  },
+  {
+    "slug": "level-5-1",
+    "level": 5,
+    "order": 1,
+    "kind": "jigsaw",
+    "title": "Meet Chikki",
+    "cheer": "Hello, Chikki!",
+    "blurb": "Chikki loves the rain, and modaks even more.",
+    "fact": "The monsoon brings heavy rain to Mumbai every year, from about June to September.",
+    "picture": "chikki",
+    "cols": 4,
+    "rows": 3,
+    "config": {}
+  },
+  {
+    "slug": "level-5-2",
+    "level": 5,
+    "order": 2,
+    "kind": "maze",
+    "title": "Modak Hunt",
+    "cheer": "Modak time!",
+    "blurb": "Gappu found the modaks. Chikki is so happy!",
+    "fact": "Mumbai was once seven little islands. They were joined together long ago to make one city.",
+    "maze": {
+      "intro": "Two railway lines! Find the yellow lever, then the blue one.",
+      "goal": "modak",
+      "map": [
+        "J..#o..#",
+        ".#....C#",
+        ".#.#....",
+        "RRRRRBRR",
+        "..b#....",
+        ".#.#.#.o",
+        "......#.",
+        "RARRRRRR",
+        "..#.a#..",
+        "S...o..."
       ],
       "gates": {
         "A": {
@@ -229,50 +553,225 @@
       "monkeys": [
         {
           "axis": "h",
-          "line": 3,
-          "min": 1,
-          "max": 7,
-          "start": 4,
+          "line": 6,
+          "min": 0,
+          "max": 5,
+          "start": 3,
           "dir": 1
         },
         {
-          "axis": "v",
-          "line": 4,
-          "min": 7,
-          "max": 9,
-          "start": 8,
-          "dir": 1
+          "axis": "h",
+          "line": 1,
+          "min": 2,
+          "max": 5,
+          "start": 4,
+          "dir": -1
         }
       ]
-    },
+    }
+  },
+  {
+    "slug": "level-5-3",
+    "level": 5,
+    "order": 3,
+    "kind": "rangoli",
+    "title": "Chaturthi Rangoli",
+    "cheer": "Beautiful!",
+    "blurb": "A bright rangoli at the door, ready for the festival.",
+    "fact": "At Ganesh Chaturthi, families make sweet dumplings called modaks, filled with coconut and jaggery.",
+    "config": {
+      "style": "rangoli",
+      "rings": [
+        {
+          "shape": "disc",
+          "count": 1,
+          "colors": [
+            "yellow"
+          ]
+        },
+        {
+          "shape": "petal",
+          "count": 8,
+          "colors": [
+            "pink"
+          ]
+        },
+        {
+          "shape": "diamond",
+          "count": 8,
+          "colors": [
+            "orange",
+            "yellow"
+          ]
+        },
+        {
+          "shape": "drop",
+          "count": 16,
+          "colors": [
+            "green"
+          ]
+        },
+        {
+          "shape": "dot",
+          "count": 16,
+          "colors": [
+            "white"
+          ]
+        }
+      ],
+      "extra": [
+        "blue"
+      ]
+    }
+  },
+  {
+    "slug": "hard-4",
+    "level": 5,
+    "order": 4,
+    "kind": "memory",
+    "title": "Chowpatty Snack Snap",
+    "cheer": "Snack feast!",
+    "blurb": "Six pairs of Mumbai street snacks!",
+    "fact": "Vada pav is a spicy potato fritter in a soft bun. It is a favourite snack in Mumbai.",
+    "config": {
+      "snacks": [
+        "vadapav",
+        "modak",
+        "chai",
+        "kulfi",
+        "mango",
+        "samosa"
+      ],
+      "cols": 4
+    }
+  },
+  {
+    "slug": "level-5-5",
+    "level": 5,
+    "order": 5,
+    "kind": "tracks",
+    "title": "Monsoon Local",
+    "cheer": "Choo choo!",
+    "blurb": "Splish splash! The train made it through the rain.",
+    "fact": "Mumbai's local trains carry millions of people every single day.",
+    "config": {
+      "map": [
+        "bdH.H",
+        "ac.FT",
+        "FacFT",
+        "Hba-c",
+        "HHb-d"
+      ],
+      "taps": [
+        "23000",
+        "33000",
+        "01100",
+        "02212",
+        "00213"
+      ],
+      "start": 1,
+      "goal": 2
+    }
+  },
+  {
+    "slug": "level-6-1",
+    "level": 6,
+    "order": 1,
+    "kind": "jigsaw",
+    "title": "Meet Appu",
+    "cheer": "Hello, Appu!",
+    "blurb": "Appu loves the backwaters, and boat races most of all.",
+    "fact": "The elephant is the state animal of Kerala. An elephant's trunk has thousands of muscles!",
+    "picture": "appu",
+    "cols": 5,
+    "rows": 3,
     "config": {}
   },
   {
-    "slug": "hard-1",
-    "tier": "hard",
-    "order": 1,
-    "kind": "jigsaw",
-    "title": "All Aboard at Jalebi Junction",
-    "cheer": "All aboard!",
-    "blurb": "Twenty pieces, all the right way up!",
-    "fact": "Old steam trains ran on coal and water, and puffed out big clouds of steam.",
-    "picture": "station",
-    "cols": 5,
-    "rows": 4,
+    "slug": "level-6-2",
+    "level": 6,
+    "order": 2,
+    "kind": "shadow",
+    "title": "Backwater Shadows",
+    "cheer": "Super spotting!",
+    "blurb": "Shadows on the riverbank, and one friend with none!",
+    "fact": "Kerala's backwaters are rivers, lakes and canals, all joined up for hundreds of kilometres.",
     "config": {
-      "spin": true
+      "friends": [
+        "appu",
+        "chikki",
+        "raja",
+        "kesar",
+        "bholu"
+      ],
+      "cols": 3
+    }
+  },
+  {
+    "slug": "level-6-3",
+    "level": 6,
+    "order": 3,
+    "kind": "rangoli",
+    "title": "Onam Pookalam",
+    "cheer": "Beautiful!",
+    "blurb": "A flower carpet for Onam, petal by petal.",
+    "fact": "At Onam, families in Kerala make a pookalam, a carpet of flowers, in front of their homes.",
+    "config": {
+      "style": "pookalam",
+      "rings": [
+        {
+          "shape": "disc",
+          "count": 1,
+          "colors": [
+            "purple"
+          ]
+        },
+        {
+          "shape": "petal",
+          "count": 8,
+          "colors": [
+            "white"
+          ]
+        },
+        {
+          "shape": "petal",
+          "count": 8,
+          "colors": [
+            "yellow",
+            "orange"
+          ]
+        },
+        {
+          "shape": "leaf",
+          "count": 16,
+          "colors": [
+            "green"
+          ]
+        },
+        {
+          "shape": "drop",
+          "count": 16,
+          "colors": [
+            "orange",
+            "red"
+          ]
+        }
+      ],
+      "extra": [
+        "pink"
+      ]
     }
   },
   {
     "slug": "hard-2",
-    "tier": "hard",
-    "order": 2,
+    "level": 6,
+    "order": 4,
     "kind": "slide",
-    "title": "Tillu's Slide Puzzle",
-    "cheer": "You fixed Tillu!",
-    "blurb": "Slow and steady, just like Tillu.",
-    "fact": "Some tortoises live for more than 100 years!",
-    "picture": "tillu",
+    "title": "Snake Boat Race",
+    "cheer": "Row, row, row!",
+    "blurb": "Slow and steady wins the race. Well done!",
+    "fact": "Kerala's snake boats are so long that around 100 rowers can sit in one!",
+    "picture": "boat-race",
     "config": {
       "size": 3,
       "start": [
@@ -290,14 +789,310 @@
     }
   },
   {
-    "slug": "hard-3",
-    "tier": "hard",
+    "slug": "level-6-5",
+    "level": 6,
+    "order": 5,
+    "kind": "tracks",
+    "title": "Backwater Express",
+    "cheer": "Choo choo!",
+    "blurb": "Past the ponds and the palms, all the way through.",
+    "fact": "Coconut palms grow all over Kerala. The name Kerala may come from \"kera\", a word for coconut.",
+    "config": {
+      "map": [
+        "HFTFP|",
+        "TFFdbd",
+        "FTabdb",
+        "Fbc|T.",
+        "H|adHT",
+        "Fa-cPT"
+      ],
+      "taps": [
+        "000001",
+        "000123",
+        "002312",
+        "012100",
+        "012300",
+        "031300"
+      ],
+      "start": 5,
+      "goal": 3
+    }
+  },
+  {
+    "slug": "level-7-1",
+    "level": 7,
+    "order": 1,
+    "kind": "jigsaw",
+    "title": "Meet Mayil",
+    "cheer": "Hello, Mayil!",
+    "blurb": "Mayil draws a kolam at the door every morning.",
+    "fact": "The peacock is the national bird of India. Only the boys have the big, bright tail feathers.",
+    "picture": "mayil",
+    "cols": 5,
+    "rows": 4,
+    "config": {}
+  },
+  {
+    "slug": "level-7-2",
+    "level": 7,
+    "order": 2,
+    "kind": "rangoli",
+    "title": "Pongal Kolam",
+    "cheer": "Beautiful!",
+    "blurb": "A kolam for Pongal, white as rice flour.",
+    "fact": "A kolam is drawn with rice flour, so ants and little birds get a breakfast too!",
+    "config": {
+      "style": "kolam",
+      "rings": [
+        {
+          "shape": "disc",
+          "count": 1,
+          "colors": [
+            "yellow"
+          ]
+        },
+        {
+          "shape": "dot",
+          "count": 8,
+          "colors": [
+            "white"
+          ]
+        },
+        {
+          "shape": "petal",
+          "count": 8,
+          "colors": [
+            "red",
+            "white"
+          ]
+        },
+        {
+          "shape": "diamond",
+          "count": 8,
+          "colors": [
+            "white"
+          ]
+        },
+        {
+          "shape": "dot",
+          "count": 16,
+          "colors": [
+            "yellow",
+            "red"
+          ]
+        },
+        {
+          "shape": "drop",
+          "count": 16,
+          "colors": [
+            "white"
+          ]
+        }
+      ],
+      "extra": [
+        "green"
+      ]
+    }
+  },
+  {
+    "slug": "level-7-3",
+    "level": 7,
     "order": 3,
     "kind": "tracks",
-    "title": "Fix the Tracks",
+    "title": "Temple Town Tracks",
+    "cheer": "Choo choo!",
+    "blurb": "The train found its way to the temple town.",
+    "fact": "The tall, colourful towers over the gates of temples in Tamil Nadu are called gopurams.",
+    "config": {
+      "map": [
+        "Tb--da",
+        "bddFHT",
+        "acH|bP",
+        "bdFHHH",
+        "a-cTdP",
+        "HHacTH"
+      ],
+      "taps": [
+        "031110",
+        "222000",
+        "120110",
+        "220000",
+        "211030",
+        "003200"
+      ],
+      "start": 4,
+      "goal": 3
+    }
+  },
+  {
+    "slug": "level-7-4",
+    "level": 7,
+    "order": 4,
+    "kind": "shadow",
+    "title": "Peacock Shadows",
+    "cheer": "Super spotting!",
+    "blurb": "Six friends! Can you find Mayil's fancy tail?",
+    "fact": "At Pongal, rice is cooked in a pot until it bubbles over. Everyone shouts \"Pongalo Pongal!\"",
+    "config": {
+      "friends": [
+        "mayil",
+        "appu",
+        "raja",
+        "chikki",
+        "bholu",
+        "kesar"
+      ],
+      "cols": 3
+    }
+  },
+  {
+    "slug": "level-7-5",
+    "level": 7,
+    "order": 5,
+    "kind": "memory",
+    "title": "Tiffin Snap",
+    "cheer": "Snack feast!",
+    "blurb": "Six pairs of southern breakfasts. Idli, dosa, yum!",
+    "fact": "Idli is a soft, steamed cake made from rice and lentils. It is often eaten for breakfast.",
+    "config": {
+      "snacks": [
+        "idli",
+        "dosa",
+        "appam",
+        "coconut",
+        "chai",
+        "laddoo"
+      ],
+      "cols": 4
+    }
+  },
+  {
+    "slug": "level-8-1",
+    "level": 8,
+    "order": 1,
+    "kind": "jigsaw",
+    "title": "Meet Bagha",
+    "cheer": "Hello, Bagha!",
+    "blurb": "Bagha is shy, but he loves a festival.",
+    "fact": "The Bengal tiger is the national animal of India. Every tiger has its own pattern of stripes.",
+    "picture": "bagha",
+    "cols": 5,
+    "rows": 4,
+    "config": {}
+  },
+  {
+    "slug": "level-8-2",
+    "level": 8,
+    "order": 2,
+    "kind": "memory",
+    "title": "Mishti Snap",
+    "cheer": "Mishti time!",
+    "blurb": "Six pairs of sweets. Bengal loves mishti!",
+    "fact": "Mishti doi is sweet yoghurt from Bengal, set in little clay pots.",
+    "config": {
+      "snacks": [
+        "rasgulla",
+        "mishtidoi",
+        "gulabjamun",
+        "kajukatli",
+        "laddoo",
+        "jalebi"
+      ],
+      "cols": 4
+    }
+  },
+  {
+    "slug": "level-8-3",
+    "level": 8,
+    "order": 3,
+    "kind": "shadow",
+    "title": "Shadows by the River",
+    "cheer": "Super spotting!",
+    "blurb": "Six friends by the river, and one with no shadow!",
+    "fact": "The Sundarbans is a huge mangrove forest, where Bengal tigers swim between the islands.",
+    "config": {
+      "friends": [
+        "bagha",
+        "mayil",
+        "appu",
+        "chikki",
+        "raja",
+        "kesar"
+      ],
+      "cols": 3
+    }
+  },
+  {
+    "slug": "level-8-4",
+    "level": 8,
+    "order": 4,
+    "kind": "rangoli",
+    "title": "Durga Puja Alpana",
+    "cheer": "Beautiful!",
+    "blurb": "White alpana on a red floor, ready for Durga Puja.",
+    "fact": "Alpana is a floor art from Bengal, painted with a white paste made from rice.",
+    "config": {
+      "style": "alpana",
+      "rings": [
+        {
+          "shape": "disc",
+          "count": 1,
+          "colors": [
+            "yellow"
+          ]
+        },
+        {
+          "shape": "petal",
+          "count": 8,
+          "colors": [
+            "white"
+          ]
+        },
+        {
+          "shape": "dot",
+          "count": 16,
+          "colors": [
+            "white",
+            "yellow"
+          ]
+        },
+        {
+          "shape": "leaf",
+          "count": 16,
+          "colors": [
+            "white"
+          ]
+        },
+        {
+          "shape": "drop",
+          "count": 16,
+          "colors": [
+            "yellow",
+            "white"
+          ]
+        },
+        {
+          "shape": "dot",
+          "count": 24,
+          "colors": [
+            "white"
+          ]
+        }
+      ],
+      "extra": [
+        "orange"
+      ]
+    }
+  },
+  {
+    "slug": "hard-3",
+    "level": 8,
+    "order": 5,
+    "kind": "tracks",
+    "title": "Howrah Express",
     "cheer": "Choo choo!",
     "blurb": "You found the one line that works!",
-    "fact": "The first train in India ran more than 170 years ago, in 1853.",
+    "fact": "Howrah Bridge in Kolkata has no nuts and bolts. It is held together with rivets!",
     "config": {
       "map": [
         "|Tb-cH",
@@ -320,38 +1115,80 @@
     }
   },
   {
-    "slug": "hard-4",
-    "tier": "hard",
-    "order": 4,
+    "slug": "level-9-1",
+    "level": 9,
+    "order": 1,
+    "kind": "jigsaw",
+    "title": "Meet Momo",
+    "cheer": "Hello, Momo!",
+    "blurb": "Momo loves the mountains, and momos even more!",
+    "fact": "Red pandas spend most of their lives up in trees, and they love to eat bamboo.",
+    "picture": "momo",
+    "cols": 6,
+    "rows": 4,
+    "config": {}
+  },
+  {
+    "slug": "level-9-2",
+    "level": 9,
+    "order": 2,
+    "kind": "slide",
+    "title": "Toy Train in the Hills",
+    "cheer": "Puff puff!",
+    "blurb": "The little train is climbing again!",
+    "fact": "The Darjeeling toy train has been puffing up the hills for more than 140 years.",
+    "picture": "toy-train",
+    "config": {
+      "size": 3,
+      "start": [
+        6,
+        0,
+        1,
+        4,
+        -1,
+        2,
+        7,
+        3,
+        5
+      ],
+      "par": 12
+    }
+  },
+  {
+    "slug": "level-9-3",
+    "level": 9,
+    "order": 3,
     "kind": "memory",
-    "title": "Snack Snap",
+    "title": "Picnic Snap",
     "cheer": "Snack feast!",
-    "blurb": "Six pairs! Nobody remembers snacks like you.",
-    "fact": "The mango is the national fruit of India.",
+    "blurb": "Eight pairs! Snacks from every stop on the trip.",
+    "fact": "The hills around Darjeeling are covered in tea gardens. Tea from there goes all over the world.",
     "config": {
       "snacks": [
-        "jalebi",
-        "laddoo",
-        "samosa",
+        "momos",
         "chai",
-        "kulfi",
-        "mango"
+        "rasgulla",
+        "appam",
+        "dhokla",
+        "vadapav",
+        "lassi",
+        "ghevar"
       ],
       "cols": 4
     }
   },
   {
     "slug": "hard-5",
-    "tier": "hard",
-    "order": 5,
+    "level": 9,
+    "order": 4,
     "kind": "maze",
-    "title": "Jalebi Hunt",
-    "cheer": "Yum!",
-    "blurb": "Gappu found the jalebis!",
-    "fact": "Monkeys eat fruit, leaves, seeds and even insects.",
+    "title": "Hill Hunt",
+    "cheer": "Momo time!",
+    "blurb": "Gappu found the momos, high up in the hills!",
+    "fact": "Kanchenjunga, in Sikkim, is the third highest mountain in the world.",
     "maze": {
-      "id": "hard",
       "intro": "The switch opens one gate and shuts the other. Think first!",
+      "goal": "momos",
       "map": [
         "o..#..C.J",
         ".#.......",
@@ -403,7 +1240,195 @@
           "dir": 1
         }
       ]
-    },
+    }
+  },
+  {
+    "slug": "level-9-5",
+    "level": 9,
+    "order": 5,
+    "kind": "tracks",
+    "title": "Loops in the Hills",
+    "cheer": "Choo choo!",
+    "blurb": "Round and round, up and up the hill!",
+    "fact": "The toy train climbs so steeply that its track goes round in loops and zig-zags.",
+    "config": {
+      "map": [
+        "FbdbcF",
+        "|a-dac",
+        "T-TTbd",
+        "PTbHac",
+        "HcHHbd",
+        "TFTbd|"
+      ],
+      "taps": [
+        "011230",
+        "221113",
+        "020032",
+        "003021",
+        "030012",
+        "000123"
+      ],
+      "start": 2,
+      "goal": 3
+    }
+  },
+  {
+    "slug": "medium-1",
+    "level": 10,
+    "order": 1,
+    "kind": "jigsaw",
+    "title": "Gappu's Diwali Shop",
+    "cheer": "Happy Diwali!",
+    "blurb": "Diyas, lights and a marigold garland!",
+    "fact": "Diwali is the festival of lights. Families light little clay lamps called diyas.",
+    "picture": "diwali-shop",
+    "cols": 5,
+    "rows": 4,
     "config": {}
+  },
+  {
+    "slug": "medium-2",
+    "level": 10,
+    "order": 2,
+    "kind": "tracks",
+    "title": "Diwali Express",
+    "cheer": "Choo choo!",
+    "blurb": "The lamps lit up all the way to the stall.",
+    "fact": "At Diwali, homes and streets twinkle with lights.",
+    "config": {
+      "map": [
+        "T|HFT",
+        "Ha-cP",
+        "FTbdH",
+        "PHacT",
+        "TFT|F"
+      ],
+      "taps": [
+        "01000",
+        "01120",
+        "00310",
+        "00210",
+        "00010"
+      ],
+      "start": 1,
+      "goal": 3
+    }
+  },
+  {
+    "slug": "medium-3",
+    "level": 10,
+    "order": 3,
+    "kind": "shadow",
+    "title": "Lamplight Shadows",
+    "cheer": "Super spotting!",
+    "blurb": "All the new friends found their shadows in the lamplight.",
+    "fact": "A lamp makes shadows. The closer you stand to it, the bigger your shadow!",
+    "config": {
+      "friends": [
+        "bholu",
+        "kesar",
+        "raja",
+        "chikki",
+        "appu",
+        "mayil"
+      ],
+      "cols": 3
+    }
+  },
+  {
+    "slug": "medium-4",
+    "level": 10,
+    "order": 4,
+    "kind": "memory",
+    "title": "Mithai Snap",
+    "cheer": "Mithai time!",
+    "blurb": "Eight pairs of sweets, from every stop on the trip!",
+    "fact": "Kaju katli is a Diwali sweet made from cashew nuts.",
+    "config": {
+      "snacks": [
+        "kajukatli",
+        "gulabjamun",
+        "laddoo",
+        "jalebi",
+        "rasgulla",
+        "ghevar",
+        "modak",
+        "barfi"
+      ],
+      "cols": 4
+    }
+  },
+  {
+    "slug": "medium-5",
+    "level": 10,
+    "order": 5,
+    "kind": "maze",
+    "title": "Lantern Walk",
+    "cheer": "Yum!",
+    "blurb": "Gappu lit the way to the jalebis!",
+    "fact": "A kandil is a paper lantern that many families hang outside their homes at Diwali.",
+    "maze": {
+      "intro": "It's dark! Two gates this time. Find the yellow lever first.",
+      "map": [
+        "o..#...J",
+        ".#...#.#",
+        "RRRBRRRR",
+        "o.......",
+        ".#.#.#..",
+        "...#..#b",
+        "RRARRRRR",
+        ".....#Ca",
+        ".#.#.#o.",
+        "S..#...."
+      ],
+      "gates": {
+        "A": {
+          "name": "yellow",
+          "color": "#FFC93C",
+          "glyph": "M1.5 6a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0 -9 0z",
+          "lever": "a"
+        },
+        "B": {
+          "name": "blue",
+          "color": "#4FA8F0",
+          "glyph": "M2 2h8v8H2z",
+          "lever": "b"
+        }
+      },
+      "monkeys": [
+        {
+          "axis": "h",
+          "line": 3,
+          "min": 1,
+          "max": 7,
+          "start": 4,
+          "dir": 1
+        },
+        {
+          "axis": "v",
+          "line": 4,
+          "min": 7,
+          "max": 9,
+          "start": 8,
+          "dir": 1
+        }
+      ]
+    }
+  },
+  {
+    "slug": "level-10-6",
+    "level": 10,
+    "order": 6,
+    "kind": "jigsaw",
+    "title": "The Big Picture",
+    "cheer": "Happy Diwali!",
+    "blurb": "Every friend is a piece of the big picture.",
+    "fact": "India has more than 120 languages. Namaste, vanakkam, sat sri akal: there are lots of ways to say hello!",
+    "picture": "big-picture",
+    "cols": 6,
+    "rows": 4,
+    "config": {
+      "spin": true
+    }
   }
 ]

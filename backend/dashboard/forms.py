@@ -4,7 +4,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 
 from content import builders
-from content.models import Puzzle, Tier
+from content.models import LEVEL_CHOICES, Puzzle
 
 from .art import FRIENDS, PICTURES, SNACKS
 
@@ -23,29 +23,29 @@ def _ints(lo, hi):
     return [(n, str(n)) for n in range(lo, hi + 1)]
 
 
-def next_free_order(tier: str, exclude: int | None = None) -> int:
-    used = set(Puzzle.objects.filter(tier=tier).exclude(pk=exclude).values_list("order", flat=True))
+def next_free_order(level: int, exclude: int | None = None) -> int:
+    used = set(Puzzle.objects.filter(level=level).exclude(pk=exclude).values_list("order", flat=True))
     n = 1
     while n in used:
         n += 1
     return n
 
 
-def free_slug(tier: str, order: int) -> str:
-    slug, n = f"{tier}-{order}", 2
+def free_slug(level: int, order: int) -> str:
+    slug, n = f"level-{level}-{order}", 2
     while Puzzle.objects.filter(slug=slug).exists():
-        slug, n = f"{tier}-{order}-{n}", n + 1
+        slug, n = f"level-{level}-{order}-{n}", n + 1
     return slug
 
 
 class PuzzleForm(forms.Form):
     """Everything about one puzzle, with simple fields for each kind instead of raw JSON (raw JSON is still
-    there for tracks and mazes, filled in by the generator and the templates)."""
+    there for tracks, mazes and rangoli, filled in by the generator and the templates)."""
 
     kind = forms.ChoiceField(choices=Puzzle.Kind.choices, widget=forms.RadioSelect, initial=Puzzle.Kind.JIGSAW)
     title = forms.CharField(max_length=80, help_text="Shown on the map and on the finish screen.")
-    tier = forms.ChoiceField(choices=Tier.choices, initial=Tier.EASY)
-    order = forms.IntegerField(min_value=1, max_value=99, required=False, help_text="Leave blank to add it at the end of the tier.")
+    level = forms.TypedChoiceField(choices=LEVEL_CHOICES, coerce=int, initial=1)
+    order = forms.IntegerField(min_value=1, max_value=99, required=False, help_text="Leave blank to add it at the end of the level.")
     cheer = forms.CharField(max_length=40, required=False, help_text='Big headline when it\'s done, e.g. "You made Mithu!"')
     blurb = forms.CharField(max_length=120, required=False, help_text="One short line under the picture on the finish screen.")
     fact = forms.CharField(max_length=160, required=False, label="Pip's fact", help_text="One short, true fun fact for children, shown on the finish screen.")
@@ -66,11 +66,12 @@ class PuzzleForm(forms.Form):
     friends = forms.MultipleChoiceField(choices=FRIENDS.items(), required=False, widget=forms.CheckboxSelectMultiple, help_text="Pick 2 to 6.")
     shadow_cols = forms.TypedChoiceField(choices=_ints(2, 4), coerce=int, empty_value=None, required=False, initial=3, label="Shadows per row")
 
-    snacks = forms.MultipleChoiceField(choices=SNACKS.items(), required=False, widget=forms.CheckboxSelectMultiple, help_text="Pick 2 to 6 (each one is a pair of cards).")
+    snacks = forms.MultipleChoiceField(choices=SNACKS.items(), required=False, widget=forms.CheckboxSelectMultiple, help_text="Pick 2 to 8 (each one is a pair of cards).")
     memory_cols = forms.TypedChoiceField(choices=[("", "Automatic"), *_ints(2, 4)], coerce=int, empty_value=None, required=False, label="Cards per row")
 
     tracks_json = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 9, "spellcheck": "false"}), label="Track map")
     maze_json = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 16, "spellcheck": "false"}), label="Maze")
+    rangoli_json = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 14, "spellcheck": "false"}), label="Rangoli pattern")
 
     def __init__(self, *args, instance: Puzzle | None = None, **kwargs):
         self.instance = instance
@@ -84,7 +85,7 @@ class PuzzleForm(forms.Form):
         initial = {
             "kind": p.kind,
             "title": p.title,
-            "tier": p.tier,
+            "level": p.level,
             "order": p.order,
             "cheer": p.cheer,
             "blurb": p.blurb,
@@ -105,6 +106,8 @@ class PuzzleForm(forms.Form):
             initial["tracks_json"] = _pretty({k: c.get(k) for k in ("map", "taps", "start", "goal")})
         elif p.kind == Puzzle.Kind.MAZE:
             initial["maze_json"] = _pretty({k: v for k, v in (p.maze or {}).items() if k != "id"})
+        elif p.kind == Puzzle.Kind.RANGOLI:
+            initial["rangoli_json"] = _pretty(c)
         return initial
 
     # ------------------------------------------------------------------ turning the form into a puzzle
@@ -153,8 +156,8 @@ class PuzzleForm(forms.Form):
 
     def _memory(self, data):
         snacks = data.get("snacks") or []
-        if not 2 <= len(snacks) <= 6:
-            self.add_error("snacks", "Pick 2 to 6 snacks.")
+        if not 2 <= len(snacks) <= 8:
+            self.add_error("snacks", "Pick 2 to 8 snacks.")
         config = {"snacks": snacks}
         if data.get("memory_cols"):
             config["cols"] = data["memory_cols"]
@@ -175,20 +178,29 @@ class PuzzleForm(forms.Form):
             return
         value = _parse(data["maze_json"], "maze")
         if not isinstance(value, dict):
-            raise ValidationError('The maze must be {"intro": ..., "map": [...], "gates": {...}, "monkeys": [...]}.')
+            raise ValidationError('The maze must be {"intro": ..., "goal": ..., "map": [...], "gates": {...}, "monkeys": [...]}.')
         value.setdefault("intro", "Help Gappu find the jalebis!")
         value.setdefault("gates", {})
         value.setdefault("monkeys", [])
         self.settings["maze"] = value
 
+    def _rangoli(self, data):
+        if not data.get("rangoli_json"):
+            self.add_error("rangoli_json", "Start from one of the patterns, then change the colours or shapes.")
+            return
+        value = _parse(data["rangoli_json"], "rangoli pattern")
+        if not isinstance(value, dict):
+            raise ValidationError('The pattern must be {"style": ..., "rings": [...]}.')
+        self.settings["config"] = {k: value[k] for k in ("style", "rings", "extra") if k in value}
+
     def save(self) -> Puzzle | None:
         """Write the puzzle to the database, or put the model's own checks on the form and return None."""
         data = self.cleaned_data
         p = self.instance or Puzzle()
-        p.kind, p.title, p.tier = data["kind"], data["title"], data["tier"]
+        p.kind, p.title, p.level = data["kind"], data["title"], data["level"]
         p.cheer, p.blurb, p.is_published = data.get("cheer", ""), data.get("blurb", ""), data.get("is_published", False)
         p.fact = data.get("fact", "")
-        p.order = data.get("order") or next_free_order(p.tier, exclude=p.pk)
+        p.order = data.get("order") or next_free_order(p.level, exclude=p.pk)
         for field, value in self.settings.items():
             setattr(p, field, value)
         uses_picture = p.kind in (Puzzle.Kind.JIGSAW, Puzzle.Kind.SLIDE)
@@ -197,7 +209,7 @@ class PuzzleForm(forms.Form):
         elif not uses_picture or data.get("picture") != UPLOAD:
             p.image = None  # a bundled picture was picked (or this kind has none): drop any old upload
         if not p.slug:
-            p.slug = free_slug(p.tier, p.order)  # never changed later: phones keep stars by slug
+            p.slug = free_slug(p.level, p.order)  # never changed later: phones keep stars by slug
         try:
             p.full_clean()
         except ValidationError as e:

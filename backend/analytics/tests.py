@@ -87,10 +87,11 @@ class StatsTests(TestCase):
         rows = {r["puzzle"].slug: r for r in stats.per_puzzle(w)}
         self.assertEqual((rows["easy-1"]["starts"], rows["easy-1"]["finishes"], rows["easy-1"]["players"]), (2, 1, 2))
         self.assertEqual(rows["easy-1"]["stars"], [0, 0, 1])
-        self.assertEqual(len(rows), 15)
+        self.assertEqual(len(rows), Puzzle.objects.count())
 
         funnel = {f["label"]: f["devices"] for f in stats.funnel(w)}
-        self.assertEqual(funnel, {"Played a puzzle": 2, "Finished a puzzle": 1, "Reached Medium": 1, "Reached Hard": 0})
+        # medium-1 is Gappu's Diwali Shop, now in level 10: device b got that far.
+        self.assertEqual(funnel, {"Played a puzzle": 2, "Finished a puzzle": 1, "Reached level 2": 1, "Reached level 5": 1, "Reached level 10": 1})
 
         days = stats.daily(w)
         self.assertEqual(len(days), 7)

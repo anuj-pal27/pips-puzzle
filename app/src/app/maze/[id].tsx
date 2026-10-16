@@ -9,14 +9,17 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { playSound, useMusic } from '@/audio/sound';
 import { ChunkyButton, CircleButton, Pill } from '@/components/Buttons';
-import { ChapterParty, useChapterFinale } from '@/components/ChapterParty';
+import { LevelBadge } from '@/components/GameChrome';
+import { LevelParty, useLevelFinale } from '@/components/LevelParty';
 import { Diya, ThemeBackdrop } from '@/components/Festive';
 import { Icon, type IconName } from '@/components/Icon';
 import { GateTile, HouseTile, LeverTile, RailTile, SwitchTile } from '@/components/MazeParts';
 import { Stars } from '@/components/Stars';
 import { Txt } from '@/components/Txt';
-import { getTier, type MazePuzzle } from '@/data/puzzles';
-import { themeFor } from '@/data/themes';
+import { goalArt } from '@/data/art';
+import { goalName, type GoalId } from '@/data/games';
+import { themeFor } from '@/data/levels';
+import type { MazePuzzle } from '@/data/puzzles';
 import {
   findTile,
   gateIsOpen,
@@ -32,7 +35,7 @@ import {
   type MazeConfig,
   type MazeState,
 } from '@/game/maze';
-import { openPuzzle } from '@/navigation';
+import { useOpenPuzzle } from '@/navigation';
 import { useCatalog, usePuzzle } from '@/state/catalog';
 import { usePlayStats } from '@/state/playStats';
 import { useProgress } from '@/state/progress';
@@ -42,7 +45,6 @@ const IMG = {
   gappu: require('@/assets/images/game/gappu-token.png'),
   chunnu: require('@/assets/images/game/chunnu-token.png'),
   cow: require('@/assets/images/game/cow-nap.png'),
-  jalebi: require('@/assets/images/game/jalebi.png'),
   laddoo: require('@/assets/images/game/laddoo.png'),
 };
 
@@ -57,14 +59,16 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
   usePlayStats(puzzle.id);
   const cfg = puzzle.maze;
   const { puzzleAfter } = useCatalog();
-  const tier = getTier(puzzle.tier);
   const { stars, recordStars } = useProgress();
-  const theme = themeFor(puzzle.tier);
+  const openPuzzle = useOpenPuzzle();
+  const theme = themeFor(puzzle.level);
+  const goal = goalArt(cfg.goal);
+  const goalWord = cfg.goal ? goalName(cfg.goal as GoalId) : 'jalebis';
   useMusic(theme.music);
   // Lantern Walk (Diwali Night): the maze is dark; Gappu's lantern lights the squares near him, and he
   // leaves a diya on every square he walks, so the way he came stays lit.
   const night = theme.id === 'diwali';
-  const finale = useChapterFinale(puzzle.tier);
+  const finale = useLevelFinale(puzzle.level);
   const fresh = () => ({ maze: initMaze(cfg), trail: [findTile(cfg, 'S').join(',')] });
   const [game, setGame] = useState<{ maze: MazeState; trail: string[] }>(fresh);
   const state = game.maze;
@@ -139,9 +143,7 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
             style={night ? { textShadowColor: 'rgba(5, 8, 30, 0.9)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } } : undefined}>
             {puzzle.title || 'Jalebi Hunt'}
           </Txt>
-          <View style={[styles.tierBadge, { backgroundColor: tier.color }]}>
-            <Txt weight="extrabold" size={13}>{tier.name}</Txt>
-          </View>
+          <LevelBadge level={puzzle.level} />
         </View>
         <Pill>
           <Image source={IMG.laddoo} style={{ width: 34, height: 34 }} />
@@ -155,7 +157,7 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
             accessible
             accessibilityLabel="Town maze. Use the arrow buttons to move Gappu."
             style={{ width: cols * cell, height: rows * cell, borderRadius: 14, overflow: 'hidden', backgroundColor: colors.road }}>
-            <Board cfg={cfg} state={state} cell={cell} lit={night ? lanternLit(cfg, state.pos, game.trail) : null} trail={night ? game.trail : []} />
+            <Board cfg={cfg} state={state} cell={cell} lit={night ? lanternLit(cfg, state.pos, game.trail) : null} trail={night ? game.trail : []} goal={goal} houses={theme.houses} />
           </View>
         </GestureDetector>
       </View>
@@ -183,9 +185,11 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
           <Animated.View entering={ZoomIn.duration(260)} style={styles.winCard}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
               <Image source={IMG.gappu} style={{ width: 88, height: 88 }} />
-              <Image source={IMG.jalebi} style={{ width: 72, height: 72 }} />
+              <Image source={goal} style={{ width: 72, height: 72 }} />
             </View>
-            <Txt weight="display" size={30} align="center" accessibilityRole="header">Yum! Gappu got the jalebis!</Txt>
+            <Txt weight="display" size={30} align="center" accessibilityRole="header">
+              {puzzle.cheer || 'Yum!'} Gappu found the {goalWord}!
+            </Txt>
             <Stars count={mazeStars(state)} size={42} />
             {mazeStars(state) < 3 ? (
               <Txt size={15} weight="semibold" color={colors.inkSoft} align="center">Collect all 3 laddoos on the way for 3 stars.</Txt>
@@ -209,7 +213,7 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
           </Animated.View>
         </View>
       ) : null}
-      {state.won && finale.show ? <ChapterParty tier={puzzle.tier} onClose={finale.close} /> : null}
+      {state.won && finale.show ? <LevelParty level={puzzle.level} onClose={finale.close} /> : null}
     </SafeAreaView>
   );
 }
@@ -227,7 +231,23 @@ function PadButton({ icon, label, onPress }: { icon: IconName; label: string; on
 }
 
 /** Everything drawn on the maze board, tile by tile, plus Gappu and the monkeys on top. */
-function Board({ cfg, state, cell, lit, trail }: { cfg: MazeConfig; state: MazeState; cell: number; lit: Set<string> | null; trail: string[] }) {
+function Board({
+  cfg,
+  state,
+  cell,
+  lit,
+  trail,
+  goal,
+  houses,
+}: {
+  cfg: MazeConfig;
+  state: MazeState;
+  cell: number;
+  lit: Set<string> | null;
+  trail: string[];
+  goal: ImageSourcePropType;
+  houses: [string, string][];
+}) {
   const tiles: ReactNode[] = [];
   let house = 0;
   const switchGates = Object.keys(cfg.gates).filter((G) => cfg.gates[G].openWhen !== undefined);
@@ -238,7 +258,7 @@ function Board({ cfg, state, cell, lit, trail }: { cfg: MazeConfig; state: MazeS
     row.split('').forEach((t, c) => {
       const at = { position: 'absolute' as const, left: c * cell, top: r * cell, width: cell, height: cell };
       const k = `${c},${r}`;
-      if (t === '#') tiles.push(<View key={k} style={at}><HouseTile size={cell} index={house++} /></View>);
+      if (t === '#') tiles.push(<View key={k} style={at}><HouseTile size={cell} index={house++} colors={houses} /></View>);
       else if (t === 'R') tiles.push(<View key={k} style={at}><RailTile size={cell} /></View>);
       else if (cfg.gates[t]) {
         const g = cfg.gates[t];
@@ -259,7 +279,7 @@ function Board({ cfg, state, cell, lit, trail }: { cfg: MazeConfig; state: MazeS
           </View>,
         );
       } else if (t === 'C') tiles.push(<Image key={k} source={IMG.cow} style={at} />);
-      else if (t === 'J') tiles.push(<Goal key={k} style={at} size={cell} />);
+      else if (t === 'J') tiles.push(<Goal key={k} style={at} size={cell} source={goal} />);
       else if (t === 'o' && !state.got.includes(k)) {
         tiles.push(
           <View key={k} style={[at, { alignItems: 'center', justifyContent: 'center' }]}>
@@ -328,7 +348,7 @@ function Lantern({ x, y, cell }: { x: number; y: number; cell: number }) {
   );
 }
 
-function Goal({ style, size }: { style: object; size: number }) {
+function Goal({ style, size, source }: { style: object; size: number; source: ImageSourcePropType }) {
   const glow = useSharedValue(1);
   useEffect(() => {
     glow.set(withRepeat(withSequence(withTiming(1.15, { duration: 700 }), withTiming(1, { duration: 700 })), -1));
@@ -337,7 +357,7 @@ function Goal({ style, size }: { style: object; size: number }) {
   return (
     <View style={style}>
       <Animated.View style={[{ position: 'absolute', left: size * 0.08, top: size * 0.08, width: size * 0.84, height: size * 0.84, borderRadius: size, backgroundColor: colors.sun }, glowStyle]} />
-      <Image source={IMG.jalebi} style={{ width: size, height: size }} />
+      <Image source={source} style={{ width: size, height: size }} />
     </View>
   );
 }
@@ -366,7 +386,6 @@ const styles = StyleSheet.create({
   fact: { alignSelf: 'stretch', alignItems: 'center', gap: 2, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: '#FFF6E0', borderWidth: 2, borderColor: colors.coral },
   screen: { flex: 1, backgroundColor: colors.sand },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, gap: 12 },
-  tierBadge: { paddingHorizontal: 10, borderRadius: 999 },
   frame: {
     alignSelf: 'center',
     padding: 10,

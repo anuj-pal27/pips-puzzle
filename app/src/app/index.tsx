@@ -121,7 +121,7 @@ export default function Home() {
         <View style={styles.doors}>
           <Door
             title="Puzzles"
-            subtitle="Jigsaws, mazes and more"
+            subtitle="A train ride round India"
             color={colors.sun}
             shadow={colors.sunShadow}
             textColor={colors.ink}

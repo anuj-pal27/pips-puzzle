@@ -1,14 +1,26 @@
 # Pip's Puzzles
 
-A puzzle game for kids aged 3–7, set in **Jalebi Junction**. Fifteen puzzles in three tiers, and no two in a row play the same way:
+A puzzle game for kids aged 3–7. **Pip's Big Picture**: Pip and Gappu ride the Jalebi Express round India to invite a
+friend from every corner to the Friendship Mela at Diwali. **10 levels**, one stop each, 52 puzzles, 14 friends
+(the story, cast and every level are in [STORY.md](STORY.md)):
 
-| | Easy | Medium | Hard |
+| Level | Stop | New friend | Puzzles |
 |---|---|---|---|
-| 1 | Jigsaw: Gappu (6 pieces) | Jigsaw: Jalebi Shop (12) | **Spin jigsaw**: Station (20), pieces start turned round, tap to spin |
-| 2 | **Who's That Shadow?** Drag 3 friends onto their shadows | **Fix the Tracks** Turn track pieces to join the station to the jalebi stall | **Slide puzzle** Put Tillu back together |
-| 3 | **Snack Snap** Memory cards, 3 pairs | **Who's That Shadow?** 5 friends, with look-alikes | **Fix the Tracks** Bigger, with decoy pieces |
-| 4 | Jigsaw: Chunnu (6) | **Snack Snap** 4 pairs | **Snack Snap** 6 pairs |
-| 5 | Jalebi Hunt maze | Jalebi Hunt maze (2 levers) | Jalebi Hunt maze (levers + switch) |
+| 1 | Jalebi Junction | (home: Gappu, Mithu, Tillu, Chunnu, Gauri, Pip) | Jigsaws, shadows, snap, maze, the station jigsaw |
+| 2 | Punjab: Golden Fields | Bholu the buffalo | Jigsaw, Baisakhi snap, shadows, first tracks, find the dhol maze |
+| 3 | Rajasthan: Desert Fair | Kesar the camel | Jigsaw, **Mandana rangoli**, shadows with a decoy, snap, puppet maze |
+| 4 | Gujarat: Kite Festival | Raja the lion | Jigsaw, tracks, farsan snap, shadows, kites slide puzzle |
+| 5 | Mumbai: Monsoon City | Chikki the mouse | Jigsaw, modak maze (2 levers), rangoli, snap, tracks with decoys |
+| 6 | Kerala: Backwaters | Appu the elephant | Jigsaw, shadows, **pookalam**, snake-boat slide, tracks |
+| 7 | Tamil Nadu: Temple Town | Mayil the peacock | Jigsaw (20), **kolam**, tracks, shadows, tiffin snap |
+| 8 | Kolkata: City of Joy | Bagha the tiger | Jigsaw, mishti snap, shadows, **alpana**, Howrah Express |
+| 9 | The Hills | Momo the red panda | Jigsaw (24), toy-train slide, picnic snap (8 pairs), hill maze (switch), loops tracks |
+| 10 | Home for Diwali | (everyone) | Diwali shop, Diwali Express, lamplight shadows, mithai snap, Lantern Walk, **The Big Picture** |
+
+Seven kinds of game, and no two in a row in a level play the same way: jigsaw (spin jigsaws in level 10), Who's That
+Shadow?, Snack Snap, Fix the Tracks, slide puzzle, maze, and **Rangoli** (colour a festival floor pattern to match
+the picture, in five regional styles). Each level opens with a story card to read aloud and ends with its new friend
+hopping on the train with a gift for the Mela.
 
 ```
 pips-puzzles/
@@ -16,7 +28,7 @@ pips-puzzles/
 └── backend/   Django + Django REST Framework + PostgreSQL (accounts, puzzle packs, progress sync)
 ```
 
-The game works fully **offline**: stars and settings are saved on the phone. The **puzzles come from the backend**: add one in Django admin and every phone picks it up the next time the game opens, with no app update. The last list the server sent is saved on the phone, and the 15 built-in puzzles are used until a server has been reached. The backend also has parent accounts and cloud save, ready for a sign-in screen.
+The game works fully **offline**: stars and settings are saved on the phone. The **puzzles come from the backend**: add one in Django admin and every phone picks it up the next time the game opens, with no app update. The last list the server sent is saved on the phone, and the 52 built-in puzzles are used until a server has been reached. The backend also has parent accounts and cloud save, ready for a sign-in screen.
 
 ---
 
@@ -81,7 +93,7 @@ Then:
 pip install -r requirements.txt
 copy .env.example .env          # Mac: cp .env.example .env
 python manage.py migrate
-python manage.py seed_puzzles   # loads the 15 puzzles
+python manage.py seed_puzzles   # loads the 52 puzzles of the 10 levels
 python manage.py createsuperuser
 ```
 
@@ -117,8 +129,8 @@ Open http://127.0.0.1:8000/dashboard/ and sign in with the superuser from step 3
 - players (phones), new players, puzzles started and finished, finish rate and average stars, each compared with the period before
 - plays per day (point at a day for its numbers, or open it as a table)
 - **where children get stuck**: puzzles with the lowest finish rate
-- **how far players get**: played → finished one → reached Medium → reached Hard
-- by tier, by kind of phone, parent accounts, and the latest plays
+- **how far players get**: played → finished one → reached level 2 → level 5 → level 10
+- by level, by kind of phone, parent accounts, and the latest plays
 - **Download CSV** of every play event in the time range
 
 **Puzzles** lists every puzzle in play order with its players, finish rate, average stars and typical time. From here you can move a puzzle up or down, hide or publish it, and open it for its own stats, stars chart and a preview drawn the way the game shows it (Duplicate and Delete are there too).
@@ -129,14 +141,15 @@ Open http://127.0.0.1:8000/dashboard/ and sign in with the superuser from step 3
 |---|---|
 | Jigsaw | Pick a picture from the game or upload your own (about 3:2), choose columns × rows, tick *Spin* to start pieces turned round |
 | Who's That Shadow? | Tick 2 to 6 friends |
-| Snack Snap | Tick 2 to 6 snacks |
+| Snack Snap | Tick 2 to 8 snacks |
 | Slide puzzle | Pick a picture, board size and difficulty, press **Shuffle**: the server mixes it so it can always be solved and works out the fewest moves (for the stars) |
 | Fix the Tracks | Choose width, height and decoy pieces, press **Generate** until you like the map; *Show it solved* shows the line |
-| Jalebi Hunt maze | Start from the Easy, Medium or Hard maze and edit the map; the check says if Gappu can't reach the jalebis or a laddoo |
+| Maze | Start from one of the game's mazes and edit the map; `goal` picks what Gappu finds (jalebis, any snack, or a gift like `dhol`); the check says if Gappu can't reach it or a laddoo |
+| Rangoli | Start from one of the game's patterns and change the rings (shape, count, one or two colours) or the style; the preview draws it as the game will |
 
-Save, and published puzzles reach phones the next time the game opens (or a grown-up opens **Grown-ups**). A puzzle's id (like `easy-6`) never changes, so children keep their stars on it even if you move or rename it. The same checks run in the Django admin, so a puzzle that can't be finished can't be saved either way.
+Save, and published puzzles reach phones the next time the game opens (or a grown-up opens **Grown-ups**). A puzzle's id (like `level-3-7`) never changes, so children keep their stars on it even if you move or rename it. The same checks run in the Django admin, so a puzzle that can't be finished can't be saved either way.
 
-New puzzles must use one of the six kinds above, with the game's friends, snacks and pictures. A new *kind* of game, or new friends and snacks, still needs an app update. If something in the server's list doesn't fit the app, the app leaves that puzzle out rather than crashing.
+Choose the **level** (1 to 10) a puzzle belongs to; it goes at the end of that level unless you give it an order. New puzzles must use one of the seven kinds above, with the game's friends, snacks and pictures (listed in `backend/content/ids.py`). A new *kind* of game, or new friends and snacks, still needs an app update. If something in the server's list doesn't fit the app, the app leaves that puzzle out rather than crashing.
 
 **Where the numbers come from.** The game sends a short note to `POST /api/events/` when a puzzle is started, finished (with its stars and time) or left unfinished. It's anonymous: the phone makes up a random id the first time, and no names or accounts are involved. Notes wait on the phone while it's offline and are sent later. Grown-ups can switch it off under **Grown-ups → Privacy → Share play stats**.
 
@@ -147,19 +160,9 @@ python manage.py demo_analytics          # 120 pretend phones over 60 days
 python manage.py demo_analytics --clear  # remove them again (real plays are kept)
 ```
 
----|---|
-   | Jigsaw | **Picture**: a built-in id (`gappu`, `mithu`, `tillu`, `chunnu`, `shop`, `station`) **or** upload an **Image** (about 3:2), plus **cols** (2–6) and **rows** (2–5). Settings `{"spin": true}` turns pieces round. |
-   | Shadow | Settings `{"friends": ["gappu", "gauri", "pip"], "cols": 3}` (friends: `gappu mithu tillu chunnu gauri pip`) |
-   | Snack Snap | Settings `{"snacks": ["jalebi", "chai", "mango"], "cols": 3}` (snacks: `jalebi laddoo samosa chai kulfi mango`) |
-   | Tracks | Settings `{"map": [...], "taps": [...], "start": 0, "goal": 4}`: see the legend at the top of `app/src/game/tracks.ts` |
-   | Slide | Picture or Image, and settings `{"size": 3, "start": [...], "par": 10}` |
-   | Maze | **Maze** JSON, in the same shape as `app/src/data/mazes.ts` |
-
-   **Cheer** and **Blurb** are the finish screen's headline and line of text.
-3. Save. Admin checks the settings, so a broken puzzle can't be published. Untick **Is published** to hide a puzzle again.
-4. On the phone, close and reopen the game (or just open **Grown-ups**): the new puzzle is on the map.
-
-New puzzles must use one of the six kinds above, with the friends, snacks and pictures listed. A new *kind* of game, or new friends and snacks, still needs an app update. If something in the server's list doesn't fit the app, the app leaves that puzzle out rather than crashing.
+You can also add a puzzle in **Django admin** (`/admin/` → Puzzles → Add): pick its **Level**, **Order** and
+**Kind**, then fill **Picture**/**Cols**/**Rows** (jigsaws), **Maze** (mazes) or **Config** (the other kinds, in the same
+shape as the puzzles in `app/src/data/puzzles.ts`). Admin runs the same checks, so a broken puzzle can't be published.
 
 ---
 
@@ -280,6 +283,16 @@ Every push that changes `backend/` redeploys it; database changes (migrations) r
 
 Install the new build, open **Grown-ups**: *Game server* should say **Connected** with the Render address.
 
+### e) Updating a live server to the story levels (app 1.4)
+
+Deploy the **backend first**. On start, migrations `0007` and `0008` turn Easy/Medium/Hard into levels and add the new
+puzzles: the 15 older puzzles keep their ids (so children keep their stars) and move to their place in the story;
+puzzles you made in the dashboard go to the end of a level (Easy ones to level 1, Medium to level 10, Hard to 9); and
+older puzzles you renamed in the dashboard keep your changes. Then release the app.
+
+Phones with an app from before 1.4 don't understand levels: they ignore the new list and keep playing the last one
+they saved. The 1.4 app ignores a list from a server that hasn't been updated, and plays its own 52 puzzles.
+
 ### Good to know about the free plans
 
 - **Render free servers sleep** after 15 minutes without visitors and take about a minute to wake. The game copes (it
@@ -298,37 +311,43 @@ Install the new build, open **Grown-ups**: *Game server* should say **Connected*
 |---|---|
 | `app/` | Screens (Expo Router: every file is a screen) |
 | `app/index.tsx` | Home: two doors, **Puzzles** (Pip) and **Learn with Bit** (the robot) |
-| `app/map.tsx` | Puzzle map: Easy / Medium (the **Diwali Night** chapter) / Hard, 5 each, with unlocking |
-| `app/puzzle/[id].tsx` | Drag-and-drop jigsaw (6 / 12 / 20 pieces; "spin" jigsaws: tap a piece to turn it) |
+| `app/map.tsx` | The journey map: a card per level joined by a railway, the new friend's face, a Story button, the next stop's friend as a mystery shadow, and the train of friends who have joined |
+| `app/story/[level].tsx` | A level's story card (picture and lines to read aloud), shown before its first puzzle and from the map |
+| `app/puzzle/[id].tsx` | Drag-and-drop jigsaw (6 to 24 pieces; "spin" jigsaws: tap a piece to turn it) |
 | `app/shadow/[id].tsx` | Who's That Shadow? (drag friends onto their shadows) |
 | `app/memory/[id].tsx` | Snack Snap memory game |
 | `app/tracks/[id].tsx` | Fix the Tracks (tap to turn track pieces, then the train drives) |
 | `app/slide/[id].tsx` | Slide puzzle |
-| `app/maze/[id].tsx` | Jalebi Hunt maze (arrow pad + swipe) |
+| `app/maze/[id].tsx` | Maze (arrow pad + swipe); each level hides its own goal (dhol, puppet, modaks, momos...) |
+| `app/rangoli/[id].tsx` | Rangoli: pick a colour pot, tap the pattern; every matching shape fills at once |
 | `app/complete/[id].tsx` | Celebration screen ("Choo choo!", "Found them all!"…) |
 | `app/lab/index.tsx` | Learn with Bit: the robot lab, lesson path and badges |
 | `app/lab/[id].tsx` | Teach the Robot: the child sorts pictures, then Bit sorts new ones by itself |
 | `app/grown-ups/` | Parental gate + settings (incl. "What your child learned with Bit") |
-| `data/puzzles.ts` | The 15 built-in puzzles, pictures and tiers (used until a server has been reached) |
+| `data/levels.ts` | The 10 levels: place, friend, story card, finale, and each level's look (colours, decoration, maze houses, music); level 10 is Diwali night |
+| `data/puzzles.ts` | The 52 built-in puzzles in level order (used until a server has been reached) |
 | `data/catalog.ts` | Reads and checks the server's puzzle list; play order and unlock rules (no React, unit-tested) |
-| `data/games.ts` | Settings for shadows, Snack Snap, track maps and the slide puzzle |
-| `data/mazes.ts` | The three maze maps (Easy, Medium, Hard) |
-| `data/art.ts` | Friend cut-outs, snacks and sweets, train set and map thumbnails |
-| `data/themes.ts` | Chapter looks per tier: Medium is Diwali Night (night colours, its own music); Easy and Hard are the daytime town |
+| `data/games.ts` | Friends, snacks and gifts; track maps, slide boards and rangoli patterns |
+| `data/mazes.ts` | The maze maps (six of them) |
+| `data/art.ts` | Pictures, friend cut-outs, snacks, gifts and the train set |
+| `data/seed.ts` | A puzzle in the server's shape: `npm run seed` writes `backend/content/seed.json` from the built-in list |
 | `game/jigsaw.ts` | Piece shapes, board guides, tray layout, spin turns, stars |
 | `game/maze.ts` | Maze rules: levers, gates, the switch, monkeys, laddoos |
-| `game/tracks.ts`, `memory.ts`, `slide.ts`, `shadow.ts` | Rules for the other games, including the random layouts (no React, unit-tested) |
+| `game/tracks.ts`, `memory.ts`, `slide.ts`, `shadow.ts`, `rangoli.ts` | Rules for the other games, including the random layouts (no React, unit-tested) |
 | `game/teach.ts` | Teach the Robot: what Bit sees in each picture, how it guesses (nearest example), the 5 lessons |
 | `audio/sound.ts` | Sound effects and music (made by `scripts/make-sounds.py`), obeying the Sound and Music switches |
-| `navigation.ts` | Which screen plays each kind of puzzle |
+| `navigation.ts` | Which screen plays each kind of puzzle; shows a level's story card first, the first time |
 | `state/catalog.tsx` | Which puzzles are played: asks the server when the game opens, saves the list on the phone |
 | `state/playStats.ts` | Anonymous play stats for the dashboard: queued on the phone, sent when online, off-switch in Grown-ups |
 | `state/progress.tsx` | Stars + settings, saved on the phone |
 | `api/client.ts` | Calls to the Django API |
 | `components/` | Buttons, icons, stars, jigsaw pieces, maze tiles, Bit (`Bit.tsx`) and the lesson pictures (`ThingArt.tsx`), all drawn in code |
-| `components/Festive.tsx`, `ChapterParty.tsx` | Diwali decorations drawn in code (diyas, twinkling lights, night sky, fireworks) and the chapter finale |
+| `components/Festive.tsx` | Decorations drawn in code: diyas, lights, fireworks, and each level's backdrop (bunting, mirror-work, kites, rain, palms, toran, snow) |
+| `components/LevelParty.tsx` | A level's finale: the new friend joins the train with their gift; level 10 ends the story with fireworks and The Big Picture |
+| `components/PuzzleThumb.tsx` | Map tiles drawn from the puzzle itself (its friends, snacks, track map, maze or rangoli), so every puzzle gets a thumbnail |
+| `components/RangoliArt.tsx` | Draws a rangoli from its rings |
 
-**Unlocking:** Medium opens once 5 Easy puzzles have at least one star (all of them, if Easy has fewer than 5); Hard opens the same way after Medium. Adding more puzzles to a tier never locks a tier a child has already opened.
+**Unlocking:** a level opens once 4 puzzles of the level before have at least one star (all of them, if it has fewer than 4), so one tricky puzzle never blocks a child. Adding more puzzles to a level never locks one a child has already opened. Levels 1 and 2 are gentler: a peek at the Snack Snap cards, jigsaw pieces laid out in a grid, and no decoy shadow.
 **Stars** (always at least 1 for finishing):
 
 - Jigsaw: 3, minus 1 for using the picture hint, minus 1 for more than 5 missed drops.
@@ -337,11 +356,12 @@ Install the new build, open **Grown-ups**: *Game server* should say **Connected*
 - Tracks: 3 within 6 taps of the fewest possible, 2 within a generous margin.
 - Slide: 3 within 10 moves of the fewest possible (10), 2 within a generous margin.
 - Maze: 1 per laddoo collected.
+- Rangoli: 3 for at most one wrong colour, 2 for at most three.
 - Learn with Bit: 3 if Bit sorts everything right the first time, 2 after one re-teach, 1 after that. Lessons open one after another; the lab itself is always open.
 
-**Diwali Night (Medium):** the same five kinds of puzzle, retold for Diwali at night: Gappu's Diwali Shop (jigsaw), Diwali Express (each track piece lights a diya as it joins the line), Lamplight Shadows, Mithai Snap (kaju katli, gulab jamun, laddoo, jalebi) and Lantern Walk (a dark maze: Gappu's lantern lights two steps around him and he leaves a diya on every square he walks). Finishing all five plays a one-time "Happy Diwali!" fireworks finale. Older app versions that don't have the new pictures simply skip those two puzzles.
+**The story** ([STORY.md](STORY.md)): each level has a story card (shown before its first puzzle, and from the map's Story button), puzzles that each tell a small moment with a true Pip's fact about the place, and a one-time finale when it's done. Level 10, Home for Diwali, is the night level: Diwali Express lights a diya on every joined piece, Lantern Walk is a dark maze, and finishing The Big Picture plays the "Happy Diwali!" fireworks.
 
-**New art** drawn as SVG lives in `app/scripts/art/` and is rendered to `app/assets/images/game/` with `bash scripts/make-art.sh` (needs `rsvg-convert`). SVGs can use the existing pictures by file name, e.g. the Diwali shop is the day shop plus decorations.
+**The art kit** (`app/scripts/art/`): the friends, places, snacks and gifts are drawn in TypeScript from small reusable parts (`kit.ts`: faces, bodies, Indian motifs such as torans, bunting, diyas, kites, palms, gopurams, kolams), so a new friend or a new place is a few lines. `npm run art` renders everything to `app/assets/images/game/` with resvg (installed by `npm install`, no system tools); `npm run art -- bholu --preview` redraws just the matching pictures and writes a contact sheet. Hand-written SVGs in the same folder are rendered too, and can use existing pictures by file name (`<image href="shop.png">`).
 
 **How Bit learns** (`game/teach.ts`): each picture has a few things you can see (colour, shape, wings, wheels, a stem…). For a new picture Bit finds the taught example that shares the most, colour counting less than shape, and copies its basket. So Bit really does copy the child's mistakes. Lesson 4 is set up so Bit first learns from red fruits only and wrongly calls a red ball a fruit; the logic tests check every lesson works out the way the story needs.
 
@@ -349,11 +369,11 @@ Install the new build, open **Grown-ups**: *Game server* should say **Connected*
 
 | App | Models | Endpoints |
 |---|---|---|
-| `content` | `Puzzle` (tier, order, kind, title, finish-screen cheer and blurb, picture or uploaded image, grid size, maze JSON, settings JSON for the other kinds) | `GET /api/puzzles/`, `GET /api/health/` |
+| `content` | `Puzzle` (level, order, kind, title, finish-screen cheer and blurb, picture or uploaded image, grid size, maze JSON, settings JSON for the other kinds); `ids.py` lists the levels, pictures, friends, snacks and gifts the app has | `GET /api/puzzles/`, `GET /api/health/` |
 | `accounts` | `User` (parent, signs in with email), `ChildProfile` (nickname + avatar only) | `POST /api/auth/register/`, `POST /api/auth/token/`, `POST /api/auth/token/refresh/`, `/api/children/` |
 | `progress` | `Progress` (best stars per child per puzzle) | `GET /api/progress/?child=<id>`, `POST /api/progress/sync/` |
 | `analytics` | `PlayEvent` (anonymous: start / finish / left, stars, seconds, phone type); `stats.py` works out the dashboard's numbers | `POST /api/events/` |
-| `dashboard` | Staff-only pages at `/dashboard/`: overview, puzzles, puzzle builder. `content/builders.py` holds the server's copies of the game rules (track generator, slide shuffler, maze and track checks) | |
+| `dashboard` | Staff-only pages at `/dashboard/`: overview, puzzles, puzzle builder. `content/builders.py` holds the server's copies of the game rules (track generator, slide shuffler, maze, track and rangoli checks) | |
 
 Sign-in returns JWT tokens; send `Authorization: Bearer <access>` on the other calls. Sync keeps the **best** result, so a worse score from another phone never overwrites a better one.
 
@@ -366,11 +386,12 @@ Sign-in returns JWT tokens; send `Authorization: Bearer <access>` on the other c
 cd app
 npm run typecheck
 npx expo lint
-npm run test:logic      # 68 checks: every maze and track map is solvable, random layouts never start a piece near its spot, slide scrambles get the true best solution, the server's seed matches the built-in puzzles, and more
+npm run test:logic      # 168 checks: every maze and track map is solvable, random layouts never start a piece near its spot, slide scrambles get the true best solution, rangoli taps land on the right ring, every level gets harder and tells its story, the server's seed matches the built-in puzzles, and more
 
-# backend (venv active, PostgreSQL running)
+# backend (venv active, PostgreSQL running). The tests make a temporary database on whatever server
+# DATABASE_URL points to, so point it at your local one first (not Supabase).
 cd backend
-python manage.py test   # 42 tests: API, play stats, dashboard pages and puzzle builder, game-rule checks
+python manage.py test   # 44 tests: API, play stats, dashboard pages and puzzle builder, game-rule checks, the move to levels
 ```
 
 ---

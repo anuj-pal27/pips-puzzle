@@ -4,7 +4,7 @@ import { colors } from '@/theme';
 
 export type IconName =
   | 'back' | 'pause' | 'bulb' | 'lock' | 'star' | 'play' | 'home' | 'replay' | 'next' | 'close'
-  | 'grid' | 'sliders' | 'sound' | 'soundOff' | 'up' | 'down' | 'left' | 'right' | 'piece' | 'check';
+  | 'grid' | 'sliders' | 'sound' | 'soundOff' | 'up' | 'down' | 'left' | 'right' | 'piece' | 'check' | 'book';
 
 const STAR = 'M12 2.8l2.8 5.7 6.3.9-4.6 4.4 1.1 6.3L12 17.1l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9z';
 const PLAY = 'M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z';
@@ -41,6 +41,7 @@ export function Icon({ name, size = 28, color = colors.ink, fill }: { name: Icon
       {name === 'next' && <Path d="M5 12h14M13 6l6 6-6 6" {...stroke} strokeWidth={3} />}
       {name === 'close' && <Path d="M6 6l12 12M18 6L6 18" {...stroke} strokeWidth={2.8} />}
       {name === 'check' && <Path d="M5 12.5l4.5 4.5L19 7.5" {...stroke} strokeWidth={3.2} />}
+      {name === 'book' && <Path d="M12 6.5C10 5 7 4.5 4 5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5zM12 6.5v13" {...stroke} />}
       {name === 'grid' && (
         <>
           <Rect x={4} y={4} width={7} height={7} rx={2} {...stroke} />

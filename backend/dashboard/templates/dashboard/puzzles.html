@@ -13,11 +13,11 @@
   </div>
 </div>
 
-{% for tier, rows in tiers %}
+{% for level, place, rows in levels %}
 <section class="card">
   <div class="tier-head">
-    <h2><span class="chip chip-{{ tier.value }}">{{ tier.label }}</span> {{ rows|length }} puzzle{{ rows|length|pluralize }}</h2>
-    <a class="btn btn-small" href="{% url 'dashboard:new' %}?tier={{ tier.value }}">+ Add to {{ tier.label }}</a>
+    <h2><span class="chip chip-l{{ level }}">Level {{ level }}</span> {{ place }} <span class="muted small">{{ rows|length }} puzzle{{ rows|length|pluralize }}</span></h2>
+    <a class="btn btn-small" href="{% url 'dashboard:new' %}?level={{ level }}">+ Add to level {{ level }}</a>
   </div>
   {% if rows %}
   <div class="table-scroll">
@@ -49,7 +49,7 @@
     </tbody>
   </table>
   </div>
-  {% else %}<p class="muted">No puzzles in this tier.</p>{% endif %}
+  {% else %}<p class="muted">No puzzles in this level: phones skip it.</p>{% endif %}
 </section>
 {% endfor %}
 <p class="faint small">Moving a puzzle changes when children meet it. Its id (and every child's stars on it) stays the same.</p>

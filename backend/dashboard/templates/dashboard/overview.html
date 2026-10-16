@@ -54,7 +54,7 @@
     <div class="bars">
       {% for r in hardest %}
       <div class="bar-row">
-        <a href="{% url 'dashboard:puzzle' r.puzzle.slug %}?days={{ days }}"><strong>{{ r.puzzle.title }}</strong> <span class="chip chip-{{ r.puzzle.tier }}">{{ r.puzzle.get_tier_display }} {{ r.puzzle.order }}</span></a>
+        <a href="{% url 'dashboard:puzzle' r.puzzle.slug %}?days={{ days }}"><strong>{{ r.puzzle.title }}</strong> <span class="chip chip-l{{ r.puzzle.level }}">Level {{ r.puzzle.level }}.{{ r.puzzle.order }}</span></a>
         <div class="bar-track" title="{{ r.finishes }} finished of {{ r.starts }} started"><div class="bar-fill" style="width: {{ r.completion|pct_width }}%"></div></div>
         <span class="bar-value">{{ r.completion|pct }}</span>
       </div>
@@ -90,10 +90,10 @@
 
 <div class="grid grid-3">
   <section class="card">
-    <header><h2>By tier</h2></header>
+    <header><h2>By level</h2></header>
     <table>
-      <thead><tr><th>Tier</th><th class="r">Puzzles</th><th class="r">Started</th><th class="r">Finish %</th></tr></thead>
-      <tbody>{% for t in tiers %}<tr><td><span class="chip chip-{{ t.tier }}">{{ t.label }}</span></td><td class="r num">{{ t.puzzles }}</td><td class="r num">{{ t.starts|compact }}</td><td class="r num">{{ t.completion|pct }}</td></tr>{% endfor %}</tbody>
+      <thead><tr><th>Level</th><th class="r">Puzzles</th><th class="r">Started</th><th class="r">Finish %</th></tr></thead>
+      <tbody>{% for t in levels %}<tr><td><span class="chip chip-l{{ t.level }}">{{ t.label }}</span></td><td class="r num">{{ t.puzzles }}</td><td class="r num">{{ t.starts|compact }}</td><td class="r num">{{ t.completion|pct }}</td></tr>{% endfor %}</tbody>
     </table>
   </section>
   <section class="card">

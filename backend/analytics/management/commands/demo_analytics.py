@@ -9,9 +9,13 @@ from django.utils import timezone
 from analytics.models import DEMO_PREFIX, PlayEvent
 from content.models import Puzzle
 
-# Rough chance a child finishes a puzzle once started, by tier, and typical minutes it takes, by kind.
-FINISH = {"easy": 0.9, "medium": 0.78, "hard": 0.62}
-MINUTES = {"jigsaw": 2.5, "shadow": 1.0, "memory": 1.5, "tracks": 2.0, "slide": 3.5, "maze": 2.5}
+# Rough chance a child finishes a puzzle once started (lower in later levels), and typical minutes it takes, by kind.
+def finish_chance(level: int) -> float:
+    return 0.92 - 0.035 * (level - 1)
+
+
+MINUTES = {"jigsaw": 2.5, "shadow": 1.0, "memory": 1.5, "tracks": 2.0, "slide": 3.5, "maze": 2.5, "rangoli": 1.5}
+UNLOCK_AFTER = 4  # a level opens once this many puzzles of the level before have a star (the app's rule)
 
 
 class Command(BaseCommand):
@@ -51,12 +55,10 @@ class Command(BaseCommand):
             for p in puzzles:
                 if at > now:
                     break
-                # Medium and Hard open once 5 puzzles in the tier before have a star (the app's rule).
-                if p.tier != "easy":
-                    before = "easy" if p.tier == "medium" else "medium"
-                    if sum(1 for q in puzzles if q.tier == before and stars.get(q.slug)) < 5:
-                        break
-                chance = FINISH[p.tier] * skill * (0.55 if p.slug == tricky else 1)
+                before = [q for q in puzzles if q.level == p.level - 1]
+                if before and sum(1 for q in before if stars.get(q.slug)) < min(UNLOCK_AFTER, len(before)):
+                    break
+                chance = finish_chance(p.level) * skill * (0.55 if p.slug == tricky else 1)
                 tries = 0
                 while tries < 3 and at <= now:
                     tries += 1

@@ -14,8 +14,8 @@ import { Icon } from '@/components/Icon';
 import { ThemeBackdrop } from '@/components/Festive';
 import { PieceArt } from '@/components/PieceArt';
 import { Txt } from '@/components/Txt';
-import { getTier, type JigsawPuzzle } from '@/data/puzzles';
-import { themeFor } from '@/data/themes';
+import type { JigsawPuzzle } from '@/data/puzzles';
+import { isGentle, themeFor } from '@/data/levels';
 import { jigsawStars, pieceMargin, piecePath, slotPath, startTurns, trayLayout, type JigsawGrid } from '@/game/jigsaw';
 import { newSeed, seededRandom } from '@/game/random';
 import { useCatalog, usePuzzle } from '@/state/catalog';
@@ -38,8 +38,7 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
   usePlayStats(puzzle.id);
   const { settings, recordStars } = useProgress();
   const picture = useCatalog().getPicture(puzzle.picture);
-  const tier = getTier(puzzle.tier);
-  const theme = themeFor(puzzle.tier);
+  const theme = themeFor(puzzle.level);
   useMusic(theme.music);
   const { width } = useWindowDimensions();
 
@@ -108,8 +107,8 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
 
   const local = (id: number) => piecePath(grid, Math.floor(id / grid.cols), id % grid.cols, margin, margin);
   const imageOffset = (id: number) => ({ x: margin - (id % grid.cols) * grid.pw, y: margin - Math.floor(id / grid.cols) * grid.ph });
-  // Easy: a loose grid. Medium and Hard: a messy pile.
-  const spots = tray ? trayLayout(grid, tray.w, tray.h, seededRandom(seed), puzzle.tier === 'easy' ? 'grid' : 'pile') : [];
+  // Levels 1 and 2: a loose grid. Later levels: a messy pile.
+  const spots = tray ? trayLayout(grid, tray.w, tray.h, seededRandom(seed), isGentle(puzzle.level) ? 'grid' : 'pile') : [];
   const boardX = (panel?.x ?? 0) + PANEL_PAD;
   const boardY = (panel?.y ?? 0) + PANEL_PAD;
 
@@ -121,9 +120,9 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
         <View style={styles.header}>
           <CircleButton icon="pause" label="Pause" onPress={() => setPaused(true)} />
           <Pill>
-            <Icon name="piece" size={26} fill={tier.color} />
+            <Icon name="piece" size={26} fill={theme.accent} />
             <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${(placed.length / total) * 100}%`, backgroundColor: tier.color }]} />
+              <View style={[styles.progressFill, { width: `${(placed.length / total) * 100}%`, backgroundColor: theme.accent }]} />
             </View>
             <Txt weight="extrabold" size={18} accessibilityLabel={`${placed.length} of ${total} pieces placed`}>
               {placed.length}/{total}

@@ -3,9 +3,28 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { isTierUnlocked, nextPuzzle, puzzleAfter, readServerPuzzles, unlockNeed } from '../../data/catalog.ts';
-import { FRIEND_NAMES, SHADOW_GAMES, SLIDE_GAMES, SNACK_NAMES, SNAP_GAMES, TRACK_GAMES } from '../../data/games.ts';
+import { isLevelDone, isLevelUnlocked, levelsIn, nextPuzzle, puzzleAfter, readServerPuzzles, unlockNeed, type KnownIds } from '../../data/catalog.ts';
+import { FRIEND_NAMES, GIFT_NAMES, RANGOLI_GAMES, SLIDE_GAMES, SNACK_NAMES, TRACK_GAMES } from '../../data/games.ts';
+import { friendsMet, LEVELS } from '../../data/levels.ts';
 import { MAZES } from '../../data/mazes.ts';
+import { PICTURE_INFO, PUZZLES, type MemoryPuzzle, type Puzzle, type ShadowPuzzle } from '../../data/puzzles.ts';
+import { toSeed } from '../../data/seed.ts';
+import {
+  checkRangoli,
+  classKey,
+  hitClass,
+  newRangoli,
+  paint,
+  paintClasses,
+  palette,
+  rangoliDone,
+  rangoliProgress,
+  rangoliStars,
+  slotClass,
+  slots,
+  targetColor,
+  type RangoliConfig,
+} from '../rangoli.ts';
 import { jigsawStars, nearHome, pieceMargin, piecePath, slotPath, startTurns, trayLayout } from '../jigsaw.ts';
 import { canFlip, flipCard, memoryDone, memoryStars, newMemory, pairResult, seededRandom, settle } from '../memory.ts';
 import { nearestSlot, pickDecoy, shadowStars, trayOrder } from '../shadow.ts';
@@ -25,8 +44,11 @@ function test(name: string, fn: () => void) {
 // ---------------------------------------------------------------- jigsaw
 for (const g of [
   { cols: 3, rows: 2, pw: 110, ph: 110 },
+  { cols: 3, rows: 3, pw: 110, ph: 73 },
   { cols: 4, rows: 3, pw: 82, ph: 73 },
+  { cols: 5, rows: 3, pw: 66, ph: 73 },
   { cols: 5, rows: 4, pw: 66, ph: 66 },
+  { cols: 6, rows: 4, pw: 55, ph: 55 },
 ]) {
   const n = g.cols * g.rows;
   test(`jigsaw ${n} pieces: outlines stay inside each piece's drawing box`, () => {
@@ -193,7 +215,7 @@ for (const cfg of Object.values(TRACK_GAMES)) {
     assert.ok(traceTracks(cfg, solvedTracks(cfg)).reached);
     assert.ok(!traceTracks(cfg, initTracks(cfg)).reached);
     route.forEach(([c, r]) => assert.notEqual(Number(cfg.taps[r][c]) % period(cfg.map[r][c]), 0, `route piece ${c},${r} already right`));
-    assert.ok(route.length >= 8, 'route is too short to be interesting');
+    assert.ok(route.length >= Math.min(8, 2 * cfg.map.length - 1), 'route is too short to be interesting');
   });
   test(`tracks ${cfg.id}: tapping each route piece the right number of times fixes it in exactly par taps`, () => {
     let s = initTracks(cfg);
@@ -247,10 +269,10 @@ for (const cfg of Object.values(TRACK_GAMES)) {
       }
     }
   });
-  if (cfg.id === 'hard') {
-    test('tracks hard: has decoy pieces off the route', () => {
+  if (cfg.id === 'hard' || cfg.id === 'hills') {
+    test(`tracks ${cfg.id}: has decoy pieces off the route`, () => {
       const decoys = cfg.map.join('').split('').filter((ch, i) => isTrack(ch) && !onRoute.has(`${i % cfg.map[0].length},${Math.floor(i / cfg.map[0].length)}`));
-      assert.ok(decoys.length >= 8, `${decoys.length} decoys`);
+      assert.ok(decoys.length >= (cfg.id === 'hard' ? 8 : 5), `${decoys.length} decoys`);
     });
   }
 }
@@ -261,7 +283,8 @@ test('tracks stars', () => {
 });
 
 // ---------------------------------------------------------------- snack snap (memory)
-for (const game of Object.values(SNAP_GAMES)) {
+const MEMORY = PUZZLES.filter((p): p is MemoryPuzzle => p.kind === 'memory');
+for (const game of MEMORY) {
   test(`snack snap ${game.id}: every deal has two of each snack and no pair side by side`, () => {
     for (let seed = 1; seed <= 200; seed++) {
       const cards = newMemory(game.snacks, seededRandom(seed), game.cols).cards;
@@ -353,7 +376,12 @@ test("shadow: friends never start under their own shadow; drops find the closest
     if (n >= 3) assert.ok(seen.size > 1, `size ${n}: always the same order`);
   }
   assert.equal(pickDecoy([1, 2], [1, 2], Math.random), undefined);
-  for (const game of Object.values(SHADOW_GAMES)) assert.equal(new Set(game.friends).size, game.friends.length);
+  for (const game of PUZZLES.filter((p): p is ShadowPuzzle => p.kind === 'shadow')) {
+    assert.equal(new Set(game.friends).size, game.friends.length);
+    // A decoy is someone met already on the journey who isn't on the wall: there must be one to pick.
+    if (game.level >= 3) assert.ok(friendsMet(game.level).some((f) => !game.friends.includes(f)), `${game.id} has no decoy to pick`);
+    game.friends.forEach((f) => assert.ok(friendsMet(game.level).includes(f), `${game.id}: ${f} hasn't been met by level ${game.level}`));
+  }
   const slots = [{ x: 0, y: 0 }, { x: 100, y: 0 }];
   assert.equal(nearestSlot(slots, 70, 10, 50), 1);
   assert.equal(nearestSlot(slots, 50, 200, 50), -1);
@@ -487,49 +515,142 @@ test('teach: new order every play, stars, and lessons open one after another', (
   assert.equal(new Set(LESSONS.map((l) => l.id)).size, LESSONS.length);
 });
 
-// ---------------------------------------------------------------- puzzles from the server
-const KNOWN = {
-  pictures: ['gappu', 'mithu', 'tillu', 'chunnu', 'shop', 'station', 'diwali-shop'],
+// ---------------------------------------------------------------- rangoli
+const RANGOLIS: RangoliConfig[] = Object.values(RANGOLI_GAMES);
+for (const cfg of RANGOLIS) {
+  test(`rangoli ${cfg.id}: a good pattern; every shape belongs to a class with a colour; the palette has every colour`, () => {
+    assert.deepEqual(checkRangoli(cfg), []);
+    const classes = paintClasses(cfg).map(classKey);
+    assert.equal(new Set(classes).size, classes.length);
+    for (const s of slots(cfg)) assert.ok(classes.includes(classKey(slotClass(cfg, s))));
+    for (const c of paintClasses(cfg)) assert.ok(palette(cfg).includes(targetColor(cfg, c)));
+    assert.ok(palette(cfg).length > new Set(cfg.rings.flatMap((r) => r.colors)).size, 'needs one colour that is not in the picture');
+  });
+  test(`rangoli ${cfg.id}: tapping the middle of any shape paints that shape's class`, () => {
+    for (const s of slots(cfg)) assert.deepEqual(hitClass(cfg, s.x, s.y), slotClass(cfg, s), `ring ${s.ring} shape ${s.index}`);
+    assert.equal(hitClass(cfg, 120, 0), null, 'a tap outside the pattern paints nothing');
+  });
+  test(`rangoli ${cfg.id}: painting the picture's colours finishes it; wrong colours are counted and can be fixed`, () => {
+    let st = newRangoli();
+    const classes = paintClasses(cfg);
+    const wrong = palette(cfg).find((c) => c !== targetColor(cfg, classes[0]))!;
+    st = paint(cfg, st, classes[0], wrong);
+    assert.equal(st.misses, 1);
+    assert.equal(paint(cfg, st, classes[0], wrong), st, 'the same colour again changes nothing');
+    for (const c of classes) st = paint(cfg, st, c, targetColor(cfg, c));
+    assert.ok(rangoliDone(cfg, st));
+    assert.equal(rangoliProgress(cfg, st), classes.length);
+    assert.equal(st.misses, 1);
+    assert.equal(rangoliStars(st.misses), 3);
+  });
+}
+test('rangoli: stars, and broken patterns are caught', () => {
+  assert.deepEqual([rangoliStars(0), rangoliStars(1), rangoliStars(3), rangoliStars(4)], [3, 3, 2, 1]);
+  const ok = RANGOLI_GAMES.mandana;
+  assert.ok(checkRangoli({ ...ok, style: 'graffiti' as never }).length);
+  assert.ok(checkRangoli({ ...ok, rings: [ok.rings[0]] }).length, 'only a centre');
+  assert.ok(checkRangoli({ ...ok, rings: [ok.rings[0], { shape: 'petal', count: 7, colors: ['red', 'white'] }] }).length, 'odd two-colour ring');
+  assert.ok(checkRangoli({ ...ok, rings: [ok.rings[0], { shape: 'petal', count: 8, colors: ['gold'] }] }).length, 'unknown colour');
+  assert.ok(checkRangoli({ ...ok, rings: [ok.rings[0], { shape: 'star' as never, count: 8, colors: ['red'] }] }).length, 'unknown shape');
+});
+
+// ---------------------------------------------------------------- the levels and their story
+const LEGACY_IDS = ['easy-1', 'easy-2', 'easy-3', 'easy-4', 'easy-5', 'medium-1', 'medium-2', 'medium-3', 'medium-4', 'medium-5', 'hard-1', 'hard-2', 'hard-3', 'hard-4', 'hard-5'];
+const KNOWN: KnownIds = {
+  pictures: Object.keys(PICTURE_INFO),
   friends: Object.keys(FRIEND_NAMES),
   snacks: Object.keys(SNACK_NAMES),
+  gifts: Object.keys(GIFT_NAMES),
+  levels: LEVELS.length,
 };
-const SEED = JSON.parse(readFileSync(new URL('../../../../backend/content/seed.json', import.meta.url), 'utf8'));
+const pieces = (p: Puzzle) => (p.kind === 'jigsaw' ? p.cols * p.rows : 0);
 
-test('server seed: an older app (before Diwali Night) safely skips the two puzzles it has no pictures for', () => {
-  const old = { pictures: KNOWN.pictures.filter((p) => p !== 'diwali-shop'), friends: KNOWN.friends, snacks: ['jalebi', 'laddoo', 'samosa', 'chai', 'kulfi', 'mango'] };
-  const { puzzles, skipped } = readServerPuzzles(SEED, old);
-  assert.deepEqual(skipped.map((s) => s.slug).sort(), ['medium-1', 'medium-4']);
-  assert.equal(puzzles.length, 13);
+test('levels: ten stops, each with a place, story, finale, colours, and a new friend from level 2 to 9', () => {
+  assert.deepEqual(LEVELS.map((l) => l.n), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  for (const l of LEVELS) {
+    assert.ok(l.place && l.title && l.done && l.gift && l.story.length >= 2, `level ${l.n} is missing its story`);
+    assert.ok(l.story.every((line) => line.length <= 90), `level ${l.n}: story lines are short enough to read aloud`);
+    assert.ok(l.picture in PICTURE_INFO, `level ${l.n}: picture ${l.picture}`);
+    assert.ok(l.friend in FRIEND_NAMES);
+    assert.equal(l.joins, l.n >= 2 && l.n <= 9);
+    if (l.joins) assert.ok(l.giftArt && l.giftArt in GIFT_NAMES, `level ${l.n}: gift picture`);
+  }
+  assert.equal(new Set(LEVELS.filter((l) => l.joins).map((l) => l.friend)).size, 8, 'a different new friend at every stop');
+  assert.equal(LEVELS.filter((l) => l.theme.id === 'diwali').length, 1);
+  assert.equal(LEVELS[9].theme.id, 'diwali', 'the journey ends at home on Diwali night');
 });
-test("server seed: all 15 puzzles read cleanly, and match the app's built-in settings", () => {
-  const { puzzles, skipped } = readServerPuzzles(SEED, KNOWN);
-  assert.deepEqual(skipped, []);
-  assert.equal(puzzles.length, 15);
-  assert.deepEqual(
-    puzzles.map((p) => p.kind),
-    ['jigsaw', 'shadow', 'memory', 'jigsaw', 'maze', 'jigsaw', 'tracks', 'shadow', 'memory', 'maze', 'jigsaw', 'slide', 'tracks', 'memory', 'maze'],
-  );
-  for (const p of puzzles) {
-    assert.ok(p.cheer && p.blurb && p.title, `${p.id} is missing its finish-screen text`);
-    assert.ok(p.fact && p.fact.length <= 160, `${p.id} needs a Pip's fact (160 letters at most)`);
-    const tier = p.tier as 'easy' | 'medium' | 'hard';
-    if (p.kind === 'shadow') assert.deepEqual([p.friends, p.cols], [SHADOW_GAMES[tier as 'easy'].friends, SHADOW_GAMES[tier as 'easy'].cols]);
-    if (p.kind === 'memory') assert.deepEqual([p.snacks, p.cols], [SNAP_GAMES[tier].snacks, SNAP_GAMES[tier].cols]);
-    if (p.kind === 'tracks') assert.deepEqual({ ...p.tracks, id: tier }, TRACK_GAMES[tier as 'medium']);
-    if (p.kind === 'maze') assert.deepEqual({ ...p.maze, id: tier }, MAZES[tier]);
-    if (p.kind === 'slide') {
-      const g = SLIDE_GAMES.hard;
-      assert.deepEqual([p.picture, p.size, p.start, p.par], [g.picture, g.size, g.start, g.par]);
+
+test('levels: five or six puzzles each, no two in a row the same kind, and each new friend has a "Meet" jigsaw first', () => {
+  const ids = PUZZLES.map((p) => p.id);
+  assert.equal(new Set(ids).size, ids.length, 'ids are unique');
+  for (const l of LEVELS) {
+    const mine = PUZZLES.filter((p) => p.level === l.n).sort((a, b) => a.order - b.order);
+    assert.ok(mine.length >= 5 && mine.length <= 6, `level ${l.n} has ${mine.length} puzzles`);
+    assert.deepEqual(mine.map((p) => p.order), mine.map((_, i) => i + 1), `level ${l.n}: orders 1, 2, 3...`);
+    mine.forEach((p, i) => i && assert.notEqual(p.kind, mine[i - 1].kind, `${p.id} plays like the puzzle before it`));
+    if (l.joins) assert.ok(mine[0].kind === 'jigsaw' && mine[0].picture === l.friend && mine[0].title === `Meet ${FRIEND_NAMES[l.friend]}`, `level ${l.n} starts by meeting ${l.friend}`);
+    for (const p of mine) {
+      assert.ok(p.title && p.cheer && p.blurb, `${p.id} is missing its finish-screen text`);
+      assert.ok(p.fact && p.fact.length <= 160, `${p.id} needs a Pip's fact (160 letters at most)`);
+      assert.ok(p.cheer.length <= 40 && p.blurb.length <= 120 && p.title.length <= 80, `${p.id}: text too long for the server`);
     }
   }
+  assert.ok(LEGACY_IDS.every((id) => ids.includes(id)), "the 15 puzzles from before the levels keep their ids, so children keep their stars");
+  assert.equal(PUZZLES.at(-1)!.id, 'level-10-6');
+  assert.ok(PUZZLES.at(-1)!.kind === 'jigsaw' && PUZZLES.at(-1)!.picture === 'big-picture', 'the very last puzzle is The Big Picture');
+});
+
+test('levels: get harder as you go (jigsaws grow, snap gets more pairs, shadows get more friends)', () => {
+  const most = (kind: Puzzle['kind'], size: (p: Puzzle) => number) =>
+    LEVELS.map((l) => Math.max(0, ...PUZZLES.filter((p) => p.level === l.n && p.kind === kind).map(size)));
+  const rising = (xs: number[], what: string) => {
+    let best = 0;
+    xs.forEach((x, i) => {
+      if (!x) return;
+      assert.ok(x >= best, `${what} gets easier at level ${i + 1}`);
+      best = x;
+    });
+  };
+  rising(most('jigsaw', pieces), 'jigsaw pieces');
+  rising(most('memory', (p) => (p.kind === 'memory' ? p.snacks.length : 0)), 'snap pairs');
+  rising(most('shadow', (p) => (p.kind === 'shadow' ? p.friends.length : 0)), 'shadow friends');
+  rising(most('slide', (p) => (p.kind === 'slide' ? p.par : 0)), 'slide moves');
+  rising(most('rangoli', (p) => (p.kind === 'rangoli' ? paintClasses(p.rangoli).length : 0)), 'rangoli colours');
+  assert.equal(pieces(PUZZLES.at(-1)!), 24);
+});
+
+// ---------------------------------------------------------------- puzzles from the server
+const SEED = JSON.parse(readFileSync(new URL('../../../../backend/content/seed.json', import.meta.url), 'utf8'));
+
+test('server seed: matches the built-in puzzles exactly (run `npm run seed` after changing them)', () => {
+  assert.deepEqual(SEED, JSON.parse(JSON.stringify(PUZZLES.map(toSeed))));
+});
+test('server seed: every puzzle reads cleanly into the same game the app has built in', () => {
+  const { puzzles, skipped } = readServerPuzzles(SEED, KNOWN);
+  assert.deepEqual(skipped, []);
+  assert.equal(puzzles.length, PUZZLES.length);
+  const byId = new Map(PUZZLES.map((p) => [p.id, p]));
+  for (const p of puzzles) {
+    const built = byId.get(p.id)!;
+    // Settings inside a puzzle (a maze, a track map) carry their own id: the server's copy uses the slug.
+    const strip = ({ id, ...rest }: Puzzle) => ({ id, ...JSON.parse(JSON.stringify(rest, (k, v) => (k === 'id' ? undefined : v))) });
+    assert.deepEqual(strip(p), strip({ ...built, ...(built.kind === 'jigsaw' ? { spin: !!built.spin } : {}) } as Puzzle), p.id);
+  }
+});
+test('server seed: an app that has never heard of a level, a kind or a picture skips just those puzzles', () => {
+  const small = { ...KNOWN, levels: 3, pictures: ['gappu', 'chunnu', 'station', 'bholu', 'kesar'] };
+  const { puzzles, skipped } = readServerPuzzles(SEED, small);
+  assert.ok(puzzles.every((p) => p.level <= 3));
+  assert.deepEqual(levelsIn(puzzles), [1, 2, 3]);
+  assert.ok(skipped.length > 30 && skipped.every((s) => s.reason));
 });
 
 test('server puzzles: anything the app cannot play is skipped, not crashed on', () => {
-  const ok = { slug: 'easy-6', tier: 'easy', order: 6, kind: 'shadow', title: 'More shadows', cheer: '', blurb: '', config: { friends: ['gappu', 'gauri'] } };
+  const ok = { slug: 'level-1-7', level: 1, order: 7, kind: 'shadow', title: 'More shadows', cheer: '', blurb: '', config: { friends: ['gappu', 'gauri'] } };
   const { puzzles, skipped } = readServerPuzzles(
     [
       ok,
-      { ...ok, slug: 'easy-6' }, // twice
+      { ...ok, slug: 'level-1-7' }, // twice
       { ...ok, slug: 'x1', kind: 'racing' },
       { ...ok, slug: 'x2', config: { friends: ['gappu', 'motu'] } },
       { ...ok, slug: 'x3', kind: 'jigsaw', picture: 'dragon', cols: 3, rows: 2, image: null },
@@ -537,43 +658,74 @@ test('server puzzles: anything the app cannot play is skipped, not crashed on', 
       { ...ok, slug: 'x5', kind: 'tracks', config: { map: ['|x'], taps: ['10'], start: 0, goal: 0 } },
       { ...ok, slug: 'x6', kind: 'maze', maze: { map: ['S..', '...'] } },
       { ...ok, slug: 'x7', kind: 'slide', picture: 'tillu', config: { size: 2, start: [0, 1, 2, -1] } }, // no par
-      { ...ok, slug: 'x8', tier: 'expert' },
+      { ...ok, slug: 'x8', level: 11 },
+      { ...ok, slug: 'x9', level: undefined, tier: 'expert' },
+      { ...ok, slug: 'x10', kind: 'rangoli', config: { style: 'rangoli', rings: [{ shape: 'disc', count: 1, colors: ['gold'] }] } },
       'not a puzzle',
     ],
     KNOWN,
   );
-  assert.deepEqual(puzzles.map((p) => p.id), ['easy-6']);
-  assert.deepEqual(skipped.map((s) => s.slug), ['easy-6', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8', '?']);
+  assert.deepEqual(puzzles.map((p) => p.id), ['level-1-7']);
+  assert.deepEqual(skipped.map((s) => s.slug), ['level-1-7', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8', 'x9', 'x10', '?']);
+  assert.match(skipped.find((s) => s.slug === 'x8')!.reason, /newer app/);
   assert.equal(puzzles[0].cheer, 'Found them all!', 'a blank cheer gets the kind\'s default');
   assert.equal(puzzles[0].kind === 'shadow' && puzzles[0].cols, 3);
 });
 
+test('server puzzles: a list from a server before the levels is ignored, so the built-in levels are played', () => {
+  const old = [
+    { slug: 'easy-1', tier: 'easy', order: 1, kind: 'jigsaw', title: 'Gappu', cheer: '', blurb: '', picture: 'gappu', cols: 3, rows: 2, image: null, config: {} },
+    { slug: 'hard-2', tier: 'hard', order: 2, kind: 'slide', title: 'Tillu', cheer: '', blurb: '', picture: 'tillu', image: null, config: { size: 3, start: [4, 3, 1, 0, 7, 2, -1, 6, 5], par: 10 } },
+  ];
+  const { puzzles, skipped } = readServerPuzzles(old, KNOWN);
+  assert.deepEqual(puzzles, []);
+  assert.ok(skipped.every((s) => /no level/.test(s.reason)));
+});
+test('server puzzles: a maze goal the app has no picture for falls back to jalebis', () => {
+  const item = { slug: 'level-2-9', level: 2, order: 9, kind: 'maze', title: 'Walk', cheer: '', blurb: '', maze: { ...MAZES.medium, goal: 'unicorn' } };
+  const maze = readServerPuzzles([item], KNOWN).puzzles[0];
+  assert.ok(maze.kind === 'maze' && maze.maze.goal === undefined);
+  const dhol = readServerPuzzles([{ ...item, maze: { ...MAZES.medium, goal: 'dhol' } }], KNOWN).puzzles[0];
+  assert.ok(dhol.kind === 'maze' && dhol.maze.goal === 'dhol');
+});
+
 test('server puzzles: an uploaded picture wins over a bundled one', () => {
-  const item = { slug: 'easy-7', tier: 'easy', order: 7, kind: 'jigsaw', title: 'New', picture: 'gappu', cols: 3, rows: 2, config: {} };
+  const item = { slug: 'level-1-8', level: 1, order: 8, kind: 'jigsaw', title: 'New', picture: 'gappu', cols: 3, rows: 2, config: {} };
   const up = readServerPuzzles([{ ...item, image: 'http://server/media/puzzles/new.png', image_width: 900, image_height: 600 }], KNOWN);
   const p = up.puzzles[0];
-  assert.ok(p.kind === 'jigsaw' && p.picture === 'upload:easy-7');
-  assert.deepEqual(up.pictures['upload:easy-7'], { id: 'upload:easy-7', title: 'New', image: { uri: 'http://server/media/puzzles/new.png' }, width: 900, height: 600 });
+  assert.ok(p.kind === 'jigsaw' && p.picture === 'upload:level-1-8');
+  assert.deepEqual(up.pictures['upload:level-1-8'], { id: 'upload:level-1-8', title: 'New', image: { uri: 'http://server/media/puzzles/new.png' }, width: 900, height: 600 });
   const bundled = readServerPuzzles([{ ...item, image: null }], KNOWN).puzzles[0];
   assert.ok(bundled.kind === 'jigsaw' && bundled.picture === 'gappu');
 });
 
-test('more than five puzzles in a tier: play order holds, and five stars still open the next tier', () => {
-  const extra = { slug: 'easy-6', tier: 'easy', order: 6, kind: 'jigsaw', title: 'Mithu', cheer: '', blurb: '', picture: 'mithu', cols: 3, rows: 2, image: null, config: {} };
-  const { puzzles } = readServerPuzzles([...SEED, extra].reverse(), KNOWN);
-  assert.deepEqual(puzzles.slice(4, 7).map((p) => p.id), ['easy-5', 'easy-6', 'medium-1']);
-  assert.equal(unlockNeed(puzzles, 'medium'), 5);
-  const four = { 'easy-1': 3, 'easy-2': 1, 'easy-3': 2, 'easy-4': 1 };
-  assert.ok(!isTierUnlocked(puzzles, 'medium', four));
-  assert.equal(nextPuzzle(puzzles, four)?.id, 'easy-5');
-  assert.equal(puzzleAfter(puzzles, 'easy-5', four)?.id, 'easy-6');
-  assert.equal(puzzleAfter(puzzles, 'easy-6', four), undefined, 'medium is still locked');
-  const five = { ...four, 'easy-6': 1 };
-  assert.ok(isTierUnlocked(puzzles, 'medium', five), 'any five Easy puzzles open Medium');
-  assert.equal(puzzleAfter(puzzles, 'easy-6', five)?.id, 'medium-1');
-  // A tier with fewer than five puzzles needs all of them.
-  const short = puzzles.filter((p) => p.tier !== 'easy' || p.order <= 3);
-  assert.equal(unlockNeed(short, 'medium'), 3);
+test('unlocking: a level opens once four puzzles of the level before have stars; extra puzzles never lock it again', () => {
+  const puzzles = PUZZLES;
+  const L1 = puzzles.filter((p) => p.level === 1).map((p) => p.id);
+  assert.equal(unlockNeed(puzzles, 2), 4);
+  assert.equal(unlockNeed(puzzles, 1), 0);
+  const three = Object.fromEntries(L1.slice(0, 3).map((id) => [id, 2]));
+  assert.ok(!isLevelUnlocked(puzzles, 2, three));
+  assert.equal(nextPuzzle(puzzles, three)?.id, L1[3]);
+  assert.equal(puzzleAfter(puzzles, L1[L1.length - 1], three), undefined, 'level 2 is still locked');
+  const four = { ...three, [L1[4]]: 1 };
+  assert.ok(isLevelUnlocked(puzzles, 2, four), 'any four of level 1 open level 2');
+  assert.ok(isLevelDone(puzzles, 1, four));
+  assert.equal(puzzleAfter(puzzles, L1[L1.length - 1], four)?.id, 'level-2-1');
+  assert.ok(!isLevelUnlocked(puzzles, 3, four));
+  // Adding a seventh puzzle to level 1 doesn't lock level 2 again.
+  const extra = { ...(puzzles[0] as Puzzle), id: 'level-1-7', order: 7 } as Puzzle;
+  assert.ok(isLevelUnlocked([...puzzles, extra], 2, four));
+  // A level with fewer than four puzzles needs all of them.
+  const short = puzzles.filter((p) => p.level !== 1 || p.order <= 2);
+  assert.equal(unlockNeed(short, 2), 2);
+  // A level the server left empty is skipped over.
+  const gap = puzzles.filter((p) => p.level !== 2);
+  assert.ok(isLevelUnlocked(gap, 3, four));
+  // The last level is only done when every puzzle in it (The Big Picture too) has a star.
+  const all = Object.fromEntries(puzzles.map((p) => [p.id, 3]));
+  assert.ok(isLevelDone(puzzles, 10, all));
+  assert.ok(!isLevelDone(puzzles, 10, { ...all, 'level-10-6': 0 }));
 });
 
 console.log(`\n${passed} checks passed`);

@@ -15,7 +15,7 @@ export function trayOrder<T>(friends: T[], rand: () => number, decoys: T[] = [])
   }
 }
 
-/** For Medium and Hard: one extra friend who has no shadow on the wall, to make the child look carefully. */
+/** From level 3: one extra friend who has no shadow on the wall, to make the child look carefully. */
 export function pickDecoy<T>(friends: T[], everyone: T[], rand: () => number): T | undefined {
   const others = everyone.filter((f) => !friends.includes(f));
   return others.length ? others[Math.floor(rand() * others.length)] : undefined;

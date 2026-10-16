@@ -1,53 +1,70 @@
 import type { RemotePuzzle } from '../api/client';
 import type { GateDef, MazeConfig, MonkeyLane } from '../game/maze';
+import { checkRangoli, type RangoliConfig } from '../game/rangoli.ts';
 import type { TrackConfig } from '../game/tracks';
 import type { FriendId, SnackId } from './games';
-import type { Picture, Puzzle, PuzzleKind, TierId } from './puzzles';
+import type { Picture, Puzzle, PuzzleKind } from './puzzles';
 
 // The puzzle list the game plays: the one sent by the Django server (backend/content), or the
-// built-in one in src/data/puzzles.ts when there is no server. Pure functions with type-only
-// imports, so the logic tests (src/game/__tests__/run.ts) can run them in plain Node.
+// built-in one in src/data/puzzles.ts when there is no server. Pure functions, so the logic tests
+// (src/game/__tests__/run.ts) can run them in plain Node.
 
-export const TIER_ORDER: TierId[] = ['easy', 'medium', 'hard'];
-
-/** A tier opens once this many puzzles in the tier before it have a star (or all of them, if it has fewer). */
-export const UNLOCK_AFTER = 5;
+/** A level opens once this many puzzles in the level before have a star (or all of them, if it has fewer). */
+export const UNLOCK_AFTER = 4;
 
 export function inPlayOrder(list: Puzzle[]): Puzzle[] {
-  return [...list].sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier) || a.order - b.order);
+  return [...list].sort((a, b) => a.level - b.level || a.order - b.order);
 }
 
-export const puzzlesInTier = (list: Puzzle[], tier: TierId) => inPlayOrder(list.filter((p) => p.tier === tier));
+export const puzzlesInLevel = (list: Puzzle[], level: number) => inPlayOrder(list.filter((p) => p.level === level));
 
-/** How many puzzles of the tier before need a star to open `tier`. */
-export function unlockNeed(list: Puzzle[], tier: TierId): number {
-  const index = TIER_ORDER.indexOf(tier);
-  return index <= 0 ? 0 : Math.min(UNLOCK_AFTER, puzzlesInTier(list, TIER_ORDER[index - 1]).length);
+/** The levels that have puzzles, in order. */
+export const levelsIn = (list: Puzzle[]) => [...new Set(list.map((p) => p.level))].sort((a, b) => a - b);
+
+/** The level with puzzles just before `level` (levels the server left empty are skipped), or undefined. */
+const levelBefore = (list: Puzzle[], level: number) => levelsIn(list).filter((n) => n < level).pop();
+
+/** How many puzzles of the level before need a star to open `level`. */
+export function unlockNeed(list: Puzzle[], level: number): number {
+  const before = levelBefore(list, level);
+  return before === undefined ? 0 : Math.min(UNLOCK_AFTER, puzzlesInLevel(list, before).length);
 }
 
-export function isTierUnlocked(list: Puzzle[], tier: TierId, stars: Record<string, number>): boolean {
-  const index = TIER_ORDER.indexOf(tier);
-  if (index <= 0) return true;
-  const done = puzzlesInTier(list, TIER_ORDER[index - 1]).filter((p) => (stars[p.id] ?? 0) > 0).length;
-  return done >= unlockNeed(list, tier);
+const starred = (list: Puzzle[], level: number, stars: Record<string, number>) => puzzlesInLevel(list, level).filter((p) => (stars[p.id] ?? 0) > 0).length;
+
+export function isLevelUnlocked(list: Puzzle[], level: number, stars: Record<string, number>): boolean {
+  const before = levelBefore(list, level);
+  return before === undefined || starred(list, before, stars) >= unlockNeed(list, level);
 }
 
-/** The first unplayed puzzle in an open tier: highlighted on the map as "play this next". */
+/**
+ * A level is done when enough of it has stars to open the next one: that's when its new friend joins the
+ * train. The last level needs every puzzle, so the finale comes after The Big Picture.
+ */
+export function isLevelDone(list: Puzzle[], level: number, stars: Record<string, number>): boolean {
+  const count = puzzlesInLevel(list, level).length;
+  if (!count) return false;
+  const all = levelsIn(list);
+  const last = all[all.length - 1] === level;
+  return starred(list, level, stars) >= (last ? count : Math.min(UNLOCK_AFTER, count));
+}
+
+/** The first unplayed puzzle in an open level: highlighted on the map as "play this next". */
 export function nextPuzzle(list: Puzzle[], stars: Record<string, number>): Puzzle | undefined {
-  return inPlayOrder(list).find((p) => isTierUnlocked(list, p.tier, stars) && !stars[p.id]);
+  return inPlayOrder(list).find((p) => isLevelUnlocked(list, p.level, stars) && !stars[p.id]);
 }
 
-/** Where "Next" goes after finishing a puzzle: the next puzzle in order, if its tier is open. */
+/** Where "Next" goes after finishing a puzzle: the next puzzle in order, if its level is open. */
 export function puzzleAfter(list: Puzzle[], id: string, stars: Record<string, number>): Puzzle | undefined {
   const ordered = inPlayOrder(list);
   const next = ordered[ordered.findIndex((p) => p.id === id) + 1];
-  return next && isTierUnlocked(list, next.tier, stars) ? next : undefined;
+  return next && isLevelUnlocked(list, next.level, stars) ? next : undefined;
 }
 
 // ---------------------------------------------------------------- reading the server's list
 
-/** Ids of the things bundled in the app, so a puzzle that names something the app doesn't have is skipped. */
-export type KnownIds = { pictures: string[]; friends: string[]; snacks: string[] };
+/** What this app has bundled, so a puzzle that needs something the app doesn't have is skipped. */
+export type KnownIds = { pictures: string[]; friends: string[]; snacks: string[]; gifts: string[]; levels: number };
 
 export type ServerCatalog = {
   puzzles: Puzzle[];
@@ -66,6 +83,7 @@ const CHEER: Record<PuzzleKind, string> = {
   memory: 'Snack Snap!',
   tracks: 'Choo choo!',
   slide: 'You did it!',
+  rangoli: 'Beautiful!',
 };
 
 class Skip extends Error {}
@@ -98,12 +116,12 @@ function pictureFor(item: RemotePuzzle, known: KnownIds, pictures: Record<string
   return item.picture;
 }
 
-function readMaze(slug: string, value: unknown): MazeConfig {
+function readMaze(slug: string, value: unknown, known: KnownIds): MazeConfig {
   need(isObject(value), 'has no maze');
   const m = value as Record<string, unknown>;
   need(isRect(m.map), 'maze map must be equal-length rows');
   const joined = (m.map as string[]).join('');
-  need(joined.split('S').length === 2 && joined.split('J').length === 2, 'maze needs one start S and one jalebi stall J');
+  need(joined.split('S').length === 2 && joined.split('J').length === 2, 'maze needs one start S and one goal J');
   const gates = (m.gates ?? {}) as Record<string, GateDef>;
   need(
     isObject(gates) && Object.values(gates).every((g) => isObject(g) && typeof g.name === 'string' && typeof g.color === 'string' && typeof g.glyph === 'string'),
@@ -114,9 +132,12 @@ function readMaze(slug: string, value: unknown): MazeConfig {
     Array.isArray(monkeys) && monkeys.every((k) => isObject(k) && (k.axis === 'h' || k.axis === 'v') && [k.line, k.min, k.max, k.start].every(Number.isInteger)),
     'every monkey needs axis, line, min, max and start',
   );
+  // A goal this app has no picture for (from a newer server) just stays jalebis: the maze still works.
+  const goal = typeof m.goal === 'string' && (known.snacks.includes(m.goal) || known.gifts.includes(m.goal)) ? m.goal : undefined;
   return {
     id: slug,
     intro: typeof m.intro === 'string' && m.intro ? m.intro : 'Help Gappu find the jalebis!',
+    ...(goal ? { goal } : {}),
     map: m.map as string[],
     gates,
     monkeys: monkeys.map((k) => ({ ...k, dir: k.dir === -1 ? -1 : 1 })),
@@ -137,15 +158,32 @@ function readTracks(slug: string, c: Record<string, unknown>): TrackConfig {
   return { id: slug, map, taps: taps as string[], start: c.start as number, goal: c.goal as number };
 }
 
+function readRangoli(slug: string, c: Record<string, unknown>): RangoliConfig {
+  const problems = checkRangoli(c as Partial<RangoliConfig>);
+  need(!problems.length, `rangoli: ${problems.join('; ')}`);
+  const r = c as unknown as RangoliConfig;
+  return { id: slug, style: r.style, rings: r.rings.map((ring) => ({ shape: ring.shape, count: ring.count, colors: [...ring.colors] })), ...(r.extra?.length ? { extra: [...r.extra] } : {}) };
+}
+
+function readLevel(item: RemotePuzzle, known: KnownIds): number {
+  // A server from before the levels sends Easy/Medium/Hard tiers instead. Its puzzles are all skipped, so
+  // the game keeps its own built-in levels until the server is updated (see the README).
+  const level = item.level;
+  need(level !== undefined && level !== null, 'has no level (the server needs updating)');
+  need(isInt(level, 1, 99), 'level must be a whole number');
+  need((level as number) <= known.levels, `level ${level} needs a newer app`);
+  return level as number;
+}
+
 function readOne(item: RemotePuzzle, known: KnownIds, pictures: Record<string, Picture>): Puzzle {
   need(typeof item.slug === 'string' && item.slug.length > 0, 'has no slug');
-  need(TIER_ORDER.includes(item.tier), `unknown tier "${item.tier}"`);
+  const level = readLevel(item, known);
   need(isInt(item.order, 1, 999), 'order must be a whole number');
   need(item.kind in CHEER, `unknown kind "${item.kind}" (a newer app is needed)`);
   const c = isObject(item.config) ? item.config : {};
   const base = {
     id: item.slug,
-    tier: item.tier,
+    level,
     order: item.order,
     title: typeof item.title === 'string' ? item.title : '',
     cheer: item.cheer || CHEER[item.kind],
@@ -181,7 +219,9 @@ function readOne(item: RemotePuzzle, known: KnownIds, pictures: Record<string, P
     case 'tracks':
       return { ...base, kind: 'tracks', tracks: readTracks(item.slug, c) };
     case 'maze':
-      return { ...base, kind: 'maze', maze: readMaze(item.slug, item.maze) };
+      return { ...base, kind: 'maze', maze: readMaze(item.slug, item.maze, known) };
+    case 'rangoli':
+      return { ...base, kind: 'rangoli', rangoli: readRangoli(item.slug, c) };
   }
 }
 

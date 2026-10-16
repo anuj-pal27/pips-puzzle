@@ -4,17 +4,19 @@ import { Image, Pressable, StyleSheet, useWindowDimensions, View, type ImageSour
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { playSound } from '@/audio/sound';
+import { playSound, useMusic } from '@/audio/sound';
 import { Pill } from '@/components/Buttons';
+import { ThemeBackdrop } from '@/components/Festive';
 import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
 import { Txt } from '@/components/Txt';
+import { themeFor } from '@/data/levels';
 import type { SlidePuzzle } from '@/data/puzzles';
 import { BLANK, canSlide, isSolved, scrambleSlide, slideStars, slideTile } from '@/game/slide';
 import { useCatalog, usePuzzle } from '@/state/catalog';
 import { usePlayStats } from '@/state/playStats';
 import { colors } from '@/theme';
 
-// Slide puzzle: Tillu's picture is mixed up. Tap a tile next to the gap to slide it in.
+// Slide puzzle: a picture from the journey is mixed up. Tap a tile next to the gap to slide it in.
 
 export default function SlideScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,6 +31,8 @@ function SlideGame({ puzzle }: { puzzle: SlidePuzzle }) {
   const picture = useCatalog().getPicture(puzzle.picture);
   const n = game.size;
   const finish = useFinish(puzzle.id);
+  const theme = themeFor(puzzle.level);
+  useMusic(theme.music);
   const { width } = useWindowDimensions();
   // A new scramble every play, about as hard as the puzzle's set par (falls back to its own start).
   const [setup] = useState(() => scrambleSlide(n, game.par, Math.random) ?? { start: game.start, par: game.par });
@@ -59,10 +63,11 @@ function SlideGame({ puzzle }: { puzzle: SlidePuzzle }) {
   const gap = board.indexOf(BLANK);
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]} edges={['top', 'left', 'right', 'bottom']}>
+      <ThemeBackdrop theme={theme} />
       <GameHeader
-        title="Slide Puzzle"
-        tier={puzzle.tier}
+        title={puzzle.title || 'Slide Puzzle'}
+        level={puzzle.level}
         right={
           <Pill>
             <Txt weight="extrabold" size={15} color={colors.inkSoft}>Moves</Txt>
@@ -115,7 +120,7 @@ function SlideGame({ puzzle }: { puzzle: SlidePuzzle }) {
         </View>
 
         <TipBubble
-          text={solved ? `${picture.title.split(' ')[0]} is back together!` : 'Tap a tile next to the gap to slide it in.'}
+          text={solved ? 'The picture is back together!' : 'Tap a tile next to the gap to slide it in.'}
           tone={solved ? 'good' : 'plain'}
         />
       </View>
@@ -181,7 +186,7 @@ function Tile({
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.sand },
+  screen: { flex: 1 },
   body: { flex: 1, justifyContent: 'center', paddingBottom: 24 },
   frame: { alignSelf: 'center', padding: 10, borderRadius: 24, backgroundColor: colors.white, boxShadow: `0px 6px 0px ${colors.sandShadow}` },
   gap: { position: 'absolute', borderRadius: 8, borderWidth: 2, borderStyle: 'dashed', borderColor: colors.sandShadow },

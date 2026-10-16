@@ -3,12 +3,15 @@
 The app's rules live in app/src/game/*.ts; these are Python ports of the parts the server needs:
   - tracks: does the solved map really join the station to the stall? Generate new track puzzles.
   - slide:  shuffle a board and work out its fewest-moves `par`.
-  - maze:   can Gappu reach the jalebis, and every laddoo, from the start?
+  - maze:   can Gappu reach the goal, and every laddoo, from the start?
+  - rangoli: is the pattern one the game can draw?
 """
 
 import heapq
 import random
 from collections import deque
+
+from .ids import MAZE_GOALS, RANGOLI_COLORS, RANGOLI_SHAPES, RANGOLI_STYLES
 
 # ---------------------------------------------------------------- tracks (app/src/game/tracks.ts)
 
@@ -200,8 +203,9 @@ MAZE_TILES = set("#R.SJoCx")
 def check_maze(maze: dict) -> list[str]:
     """Problems with a maze, in plain words (an empty list means it's good to play).
 
-    Gappu must be able to reach the jalebis and all three laddoos. Monkeys are left out: they walk
-    back and forth (or hop over Gappu), so they only ever slow him down.
+    Gappu must be able to reach the goal 'J' (jalebis, or the snack or gift in "goal") and all three
+    laddoos. Monkeys are left out: they walk back and forth (or hop over Gappu), so they only ever slow
+    him down.
     """
     problems = []
     rows = maze.get("map") or []
@@ -210,7 +214,10 @@ def check_maze(maze: dict) -> list[str]:
     gates = maze.get("gates") or {}
     joined = "".join(rows)
     if joined.count("S") != 1 or joined.count("J") != 1:
-        problems.append("The map needs exactly one start 'S' and one jalebi stall 'J'.")
+        problems.append("The map needs exactly one start 'S' and one goal 'J'.")
+    goal = maze.get("goal")
+    if goal is not None and goal not in MAZE_GOALS:
+        problems.append(f"Unknown goal '{goal}'. Use a snack or gift the game has: {', '.join(sorted(MAZE_GOALS))}.")
     if joined.count("o") != 3:
         problems.append(f"Put exactly 3 laddoos 'o' on the map (it has {joined.count('o')}): one star each.")
     for letter, g in gates.items():
@@ -242,7 +249,7 @@ def check_maze(maze: dict) -> list[str]:
     w = len(rows[0])
     find = lambda ch: [(i % w, i // w) for i, t in enumerate(joined) if t == ch]  # noqa: E731
     if not reach & set(find("J")):
-        problems.append("Gappu can't reach the jalebis 'J' from the start. Open a path (check the gates and levers).")
+        problems.append("Gappu can't reach the goal 'J' from the start. Open a path (check the gates and levers).")
     missing = [cell for cell in find("o") if cell not in reach]
     if missing:
         problems.append(f"{len(missing)} laddoo(s) can't be reached, so 3 stars would be impossible.")
@@ -280,3 +287,40 @@ def _maze_reachable(rows, gates) -> set[tuple[int, int]]:
                 if t != "J":
                     queue.append(state)
     return cells
+
+
+# ---------------------------------------------------------------- rangoli (app/src/game/rangoli.ts)
+
+
+def check_rangoli(config: dict) -> list[str]:
+    """Problems with a rangoli pattern (an empty list means the game can draw and play it)."""
+    problems = []
+    if config.get("style") not in RANGOLI_STYLES:
+        problems.append(f"Style must be one of: {', '.join(RANGOLI_STYLES)}.")
+    rings = config.get("rings")
+    if not isinstance(rings, list) or not 2 <= len(rings) <= 7:
+        return [*problems, "A rangoli needs a centre and 1 to 6 rings."]
+    for i, ring in enumerate(rings):
+        name = "The centre" if i == 0 else f"Ring {i}"
+        if not isinstance(ring, dict):
+            problems.append(f"{name} must be {{\"shape\": ..., \"count\": ..., \"colors\": [...]}}.")
+            continue
+        if ring.get("shape") not in RANGOLI_SHAPES:
+            problems.append(f"{name}: shape must be one of {', '.join(sorted(RANGOLI_SHAPES))}.")
+        colors = ring.get("colors")
+        if not isinstance(colors, list) or not 1 <= len(colors) <= 2:
+            problems.append(f"{name}: one or two colours.")
+        elif set(colors) - RANGOLI_COLORS:
+            problems.append(f"{name}: colours are {', '.join(sorted(RANGOLI_COLORS))}.")
+        count = ring.get("count")
+        if i == 0:
+            if count != 1:
+                problems.append("The centre has count 1.")
+        elif not isinstance(count, int) or not 4 <= count <= 32:
+            problems.append(f"{name}: count must be 4 to 32.")
+        elif isinstance(colors, list) and len(colors) == 2 and count % 2:
+            problems.append(f"{name}: a ring with two colours needs an even count, so they take turns all the way round.")
+    extra = config.get("extra", [])
+    if not isinstance(extra, list) or set(extra) - RANGOLI_COLORS:
+        problems.append("Extra colours must be palette colours.")
+    return problems

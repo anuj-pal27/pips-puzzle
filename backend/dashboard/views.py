@@ -16,7 +16,8 @@ from analytics import stats
 from analytics.models import LAB_LESSONS, PlayEvent
 from content import builders
 from content.management.commands.seed_puzzles import SEED_FILE
-from content.models import Puzzle, Tier
+from content.ids import LEVELS
+from content.models import Puzzle
 from progress.models import Progress
 
 from . import art, charts
@@ -60,7 +61,7 @@ def overview(request):
         "chart": charts.line_chart(day_rows, [("starts", "Started"), ("finishes", "Finished")]),
         "chart_days": len(day_rows),
         "rows": rows,
-        "tiers": stats.by_tier(rows),
+        "levels": stats.by_level(rows),
         "hardest": stats.hardest(rows),
         "funnel": stats.funnel(w),
         "platforms": stats.platforms(w),
@@ -85,8 +86,8 @@ def puzzles(request):
     rows = stats.per_puzzle(stats.window(days))
     for r in rows:
         r["thumb"] = art.thumb_url(r["puzzle"])
-    tiers = [(t, [r for r in rows if r["puzzle"].tier == t.value]) for t in Tier]
-    return render(request, "dashboard/puzzles.html", {**_common(request, days), "tiers": tiers, "total": len(rows)})
+    levels = [(n, place, [r for r in rows if r["puzzle"].level == n]) for n, place in LEVELS.items()]
+    return render(request, "dashboard/puzzles.html", {**_common(request, days), "levels": levels, "total": len(rows)})
 
 
 @staff_member_required
@@ -142,6 +143,8 @@ def _preview(p: Puzzle) -> dict:
         out["tracks"] = c
     elif p.kind == Puzzle.Kind.MAZE:
         out["maze"] = p.maze
+    elif p.kind == Puzzle.Kind.RANGOLI:
+        out["rangoli"] = c
     return out
 
 
@@ -151,6 +154,7 @@ def _art_urls() -> dict:
         "friends": {k: art.friend_url(k) for k in art.FRIENDS},
         "snacks": {k: art.snack_url(k) for k in art.SNACKS},
         "pictures": {k: art.picture_url(k) for k in art.PICTURES},
+        "goals": {k: art.game_art(k) for k in {**art.SNACKS, **art.GIFTS}},
         "laddoo": art.game_art("laddoo"),
         "gappu": art.game_art("gappu-token"),
         "engine": art.game_art("engine"),
@@ -165,18 +169,22 @@ KIND_CARDS = [
     ("memory", "snap-easy-thumb", "Find pairs of snack cards."),
     ("tracks", "tracks-medium-thumb", "Turn track pieces to join the station to the stall."),
     ("slide", "slide-thumb", "Slide tiles to fix a picture."),
-    ("maze", "maze-thumb", "Walk Gappu to the jalebis: levers, gates, monkeys."),
+    ("maze", "maze-thumb", "Walk Gappu to the goal: levers, gates, monkeys."),
+    ("rangoli", "rangoli-thumb", "Colour a festival floor pattern to match the picture."),
 ]
 
 
 def _form_context(form, puzzle=None) -> dict:
     labels = dict(Puzzle.Kind.choices)
     kinds = [(k, labels[k], art.game_art(thumb), help) for k, thumb, help in KIND_CARDS]
-    templates = {}
+    # The game's own mazes and rangoli patterns, to start a new one from.
+    templates, patterns = {}, {}
     if SEED_FILE.exists():
         for item in json.loads(SEED_FILE.read_text(encoding="utf-8")):
             if item["kind"] == "maze":
-                templates[item["tier"]] = {k: v for k, v in item["maze"].items() if k != "id"}
+                templates[item["slug"]] = {"title": item["title"], "value": {k: v for k, v in item["maze"].items() if k != "id"}}
+            if item["kind"] == "rangoli":
+                patterns[item["slug"]] = {"title": item["title"], "value": item["config"]}
     return {
         "form": form,
         "puzzle": puzzle,
@@ -184,7 +192,7 @@ def _form_context(form, puzzle=None) -> dict:
         "pictures": [(k, v, art.picture_url(k)) for k, v in art.PICTURES.items()],
         "friends": [(k, v, art.friend_url(k)) for k, v in art.FRIENDS.items()],
         "snacks": [(k, v, art.snack_url(k)) for k, v in art.SNACKS.items()],
-        "builder_data": {"art": _art_urls(), "mazeTemplates": templates, "currentImage": puzzle.image.url if puzzle and puzzle.image else None},
+        "builder_data": {"art": _art_urls(), "mazeTemplates": templates, "rangoliTemplates": patterns, "currentImage": puzzle.image.url if puzzle and puzzle.image else None},
     }
 
 
@@ -196,7 +204,8 @@ def puzzle_new(request):
             messages.success(request, f"“{puzzle.title}” is saved as {puzzle.slug}. Phones get it the next time the game opens.")
             return redirect("dashboard:puzzle", slug=puzzle.slug)
     else:
-        form = PuzzleForm(initial={"tier": request.GET.get("tier", "easy"), "kind": request.GET.get("kind", "jigsaw")})
+        level = request.GET.get("level", "1")
+        form = PuzzleForm(initial={"level": int(level) if level.isdigit() and int(level) in LEVELS else 1, "kind": request.GET.get("kind", "jigsaw")})
     return render(request, "dashboard/puzzle_form.html", _form_context(form))
 
 
@@ -226,8 +235,8 @@ def puzzle_action(request, slug, action):
     elif action == "duplicate":
         copy = Puzzle.objects.get(pk=puzzle.pk)
         copy.pk = None
-        copy.order = next_free_order(puzzle.tier)
-        copy.slug = free_slug(puzzle.tier, copy.order)
+        copy.order = next_free_order(puzzle.level)
+        copy.slug = free_slug(puzzle.level, copy.order)
         copy.title = f"{puzzle.title} (copy)"[:80]
         copy.is_published = False
         copy.save()
@@ -245,8 +254,8 @@ def puzzle_action(request, slug, action):
 
 
 def _move(puzzle: Puzzle, direction: int):
-    """Swap places with the neighbour in the same tier (play order)."""
-    siblings = list(Puzzle.objects.filter(tier=puzzle.tier).order_by("order"))
+    """Swap places with the neighbour in the same level (play order)."""
+    siblings = list(Puzzle.objects.filter(level=puzzle.level).order_by("order"))
     i = next(i for i, p in enumerate(siblings) if p.pk == puzzle.pk)
     j = i + direction
     if not 0 <= j < len(siblings):
@@ -290,7 +299,7 @@ def tool_slide(request):
 @staff_member_required
 @require_POST
 def tool_check(request):
-    """Check a tracks or maze puzzle while it's being made: {"kind": ..., "value": {...}} -> problems."""
+    """Check a tracks, maze or rangoli puzzle while it's being made: {"kind": ..., "value": {...}} -> problems."""
     try:
         body = json.loads(request.body)
         kind, value = body["kind"], body["value"]
@@ -299,6 +308,8 @@ def tool_check(request):
     if kind == "maze":
         problems = builders.check_maze(value) if isinstance(value, dict) else ["The maze must be a JSON object."]
         return JsonResponse({"problems": problems})
+    if kind == "rangoli":
+        return JsonResponse({"problems": builders.check_rangoli(value) if isinstance(value, dict) else ["The pattern must be a JSON object."]})
     if kind == "tracks":
         p = Puzzle(kind="tracks", config=value if isinstance(value, dict) else {})
         try:

@@ -2,9 +2,14 @@ import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-aud
 import { useEffect } from 'react';
 import { AppState, Platform } from 'react-native';
 
-// Sound effects and background music. All of it is made in scripts/make-sounds.py (no samples).
-// Grown-ups' Sound and Music switches turn each part off (src/state/progress.tsx calls setSoundOn / setMusicOn).
-// Any audio problem is ignored: the game always works silently.
+import type { VoiceClip } from '@/data/voice';
+
+import { VOICE_CLIPS } from './voiceClips';
+
+// Sound effects, background music, and the narrator's voice. Effects and music are made in
+// scripts/make-sounds.py (no samples); the voice in scripts/make-voice.ts.
+// Grown-ups' Sound, Music and Voice switches turn each part off (src/state/progress.tsx calls setSoundOn /
+// setMusicOn / setVoiceOn). Any audio problem is ignored: the game always works silently.
 
 const SOUNDS = {
   tap: require('@/assets/sounds/tap.wav'),
@@ -44,6 +49,7 @@ export type SoundName = keyof typeof SOUNDS;
 export type MusicName = keyof typeof MUSIC;
 
 const MUSIC_VOLUME = 0.3;
+const MUSIC_UNDER_VOICE = 0.35; // music drops to this share while the narrator talks
 const COPIES = 3; // so quick repeats (footsteps, clicks) can overlap instead of cutting each other off
 
 let soundOn = true;
@@ -54,6 +60,10 @@ let music: AudioPlayer | null = null;
 let musicLoaded: MusicName | null = null;
 const players = new Map<SoundName, { list: AudioPlayer[]; next: number }>();
 let modeSet = false;
+let voiceOn = true;
+let voice: AudioPlayer | null = null;
+let voiceLoaded: VoiceClip | null = null;
+let speaking = false;
 let webUnlocked = Platform.OS !== 'web'; // browsers block music until the first tap
 
 function setMode() {
@@ -107,7 +117,7 @@ function updateMusic() {
       musicLoaded = wanted;
     }
     music.loop = true;
-    music.volume = MUSIC_VOLUME * MUSIC_LEVEL[wanted!];
+    music.volume = MUSIC_VOLUME * MUSIC_LEVEL[wanted!] * (speaking ? MUSIC_UNDER_VOICE : 1);
     music.play();
   } catch {
     // Music is a nice extra; carry on without it.
@@ -121,6 +131,65 @@ export function setSoundOn(on: boolean) {
 export function setMusicOn(on: boolean) {
   musicOn = on;
   updateMusic();
+}
+
+export function setVoiceOn(on: boolean) {
+  voiceOn = on;
+  if (!on) stopVoice();
+}
+
+/** Has `npm run voice` made this clip yet? */
+export const hasVoice = (clip: VoiceClip) => VOICE_CLIPS[clip] !== undefined;
+
+/** Read a story card or finale aloud, in that level's language (src/data/voice.ts). Starts over if already talking. */
+export function speak(clip: VoiceClip) {
+  const source = VOICE_CLIPS[clip];
+  if (!voiceOn || !source) return;
+  try {
+    setMode();
+    if (!voice) {
+      voice = createAudioPlayer(source);
+      voice.addListener('playbackStatusUpdate', (status) => {
+        if (status.didJustFinish && speaking) {
+          speaking = false;
+          updateMusic();
+        }
+      });
+    } else if (voiceLoaded !== clip) {
+      voice.replace(source);
+    } else {
+      void voice.seekTo(0);
+    }
+    voiceLoaded = clip;
+    speaking = true;
+    voice.play();
+    updateMusic();
+  } catch {
+    speaking = false;
+  }
+}
+
+/** Stop talking (only if it's saying `clip`, when given), and bring the music back up. */
+export function stopVoice(clip?: VoiceClip) {
+  if (!speaking || (clip && clip !== voiceLoaded)) return;
+  speaking = false;
+  try {
+    voice?.pause();
+  } catch {
+    // Already quiet.
+  }
+  updateMusic();
+}
+
+/** Say `clip` a moment after the calling screen opens, and stop when it closes. */
+export function useVoice(clip: VoiceClip, delayMs: number) {
+  useEffect(() => {
+    const t = setTimeout(() => speak(clip), delayMs);
+    return () => {
+      clearTimeout(t);
+      stopVoice(clip);
+    };
+  }, [clip, delayMs]);
 }
 
 /** Play this background tune while the calling screen is shown (the newest caller wins). */
@@ -138,5 +207,6 @@ export function useMusic(name: MusicName) {
 
 AppState.addEventListener('change', (state) => {
   active = state === 'active';
+  if (!active) stopVoice();
   updateMusic();
 });

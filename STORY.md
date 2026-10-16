@@ -88,6 +88,8 @@ its food, festival or animal.
 - `app/src/data/levels.ts`: the 10 levels (place, friend, colours, decoration, story card text, finale text)
 - `app/src/data/puzzles.ts`: every built-in puzzle, in level order (52 of them)
 - `app/src/app/story/[level].tsx`: the story card; `app/src/components/LevelParty.tsx`: a level's finale
+- `app/src/data/voice.ts`: the narrator's lines in each stop's language (Punjabi in Punjab, Gujarati in Gujarat…);
+  `npm run voice` turns them into `app/assets/voice/` with one female voice (Sarvam AI)
 - `app/src/game/rangoli.ts`, `app/src/app/rangoli/[id].tsx`: the Rangoli game
 - `app/scripts/art/`: the art kit; `npm run art` draws every friend, place, snack and gift
 - `backend/content/ids.py`: the same levels, friends, snacks and pictures, for the server's checks

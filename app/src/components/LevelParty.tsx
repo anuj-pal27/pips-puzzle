@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Image, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming, ZoomIn } from 'react-native-reanimated';
 
-import { playSound } from '@/audio/sound';
+import { playSound, useVoice } from '@/audio/sound';
 import { FRIEND_ART, GIFT_ART, PICTURES } from '@/data/art';
 import type { FriendId } from '@/data/games';
 import { friendsMet, getLevel, LEVELS } from '@/data/levels';
@@ -14,9 +14,9 @@ import { Fireworks } from './Festive';
 import { OutlinedText } from './OutlinedText';
 import { Txt } from './Txt';
 
-// The end of a level: its new friend hops on the Jalebi Express with their gift for the Mela. The last level
-// (Home for Diwali) ends the story with fireworks and The Big Picture. Each plays once, the first time the
-// level is done (progress.celebrated remembers it).
+// The end of a level: its new friend hops on the Jalebi Express with their gift for the Mela, and the narrator
+// cheers it in the level's own language. The last level (Home for Diwali) ends the story with fireworks and
+// The Big Picture. Each plays once, the first time the level is done (progress.celebrated remembers it).
 
 const LAST = LEVELS[LEVELS.length - 1].n;
 /** Diwali Night's finale was saved as 'diwali' before the levels, so it doesn't play twice for those children. */
@@ -51,6 +51,7 @@ export function LevelParty({ level, onClose }: { level: number; onClose: () => v
   const theme = info.theme;
   const finale = level === LAST;
   const bounce = useSharedValue(0);
+  useVoice(`done-${level}`, 2200); // after the cheer
 
   useEffect(() => {
     const t = finale ? [0, 900, 1800, 3000].map((ms) => setTimeout(() => playSound('firework', 0.8), ms)) : [setTimeout(() => playSound('train'), 200)];

@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
-import { setMusicOn, setSoundOn } from '@/audio/sound';
+import { setMusicOn, setSoundOn, setVoiceOn } from '@/audio/sound';
 
 import { playFinished, setPlayStatsEnabled } from './playStats';
 
@@ -10,6 +10,7 @@ import { playFinished, setPlayStatsEnabled } from './playStats';
 export type Settings = {
   sound: boolean;
   music: boolean;
+  voice: boolean; // the narrator reads each stop's story in its own language
   pictureHint: boolean; // show the light-bulb button in jigsaws
   shareStats: boolean; // send anonymous play stats to the game server (src/state/playStats.ts)
 };
@@ -22,7 +23,7 @@ export type Settings = {
 type Saved = { version: 1; stars: Record<string, number>; lab: Record<string, number>; celebrated: string[]; settings: Settings };
 
 const STORAGE_KEY = 'pips-puzzles/progress';
-const DEFAULTS: Saved = { version: 1, stars: {}, lab: {}, celebrated: [], settings: { sound: true, music: true, pictureHint: true, shareStats: true } };
+const DEFAULTS: Saved = { version: 1, stars: {}, lab: {}, celebrated: [], settings: { sound: true, music: true, voice: true, pictureHint: true, shareStats: true } };
 
 type ProgressApi = {
   ready: boolean;
@@ -67,7 +68,8 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setSoundOn(saved.settings.sound);
     setMusicOn(ready && saved.settings.music);
-  }, [ready, saved.settings.sound, saved.settings.music]);
+    setVoiceOn(ready && saved.settings.voice);
+  }, [ready, saved.settings.sound, saved.settings.music, saved.settings.voice]);
 
   const save = (next: Saved) => {
     setSaved(next);

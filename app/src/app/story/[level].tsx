@@ -4,7 +4,7 @@ import { Image, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { playSound, useMusic } from '@/audio/sound';
+import { hasVoice, playSound, speak, useMusic, useVoice } from '@/audio/sound';
 import { ChunkyButton, CircleButton } from '@/components/Buttons';
 import { ThemeBackdrop } from '@/components/Festive';
 import { OutlinedText } from '@/components/OutlinedText';
@@ -17,16 +17,19 @@ import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 
 // A level's story card: where the Jalebi Express has stopped, a picture of the place and its new friend,
-// and two or three lines for a grown-up to read aloud. Shown before a level's first puzzle (then "Let's go!"
-// opens that puzzle), and any time from the map.
+// and two or three lines for a grown-up to read aloud. The narrator also reads them in the stop's own language
+// (src/data/voice.ts). Shown before a level's first puzzle (then "Let's go!" opens that puzzle), and any time
+// from the map.
 
 export default function StoryCard() {
   const { level: param, then } = useLocalSearchParams<{ level: string; then?: string }>();
   const level = getLevel(Number(param) || 1);
   const theme = level.theme;
   useMusic(theme.music);
+  const voice = `story-${level.n}` as const;
+  useVoice(voice, 1200); // after the train whistle
   const { getPuzzle, getPicture } = useCatalog();
-  const { markCelebrated } = useProgress();
+  const { markCelebrated, settings } = useProgress();
   const { width, height } = useWindowDimensions();
   const picture = PICTURES[level.picture] ?? getPicture(level.picture);
   const photoW = Math.min(width - 56, 420, (height * 0.34 * picture.width) / picture.height);
@@ -55,7 +58,7 @@ export default function StoryCard() {
           <View style={[styles.levelBadge, { backgroundColor: theme.accent }]}>
             <Txt weight="display" size={20} color={colors.ink}>Level {level.n}</Txt>
           </View>
-          <View style={{ width: 56 }} />
+          {settings.voice && hasVoice(voice) ? <CircleButton icon="sound" label="Hear the story again" onPress={() => speak(voice)} /> : <View style={{ width: 56 }} />}
         </View>
         <ScrollView contentContainerStyle={styles.body}>
           <Animated.View entering={ZoomIn.springify()} style={{ alignItems: 'center' }}>

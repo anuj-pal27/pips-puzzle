@@ -81,7 +81,14 @@ export default function GrownUpsSettings() {
       <ScrollView contentContainerStyle={styles.content}>
         <Section title="Sound">
           <ToggleRow label="Sound effects" value={settings.sound} onChange={(sound) => updateSettings({ sound })} />
-          <ToggleRow label="Music" value={settings.music} onChange={(music) => updateSettings({ music })} last />
+          <ToggleRow label="Music" value={settings.music} onChange={(music) => updateSettings({ music })} />
+          <ToggleRow
+            label="Voice"
+            help="Reads each stop's story aloud in the local language: Punjabi in Punjab, Gujarati in Gujarat, and so on"
+            value={settings.voice}
+            onChange={(voice) => updateSettings({ voice })}
+            last
+          />
         </Section>
 
         <Section title="Puzzles">

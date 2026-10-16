@@ -69,8 +69,9 @@ let webUnlocked = Platform.OS !== 'web'; // browsers block music until the first
 function setMode() {
   if (modeSet) return;
   modeSet = true;
-  // Respect the phone's silent switch, and never keep playing in the background.
-  setAudioModeAsync({ playsInSilentMode: false, shouldPlayInBackground: false, interruptionMode: 'mixWithOthers' }).catch(() => {});
+  // Never keep playing in the background. Respect the iPhone's silent switch, as games do there. On Android the
+  // ringer mode (vibrate, silent) is for calls and alerts, not media: honouring it there muted every phone on vibrate.
+  setAudioModeAsync({ playsInSilentMode: Platform.OS !== 'ios', shouldPlayInBackground: false, interruptionMode: 'mixWithOthers' }).catch(() => {});
 }
 
 /** Play a short effect (does nothing when grown-ups turned sound off). */

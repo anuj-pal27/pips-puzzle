@@ -1,7 +1,7 @@
 // Jalebi Hunt maze rules. Pure functions: (config, state, move) -> new state.
 //
 // Map legend:
-//   '#' house   'R' railway   '.' road   'S' start   'J' jalebis (goal)   'o' laddoo   'C' napping cow
+//   '#' house   'R' railway   '.' road   'S' start   'J' the goal (jalebis, or `goal`)   'o' laddoo   'C' napping cow
 //   'A','B',...  gates          'a','b',...  levers (lever 'a' opens gate 'A' for good)
 //   'x'  switch: flips every gate that has `openWhen` (opens some, shuts the others)
 //
@@ -24,6 +24,8 @@ export type MonkeyLane = { axis: 'h' | 'v'; line: number; min: number; max: numb
 export type MazeConfig = {
   id: string;
   intro: string;
+  /** What Gappu is looking for at 'J': a snack or gift id (src/data/games.ts). Jalebis if not set. */
+  goal?: string;
   map: string[];
   gates: Record<string, GateDef>;
   monkeys: MonkeyLane[];
@@ -163,4 +165,31 @@ export function mazeMessage(cfg: MazeConfig, s: MazeState): string {
 /** 1 to 3 stars: one per laddoo collected, at least one for finishing. */
 export function mazeStars(s: MazeState): 1 | 2 | 3 {
   return Math.min(3, Math.max(1, s.got.length)) as 1 | 2 | 3;
+}
+
+// ---------------------------------------------------------------- Lantern Walk (Diwali Night)
+
+/**
+ * Squares you can see in the dark maze: around Gappu's lantern (two steps), around every diya he left
+ * on the squares he walked (one step), and the jalebi stall, which always glows.
+ */
+export function lanternLit(cfg: MazeConfig, pos: Cell, trail: string[]): Set<string> {
+  const lit = new Set<string>();
+  const rows = cfg.map.length;
+  const cols = cfg.map[0].length;
+  const around = (c: number, r: number, reach: number) => {
+    for (let dr = -reach; dr <= reach; dr++)
+      for (let dc = -reach; dc <= reach; dc++) {
+        const [x, y] = [c + dc, r + dr];
+        if (Math.abs(dc) + Math.abs(dr) <= reach && x >= 0 && y >= 0 && x < cols && y < rows) lit.add(key(x, y));
+      }
+  };
+  around(pos[0], pos[1], 2);
+  for (const k of trail) {
+    const [c, r] = k.split(',').map(Number);
+    around(c, r, 1);
+  }
+  const [jc, jr] = findTile(cfg, 'J');
+  lit.add(key(jc, jr));
+  return lit;
 }

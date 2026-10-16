@@ -1,0 +1,78 @@
+{% extends "dashboard/base.html" %}
+{% load dash %}
+{% block title %}{{ puzzle.title }}{% endblock %}
+{% block content %}
+<div class="head">
+  <div class="row" style="align-items:center; gap:18px">
+    <img class="thumb-lg" src="{{ thumb }}" alt="">
+    <div>
+      <p class="muted small" style="margin:0"><a href="{% url 'dashboard:puzzles' %}?days={{ days }}">Puzzles</a> / {{ puzzle.slug }}</p>
+      <h1>{{ puzzle.title }}</h1>
+      <div class="row" style="margin-top:6px">
+        <span class="chip chip-l{{ puzzle.level }}">Level {{ puzzle.level }}.{{ puzzle.order }}</span>
+        <span class="chip">{{ puzzle.get_kind_display }}</span>
+        {% if puzzle.is_published %}<span class="status good">Live on phones</span>{% else %}<span class="chip chip-off">Hidden from phones</span>{% endif %}
+      </div>
+      {% if puzzle.cheer or puzzle.blurb %}<p class="muted small" style="margin:6px 0 0">Finish screen: <strong>{{ puzzle.cheer }}</strong> {{ puzzle.blurb }}</p>{% endif %}
+    </div>
+  </div>
+  <div class="row">
+    <a class="btn btn-primary" href="{% url 'dashboard:edit' puzzle.slug %}">Edit</a>
+    <form class="inline" method="post" action="{% url 'dashboard:action' puzzle.slug 'publish' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn">{% if puzzle.is_published %}Hide from phones{% else %}Publish{% endif %}</button></form>
+    <form class="inline" method="post" action="{% url 'dashboard:action' puzzle.slug 'duplicate' %}">{% csrf_token %}<button class="btn">Duplicate</button></form>
+    <form class="inline" method="post" action="{% url 'dashboard:action' puzzle.slug 'delete' %}" data-confirm="Delete “{{ puzzle.title }}”? Children's stars on it are deleted too. To take it off phones but keep everything, use Hide instead.">{% csrf_token %}<button class="btn btn-danger">Delete</button></form>
+  </div>
+</div>
+
+<div class="row" style="justify-content:space-between">
+  <h2>Play stats</h2>
+  {% include "dashboard/_range.html" %}
+</div>
+
+<section class="tiles five" aria-label="Key numbers for this puzzle">
+  <div class="tile"><div class="label">Players</div><div class="value num">{{ row.players|compact }}</div><div class="delta">phones that opened it</div></div>
+  <div class="tile"><div class="label">Started</div><div class="value num">{{ row.starts|compact }}</div><div class="delta">{{ row.quits|compact }} left unfinished</div></div>
+  <div class="tile"><div class="label">Finish rate</div><div class="value num">{{ row.completion|pct }}</div><div class="delta">{{ row.finishes|compact }} finished</div></div>
+  <div class="tile"><div class="label">Average stars</div><div class="value num">{{ row.avg_stars|one_decimal }}<span class="muted small"> / 3</span></div><div class="delta">&nbsp;</div></div>
+  <div class="tile"><div class="label">Typical time to finish</div><div class="value num">{{ row.median_seconds|duration }}</div><div class="delta">median</div></div>
+</section>
+
+<div class="grid grid-3">
+  <section class="card span-2">
+    <header><div><h2>Plays per day</h2><p class="muted small">Last {{ chart_days }} days.</p></div></header>
+    {% include "dashboard/_linechart.html" with aria="Plays of this puzzle per day" %}
+  </section>
+  <section class="card">
+    <header><div><h2>Stars earned</h2><p class="muted small">{{ star_total }} finish{{ star_total|pluralize:"es" }}</p></div></header>
+    {% if star_total %}
+    <div class="bars">
+      {% for label, n in star_rows %}
+      <div class="bar-row"><span>{{ label }}</span><div class="bar-track"><div class="bar-fill" style="width: {{ n|share_of:star_total }}%"></div></div><span class="bar-value">{{ n }}</span></div>
+      {% endfor %}
+    </div>
+    <p class="faint small">{% if puzzle.kind == "jigsaw" %}Fewer stars: the picture hint was used or many pieces were dropped in the wrong place.{% elif puzzle.kind == "maze" %}One star per laddoo collected.{% elif puzzle.kind == "memory" %}Fewer stars: more wrong guesses per pair.{% elif puzzle.kind == "tracks" %}Fewer stars: many more taps than needed.{% elif puzzle.kind == "slide" %}Fewer stars: many more moves than the fewest possible.{% else %}Fewer stars: more wrong tries.{% endif %}</p>
+    {% else %}<p class="muted">Nobody has finished it yet.</p>{% endif %}
+  </section>
+</div>
+
+<div class="grid grid-2">
+  <section class="card">
+    <header><h2>What it looks like</h2><a class="small" href="{% url 'dashboard:edit' puzzle.slug %}">Change it →</a></header>
+    <div class="preview-box" id="preview"></div>
+    {{ preview|json_script:"preview-data" }}
+  </section>
+  <section class="card">
+    <header><h2>Latest plays of this puzzle</h2></header>
+    {% if recent %}
+    <ul class="feed">
+      {% for e in recent %}
+      <li><time datetime="{{ e.played_at|date:'c' }}">{{ e.played_at|date:"j M, H:i" }}</time>
+        <span>Phone <code>{{ e.device|slice:":6" }}</code> {% if e.type == "finish" %}finished with {{ e.stars }} star{{ e.stars|pluralize }}{% elif e.type == "quit" %}left{% else %}started{% endif %}{% if e.seconds is not None and e.type != "start" %} after {{ e.seconds|duration }}{% endif %}
+        {% if e.is_demo %}<span class="chip chip-demo">demo</span>{% endif %}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="muted">No plays yet.</p>{% endif %}
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script>Dash.renderSavedPreview();</script>{% endblock %}

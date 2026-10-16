@@ -1,6 +1,8 @@
 // Jigsaw geometry: piece outlines (with tabs and blanks), board slot lines and tray layout.
 // Pure functions with no React or React Native imports, so they can be unit-tested with plain Node.
 
+import { randInt, shuffled } from './random.ts';
+
 export type JigsawGrid = {
   cols: number;
   rows: number;
@@ -83,31 +85,108 @@ export function slotPath(g: JigsawGrid): string {
   return d;
 }
 
+/** Where piece `id` belongs, as a fraction of the board (0..1 across and down). */
+const boardSpot = (g: JigsawGrid, id: number) => ({ x: ((id % g.cols) + 0.5) / g.cols, y: (Math.floor(id / g.cols) + 0.5) / g.rows });
+
 /**
- * Scatter all pieces over the tray in a loose grid, in a fixed shuffled order, each slightly turned.
- * Positions are piece centres relative to the tray's top-left corner.
+ * A piece starts "near home" if its tray spot is roughly where it goes on the board: too easy to guess.
+ * Distance as a fraction of the tray; smaller for big puzzles, where the tray cells are smaller too.
  */
-export function trayLayout(g: JigsawGrid, trayW: number, trayH: number): TraySpot[] {
+export const nearHome = (g: JigsawGrid) => Math.min(0.3, 0.9 / Math.max(g.cols, g.rows));
+
+/**
+ * Where the pieces wait in the tray at the start: positions are piece centres relative to the tray's
+ * top-left corner. A new mix every play (pass a seeded `rand` to repeat one):
+ * - "grid" (levels 1 and 2): a loose grid in a random order, each piece a little turned.
+ * - "pile" (later levels): a messy heap; pieces may overlap a little, and the list order is the stacking order.
+ * Either way no piece starts in the part of the tray that matches its spot on the board.
+ */
+export function trayLayout(g: JigsawGrid, trayW: number, trayH: number, rand: () => number, style: 'grid' | 'pile' = 'grid'): TraySpot[] {
   const n = g.cols * g.rows;
   const tcols = n <= 6 ? 3 : n <= 12 ? 4 : 5;
   const trows = Math.ceil(n / tcols);
   const m = pieceMargin(g);
+  const boxW = g.pw + 2 * m;
+  const boxH = g.ph + 2 * m;
   const cellW = trayW / tcols;
   const cellH = trayH / trows;
-  const scale = Math.min(0.9, (cellW * 0.98) / (g.pw + 2 * m), (cellH * 0.98) / (g.ph + 2 * m));
-  const ids = Array.from({ length: n }, (_, i) => i);
-  const shuffled = ids.slice().sort((a, b) => ((a * 2654435761) >>> 0) % 997 - ((b * 2654435761) >>> 0) % 997);
-  return shuffled.map((id, k) => {
-    const i = k % tcols;
-    const j = Math.floor(k / tcols);
-    return {
-      id,
-      cx: cellW * (i + 0.5) + (((i * 7 + j * 3) % 5) - 2),
-      cy: cellH * (j + 0.5) + (((i * 5 + j * 11) % 7) - 3),
-      rot: (((i * 13 + j * 7) % 9) - 4) * 3,
-      scale,
-    };
-  });
+  const gridScale = Math.min(0.9, (cellW * 0.98) / boxW, (cellH * 0.98) / boxH);
+  const near = (id: number, x: number, y: number) => {
+    const home = boardSpot(g, id);
+    return Math.hypot(home.x - x / trayW, home.y - y / trayH) < nearHome(g);
+  };
+
+  if (style === 'pile') {
+    const pile = pileLayout(n, trayW, trayH, boxW, boxH, Math.min(0.95, gridScale * 1.15), rand, near);
+    if (pile) return pile;
+  }
+
+  // Grid: try random orders until no piece sits near its own spot (keep the best try if none is perfect).
+  // Each cell's little wobble is decided first, so the check uses the spot the piece really starts on.
+  const cells = Array.from({ length: n }, (_, k) => ({
+    x: cellW * ((k % tcols) + 0.5) + (rand() - 0.5) * cellW * 0.12,
+    y: cellH * (Math.floor(k / tcols) + 0.5) + (rand() - 0.5) * cellH * 0.12,
+  }));
+  let best: number[] = [];
+  let bestBad = Infinity;
+  for (let attempt = 0; attempt < 200 && bestBad > 0; attempt++) {
+    const order = shuffled(Array.from({ length: n }, (_, i) => i), rand);
+    const bad = order.filter((id, k) => near(id, cells[k].x, cells[k].y)).length;
+    if (bad < bestBad) [best, bestBad] = [order, bad];
+  }
+  return best.map((id, k) => ({
+    id,
+    cx: cells[k].x,
+    cy: cells[k].y,
+    rot: randInt(rand, -15, 15),
+    scale: gridScale,
+  }));
+}
+
+/** Drop pieces one by one at random places, never right on top of another one (so each can still be grabbed). */
+function pileLayout(
+  n: number,
+  trayW: number,
+  trayH: number,
+  boxW: number,
+  boxH: number,
+  scale: number,
+  rand: () => number,
+  near: (id: number, x: number, y: number) => boolean,
+): TraySpot[] | null {
+  const w = boxW * scale;
+  const h = boxH * scale;
+  if (w >= trayW || h >= trayH) return null;
+  const minGap = 0.62 * Math.min(w, h); // centres at least this far apart: overlaps stay small
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const spots: TraySpot[] = [];
+    for (const id of shuffled(Array.from({ length: n }, (_, i) => i), rand)) {
+      let placed = false;
+      for (let tries = 0; tries < 250 && !placed; tries++) {
+        const cx = w / 2 + rand() * (trayW - w);
+        const cy = h / 2 + rand() * (trayH - h);
+        if (near(id, cx, cy)) continue;
+        if (spots.some((s) => Math.hypot(s.cx - cx, s.cy - cy) < minGap)) continue;
+        spots.push({ id, cx, cy, rot: randInt(rand, -25, 25), scale });
+        placed = true;
+      }
+      if (!placed) break;
+    }
+    if (spots.length === n) return spots;
+  }
+  return null; // tray too small for a heap: fall back to the grid
+}
+
+/**
+ * "Spin" jigsaws: how many quarter-turns clockwise each piece starts with (0 = already upright).
+ * Random every play; about two pieces in three start turned, and never none or all of them.
+ */
+export function startTurns(n: number, rand: () => number): number[] {
+  for (;;) {
+    const turns = Array.from({ length: n }, () => (rand() < 1 / 3 ? 0 : randInt(rand, 1, 3)));
+    const turned = turns.filter(Boolean).length;
+    if (turned >= Math.ceil(n / 2) && turned < n) return turns;
+  }
 }
 
 /** Stars for a finished jigsaw: start at 3, lose one for using the picture hint, one for lots of misses. */

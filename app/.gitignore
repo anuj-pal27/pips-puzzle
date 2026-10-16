@@ -44,3 +44,6 @@ example
 
 # your local API address
 .env
+
+# Contact sheet from `npm run art -- --preview`
+art-preview.png

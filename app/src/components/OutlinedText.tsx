@@ -18,14 +18,17 @@ export function OutlinedText({
   color = colors.white,
   outline = colors.ink,
   stroke = 4,
+  align = 'left',
 }: {
   children: string;
   size: number;
   color?: string;
   outline?: string;
   stroke?: number;
+  /** For titles long enough to wrap onto two lines. */
+  align?: 'left' | 'center';
 }) {
-  const base = { fontFamily: fonts.display, fontSize: size, lineHeight: Math.round(size * 1.15), letterSpacing: 1 };
+  const base = { fontFamily: fonts.display, fontSize: size, lineHeight: Math.round(size * 1.15), letterSpacing: 1, textAlign: align };
   return (
     <View accessible accessibilityRole="header" accessibilityLabel={children}>
       <Text style={[base, styles.layer, { color: outline, transform: [{ translateY: stroke * 2.2 }] }]}>{children}</Text>
@@ -40,5 +43,6 @@ export function OutlinedText({
 }
 
 const styles = StyleSheet.create({
-  layer: { position: 'absolute', left: 0, top: 0 },
+  // Same width as the text on top, so every layer wraps onto the same lines.
+  layer: { position: 'absolute', left: 0, right: 0, top: 0 },
 });

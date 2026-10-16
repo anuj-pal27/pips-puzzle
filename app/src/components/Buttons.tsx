@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { playSound } from '@/audio/sound';
 import { colors } from '@/theme';
 import { Icon, type IconName } from './Icon';
 import { Txt } from './Txt';
@@ -37,7 +38,10 @@ export function ChunkyButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      onPress={onPress}
+      onPress={() => {
+        playSound('tap');
+        onPress();
+      }}
       style={({ pressed }) => [
         styles.chunky,
         { backgroundColor: color, height, width, borderRadius: height / 2, boxShadow: `0px ${pressed ? 2 : 7}px 0px ${shadow}` },
@@ -80,7 +84,10 @@ export function CircleButton({
       accessibilityLabel={label}
       accessibilityState={selected === undefined ? undefined : { selected }}
       hitSlop={6}
-      onPress={onPress}
+      onPress={() => {
+        playSound('tap');
+        onPress();
+      }}
       style={({ pressed }) => [
         styles.circle,
         { width: size, height: size, borderRadius: size / 2, backgroundColor: color, boxShadow: `0px ${pressed ? 2 : 5}px 0px ${shadow}` },

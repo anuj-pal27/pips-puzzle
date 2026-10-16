@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- Kaju katli: three diamond pieces with silver leaf (Mithai Snap). Same style as the other snacks. -->
+  <ellipse cx="128" cy="212" rx="90" ry="14" fill="#1E2A4F" opacity="0.12"/>
+  <g id="piece">
+    <polygon points="128,70 186,108 128,146 70,108" fill="#F4E3C1"/>
+    <polygon points="70,108 128,146 128,162 70,124" fill="#DDBF8C"/>
+    <polygon points="128,146 186,108 186,124 128,162" fill="#C9A66F"/>
+    <polygon points="128,80 172,108 128,136 84,108" fill="#FBF4E6" opacity="0.9"/>
+    <ellipse cx="112" cy="100" rx="9" ry="4" fill="#FFFFFF" opacity="0.9"/>
+    <ellipse cx="140" cy="116" rx="6" ry="3" fill="#E6E9EF" opacity="0.9"/>
+  </g>
+  <use href="#piece" transform="translate(-40 48)"/>
+  <use href="#piece" transform="translate(40 52)"/>
+  <path d="M206,44 l6,14 14,6 -14,6 -6,14 -6,-14 -14,-6 14,-6 z" fill="#FFC93C"/>
+</svg>

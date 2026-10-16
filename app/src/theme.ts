@@ -25,9 +25,6 @@ export const colors = {
   danger: '#C93D24',
   navyScrim: 'rgba(30, 42, 79, 0.62)',
 
-  tierEasy: '#7ED957',
-  tierMedium: '#FFC93C',
-  tierHard: '#FF7A59',
 } as const;
 
 // Font family names come from the @expo-google-fonts packages loaded in src/app/_layout.tsx.
@@ -37,6 +34,17 @@ export const fonts = {
   semibold: 'Baloo2_600SemiBold',
   bold: 'Baloo2_700Bold',
   extrabold: 'Baloo2_800ExtraBold',
+} as const;
+
+/** Learn with Bit's robot lab: mint and teal, so it feels like its own place. */
+export const LAB = {
+  bg: '#E6F7F3',
+  card: '#FFFFFF',
+  line: '#BFE7DF',
+  teal: '#3CCFB4',
+  tealShadow: '#1F8F7C',
+  tealDark: '#0B5446',
+  locked: '#CFE9E3',
 } as const;
 
 /** The chunky "pressable toy" edge under buttons and cards. */

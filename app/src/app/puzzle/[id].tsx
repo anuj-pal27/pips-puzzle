@@ -7,41 +7,50 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { playSound, useMusic } from '@/audio/sound';
 import { ChunkyButton, CircleButton, Pill } from '@/components/Buttons';
+import { TipBubble } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
+import { ThemeBackdrop } from '@/components/Festive';
 import { PieceArt } from '@/components/PieceArt';
 import { Txt } from '@/components/Txt';
-import { getPuzzle, getTier, PICTURES, type Puzzle } from '@/data/puzzles';
-import { jigsawStars, pieceMargin, piecePath, slotPath, trayLayout, type JigsawGrid } from '@/game/jigsaw';
+import type { JigsawPuzzle } from '@/data/puzzles';
+import { isGentle, themeFor } from '@/data/levels';
+import { jigsawStars, pieceMargin, piecePath, slotPath, startTurns, trayLayout, type JigsawGrid } from '@/game/jigsaw';
+import { newSeed, seededRandom } from '@/game/random';
+import { useCatalog, usePuzzle } from '@/state/catalog';
+import { usePlayStats } from '@/state/playStats';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 
 type Rect = { x: number; y: number; w: number; h: number };
-type JigsawPuzzle = Extract<Puzzle, { kind: 'jigsaw' }>;
 
 const PANEL_PAD = 14;
 
 export default function PuzzleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const puzzle = getPuzzle(id);
+  const puzzle = usePuzzle(id);
   if (!puzzle || puzzle.kind !== 'jigsaw') return <Redirect href="/map" />;
   return <Jigsaw key={puzzle.id} puzzle={puzzle} />;
 }
 
 function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
+  usePlayStats(puzzle.id);
   const { settings, recordStars } = useProgress();
-  const picture = PICTURES[puzzle.picture];
-  const tier = getTier(puzzle.tier);
+  const picture = useCatalog().getPicture(puzzle.picture);
+  const theme = themeFor(puzzle.level);
+  useMusic(theme.music);
   const { width } = useWindowDimensions();
 
   // Board size follows the screen width; pieces follow the board.
   const boardW = Math.min(width - 32 - PANEL_PAD * 2, 420);
   const boardH = (boardW * picture.height) / picture.width;
-  const grid: JigsawGrid = { cols: tier.cols, rows: tier.rows, pw: boardW / tier.cols, ph: boardH / tier.rows };
+  const grid: JigsawGrid = { cols: puzzle.cols, rows: puzzle.rows, pw: boardW / puzzle.cols, ph: boardH / puzzle.rows };
   const margin = pieceMargin(grid);
   const boxW = grid.pw + 2 * margin;
   const boxH = grid.ph + 2 * margin;
-  const total = tier.cols * tier.rows;
+  const total = puzzle.cols * puzzle.rows;
+  const spin = !!puzzle.spin;
 
   const [placed, setPlaced] = useState<number[]>([]);
   const [hint, setHint] = useState(false);
@@ -50,6 +59,11 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
   const [paused, setPaused] = useState(false);
   const [panel, setPanel] = useState<Rect | null>(null);
   const [tray, setTray] = useState<Rect | null>(null);
+  // A new mix of the tray every play (and on "Start over"); the seed keeps it still while playing.
+  const [seed, setSeed] = useState(newSeed);
+  // Spin jigsaws: quarter-turns per piece. Only ever counts up, so pieces always spin the same way.
+  const [turns, setTurns] = useState<number[]>(() => (spin ? startTurns(total, Math.random) : Array(total).fill(0)));
+  const [tip, setTip] = useState('Some pieces are turned round. Tap a piece to spin it!');
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const done = placed.length === total;
 
@@ -68,6 +82,7 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
 
   const place = (pieceId: number) => {
     if (placed.includes(pieceId)) return;
+    playSound('snap');
     const next = [...placed, pieceId];
     setPlaced(next);
     if (next.length === total) {
@@ -82,6 +97,8 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
   };
   const restart = () => {
     setPlaced([]);
+    setTurns(spin ? startTurns(total, Math.random) : Array(total).fill(0));
+    setSeed(newSeed());
     setMisses(0);
     setUsedHint(false);
     setHint(false);
@@ -90,20 +107,22 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
 
   const local = (id: number) => piecePath(grid, Math.floor(id / grid.cols), id % grid.cols, margin, margin);
   const imageOffset = (id: number) => ({ x: margin - (id % grid.cols) * grid.pw, y: margin - Math.floor(id / grid.cols) * grid.ph });
-  const spots = tray ? trayLayout(grid, tray.w, tray.h) : [];
+  // Levels 1 and 2: a loose grid. Later levels: a messy pile.
+  const spots = tray ? trayLayout(grid, tray.w, tray.h, seededRandom(seed), isGentle(puzzle.level) ? 'grid' : 'pile') : [];
   const boardX = (panel?.x ?? 0) + PANEL_PAD;
   const boardY = (panel?.y ?? 0) + PANEL_PAD;
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]} edges={['top', 'left', 'right', 'bottom']}>
+      <ThemeBackdrop theme={theme} />
       <View style={styles.root}>
         {/* top bar */}
         <View style={styles.header}>
           <CircleButton icon="pause" label="Pause" onPress={() => setPaused(true)} />
           <Pill>
-            <Icon name="piece" size={26} fill={tier.color} />
+            <Icon name="piece" size={26} fill={theme.accent} />
             <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${(placed.length / total) * 100}%`, backgroundColor: tier.color }]} />
+              <View style={[styles.progressFill, { width: `${(placed.length / total) * 100}%`, backgroundColor: theme.accent }]} />
             </View>
             <Txt weight="extrabold" size={18} accessibilityLabel={`${placed.length} of ${total} pieces placed`}>
               {placed.length}/{total}
@@ -160,17 +179,20 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
           </View>
         </View>
 
+        {spin && !done ? <TipBubble text={tip} /> : null}
+
         {/* tray: pieces start here */}
-        <View style={styles.tray} onLayout={measure(setTray)}>
+        <View style={[styles.tray, { backgroundColor: theme.tray }]} onLayout={measure(setTray)}>
           {done ? (
             <View style={styles.doneBox}>
-              <Txt weight="display" size={44}>Great job!</Txt>
+              <Txt weight="display" size={44} color={theme.text}>Great job!</Txt>
             </View>
           ) : null}
         </View>
 
         {/* loose pieces live in a layer over everything, so they can be dragged from the tray to the board */}
-        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        {/* collapsable={false} + zIndex: keep this layer real on Android, so the pieces' own layering stays inside it */}
+        <View style={[StyleSheet.absoluteFill, { zIndex: 1 }]} pointerEvents="box-none" collapsable={false}>
           {tray && panel
             ? spots
                 .filter((s) => !placed.includes(s.id))
@@ -187,12 +209,25 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
                       target={{ x: boardX + c * grid.pw + grid.pw / 2, y: boardY + r * grid.ph + grid.ph / 2 }}
                       scale={s.scale}
                       rot={s.rot}
+                      turn={turns[s.id]}
+                      spin={spin}
+                      onSpin={(id) => {
+                        playSound('click');
+                        setTurns((t) => t.map((v, i) => (i === id ? v + 1 : v)));
+                      }}
+                      onWrongWay={() => {
+                        playSound('miss');
+                        setTip('Spin it the right way up first! Tap the piece to turn it.');
+                      }}
                       boxW={boxW}
                       boxH={boxH}
                       margin={margin}
                       snap={0.45 * Math.min(grid.pw, grid.ph)}
                       onPlaced={place}
-                      onMiss={() => setMisses((m) => m + 1)}>
+                      onMiss={() => {
+                        playSound('miss', 0.7);
+                        setMisses((m) => m + 1);
+                      }}>
                       <PieceArt
                         clipId={`tray-${puzzle.id}-${s.id}`}
                         d={local(s.id)}
@@ -236,12 +271,16 @@ function TrayPiece({
   target,
   scale,
   rot,
+  turn,
+  spin,
   boxW,
   boxH,
   margin,
   snap,
   onPlaced,
   onMiss,
+  onSpin,
+  onWrongWay,
   children,
 }: {
   id: number;
@@ -251,22 +290,28 @@ function TrayPiece({
   target: { x: number; y: number };
   scale: number;
   rot: number;
+  turn: number; // quarter-turns clockwise; upright when a multiple of 4
+  spin: boolean; // tapping turns the piece
   boxW: number;
   boxH: number;
   margin: number;
   snap: number;
   onPlaced: (id: number) => void;
   onMiss: () => void;
+  onSpin: (id: number) => void;
+  onWrongWay: () => void;
   children: ReactNode;
 }) {
   const x = useSharedValue(home.x);
   const y = useSharedValue(home.y);
   const s = useSharedValue(scale);
-  const r = useSharedValue(rot);
+  const r = useSharedValue(rot + turn * 90);
   const z = useSharedValue(1);
   const near = useSharedValue(0);
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
+  const touchX = useSharedValue(0);
+  const touchY = useSharedValue(0);
 
   // Screen size or layout changed: move the piece to its new home.
   useEffect(() => {
@@ -275,28 +320,42 @@ function TrayPiece({
     s.set(scale);
   }, [home.x, home.y, scale, x, y, s]);
 
+  // Tapped: turn a quarter clockwise.
+  useEffect(() => {
+    r.set(withTiming(rot + turn * 90, { duration: 180 }));
+  }, [turn, rot, r]);
+  const upright = turn % 4 === 0;
+
   const distance = () => {
     'worklet';
     return Math.hypot(x.get() + boxW / 2 - target.x, y.get() + boxH / 2 - target.y);
   };
 
+  // The piece follows the finger from where it first touched down, so it never lags behind
+  // however far the finger moved before the drag was recognised.
   const pan = Gesture.Pan()
     .hitSlop({ left: -margin, right: -margin, top: -margin, bottom: -margin })
-    .onStart(() => {
+    .onBegin((e) => {
+      touchX.set(e.absoluteX);
+      touchY.set(e.absoluteY);
       startX.set(x.get());
       startY.set(y.get());
+    })
+    .onStart(() => {
+      scheduleOnRN(playSound, 'pick');
       z.set(100);
       s.set(withTiming(1, { duration: 120 }));
-      r.set(withTiming(0, { duration: 120 }));
+      r.set(withTiming(turn * 90, { duration: 120 }));
     })
     .onUpdate((e) => {
-      x.set(startX.get() + e.translationX);
-      y.set(startY.get() + e.translationY);
+      x.set(startX.get() + e.absoluteX - touchX.get());
+      y.set(startY.get() + e.absoluteY - touchY.get());
       near.set(distance() < snap ? 1 : 0);
     })
     .onEnd(() => {
+      const d = distance();
       near.set(0);
-      if (distance() < snap) {
+      if (d < snap && upright) {
         x.set(withTiming(target.x - boxW / 2, { duration: 90 }));
         y.set(
           withTiming(target.y - boxH / 2, { duration: 90 }, (finished) => {
@@ -307,11 +366,21 @@ function TrayPiece({
         x.set(withSpring(home.x));
         y.set(withSpring(home.y));
         s.set(withSpring(scale));
-        r.set(withSpring(rot));
+        r.set(withSpring(rot + turn * 90));
         z.set(2);
-        scheduleOnRN(onMiss);
+        // Right spot but upside down: explain instead of counting a miss.
+        if (d < snap * 1.5 && !upright) scheduleOnRN(onWrongWay);
+        else scheduleOnRN(onMiss);
       }
     });
+  const tap = Gesture.Tap()
+    .maxDuration(300)
+    .maxDistance(10)
+    .hitSlop({ left: -margin, right: -margin, top: -margin, bottom: -margin })
+    .onEnd((_e, success) => {
+      if (success) scheduleOnRN(onSpin, id);
+    });
+  const gesture = spin ? Gesture.Race(pan, tap) : pan;
 
   const pieceStyle = useAnimatedStyle(() => ({
     zIndex: z.get(),
@@ -328,12 +397,12 @@ function TrayPiece({
           <Path d={outline} fill={colors.sun} fillOpacity={0.4} stroke={colors.sun} strokeWidth={4} strokeLinejoin="round" />
         </Svg>
       </Animated.View>
-      <GestureDetector gesture={pan}>
+      <GestureDetector gesture={gesture}>
         <Animated.View
           accessible
           accessibilityRole="button"
           accessibilityLabel={label}
-          accessibilityHint="Drag it to its place on the picture"
+          accessibilityHint={spin ? 'Tap to spin it, drag it to its place on the picture' : 'Drag it to its place on the picture'}
           accessibilityActions={[{ name: 'activate', label: 'Put piece in place' }]}
           onAccessibilityAction={() => onPlaced(id)}
           style={[{ position: 'absolute', left: 0, top: 0, width: boxW, height: boxH }, pieceStyle]}>
@@ -359,6 +428,18 @@ const styles = StyleSheet.create({
   },
   tray: { flex: 1, marginTop: 20, borderTopLeftRadius: 36, borderTopRightRadius: 36, backgroundColor: colors.sandDark },
   doneBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scrim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: colors.navyScrim, alignItems: 'center', justifyContent: 'center' },
+  // Above everything, including a piece that is being dragged.
+  scrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: 1000,
+    elevation: 1000,
+    backgroundColor: colors.navyScrim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   pauseCard: { width: 300, padding: 24, borderRadius: 32, backgroundColor: colors.white, gap: 14 },
 });

@@ -1,18 +1,29 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
+import { setMusicOn, setSoundOn, setVoiceOn } from '@/audio/sound';
+
+import { playFinished, setPlayStatsEnabled } from './playStats';
+
 // Everything the game remembers, saved on the phone (no account, works offline).
 
 export type Settings = {
   sound: boolean;
   music: boolean;
+  voice: boolean; // the narrator reads each stop's story in its own language
   pictureHint: boolean; // show the light-bulb button in jigsaws
+  shareStats: boolean; // send anonymous play stats to the game server (src/state/playStats.ts)
 };
 
-type Saved = { version: 1; stars: Record<string, number>; settings: Settings };
+/** `lab`: stars from Learn with Bit, kept apart from the puzzle stars (they don't count on the puzzle map). */
+/**
+ * `celebrated`: one-time moments that have been shown, so they only show once: a level's story card
+ * ('story-3') and a level's finale ('level-3'; 'diwali' for the last level, as before the levels).
+ */
+type Saved = { version: 1; stars: Record<string, number>; lab: Record<string, number>; celebrated: string[]; settings: Settings };
 
 const STORAGE_KEY = 'pips-puzzles/progress';
-const DEFAULTS: Saved = { version: 1, stars: {}, settings: { sound: true, music: true, pictureHint: true } };
+const DEFAULTS: Saved = { version: 1, stars: {}, lab: {}, celebrated: [], settings: { sound: true, music: true, voice: true, pictureHint: true, shareStats: true } };
 
 type ProgressApi = {
   ready: boolean;
@@ -21,6 +32,11 @@ type ProgressApi = {
   settings: Settings;
   /** Keeps the best result: replaying a puzzle never lowers its stars. */
   recordStars: (puzzleId: string, stars: number) => void;
+  labStars: Record<string, number>;
+  /** Same for a Learn with Bit lesson. */
+  recordLab: (lessonId: string, stars: number) => void;
+  celebrated: string[];
+  markCelebrated: (key: string) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   resetProgress: () => void;
 };
@@ -36,13 +52,24 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       .then((raw) => {
         if (!raw) return;
         const parsed = JSON.parse(raw) as Partial<Saved>;
-        setSaved({ ...DEFAULTS, ...parsed, settings: { ...DEFAULTS.settings, ...parsed.settings } });
+        setSaved({ ...DEFAULTS, ...parsed, lab: { ...parsed.lab }, celebrated: parsed.celebrated ?? [], settings: { ...DEFAULTS.settings, ...parsed.settings } });
       })
       .catch(() => {
         // Corrupt or unreadable save: start fresh rather than crash.
       })
       .finally(() => setReady(true));
   }, []);
+
+  useEffect(() => {
+    setPlayStatsEnabled(saved.settings.shareStats);
+  }, [saved.settings.shareStats]);
+
+  // Grown-ups' switches. Wait for the saved settings, so music never starts for a moment when it's off.
+  useEffect(() => {
+    setSoundOn(saved.settings.sound);
+    setMusicOn(ready && saved.settings.music);
+    setVoiceOn(ready && saved.settings.voice);
+  }, [ready, saved.settings.sound, saved.settings.music, saved.settings.voice]);
 
   const save = (next: Saved) => {
     setSaved(next);
@@ -55,11 +82,22 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     totalStars: Object.values(saved.stars).reduce((a, b) => a + b, 0),
     settings: saved.settings,
     recordStars: (puzzleId, stars) => {
+      playFinished(puzzleId, stars);
       const best = Math.max(saved.stars[puzzleId] ?? 0, stars);
       save({ ...saved, stars: { ...saved.stars, [puzzleId]: best } });
     },
+    labStars: saved.lab,
+    recordLab: (lessonId, stars) => {
+      playFinished(lessonId, stars);
+      const best = Math.max(saved.lab[lessonId] ?? 0, stars);
+      save({ ...saved, lab: { ...saved.lab, [lessonId]: best } });
+    },
+    celebrated: saved.celebrated,
+    markCelebrated: (key) => {
+      if (!saved.celebrated.includes(key)) save({ ...saved, celebrated: [...saved.celebrated, key] });
+    },
     updateSettings: (patch) => save({ ...saved, settings: { ...saved.settings, ...patch } }),
-    resetProgress: () => save({ ...saved, stars: {} }),
+    resetProgress: () => save({ ...saved, stars: {}, lab: {}, celebrated: [] }),
   };
 
   return <ProgressContext.Provider value={api}>{children}</ProgressContext.Provider>;

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360">
+<!-- Mithai Snap map thumbnail: Diwali sweets on cards, at night. -->
+<defs><radialGradient id="glow"><stop offset="0" stop-color="#FFE48A" stop-opacity="0.9"/><stop offset="0.5" stop-color="#FFB13B" stop-opacity="0.3"/><stop offset="1" stop-color="#FF9F1C" stop-opacity="0"/></radialGradient></defs>
+<rect width="360" height="360" fill="#262E6B"/>
+<path d="M0,26 Q180.0,70 360,26" stroke="#0B1030" stroke-width="3" fill="none"/>
+<circle cx="36.0" cy="42.9" r="14" fill="#FF7A59" opacity="0.35"/>
+<ellipse cx="36.0" cy="42.9" rx="5" ry="7" fill="#FF7A59"/>
+<circle cx="72.0" cy="49.1" r="14" fill="#7CF3FF" opacity="0.35"/>
+<ellipse cx="72.0" cy="49.1" rx="5" ry="7" fill="#7CF3FF"/>
+<circle cx="108.0" cy="53.5" r="14" fill="#FF4F79" opacity="0.35"/>
+<ellipse cx="108.0" cy="53.5" rx="5" ry="7" fill="#FF4F79"/>
+<circle cx="144.0" cy="56.1" r="14" fill="#7ED957" opacity="0.35"/>
+<ellipse cx="144.0" cy="56.1" rx="5" ry="7" fill="#7ED957"/>
+<circle cx="180.0" cy="57.0" r="14" fill="#FFD43B" opacity="0.35"/>
+<ellipse cx="180.0" cy="57.0" rx="5" ry="7" fill="#FFD43B"/>
+<circle cx="216.0" cy="56.1" r="14" fill="#FF7A59" opacity="0.35"/>
+<ellipse cx="216.0" cy="56.1" rx="5" ry="7" fill="#FF7A59"/>
+<circle cx="252.0" cy="53.5" r="14" fill="#7CF3FF" opacity="0.35"/>
+<ellipse cx="252.0" cy="53.5" rx="5" ry="7" fill="#7CF3FF"/>
+<circle cx="288.0" cy="49.1" r="14" fill="#FF4F79" opacity="0.35"/>
+<ellipse cx="288.0" cy="49.1" rx="5" ry="7" fill="#FF4F79"/>
+<circle cx="324.0" cy="42.9" r="14" fill="#7ED957" opacity="0.35"/>
+<ellipse cx="324.0" cy="42.9" rx="5" ry="7" fill="#7ED957"/>
+<g transform="translate(105 140) rotate(-8)"><rect x="-62" y="-78" width="124" height="156" rx="18" fill="#1E2A4F"/><rect x="-55" y="-71" width="110" height="142" rx="13" fill="#FFFFFF"/><image href="kajukatli.png" x="-52" y="-52" width="104" height="104"/></g>
+<g transform="translate(255 145) rotate(7)"><rect x="-62" y="-78" width="124" height="156" rx="18" fill="#1E2A4F"/><rect x="-55" y="-71" width="110" height="142" rx="13" fill="#FFC93C"/><text x="0" y="28" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="84" fill="#FFFFFF">?</text></g>
+<g transform="translate(108 290) rotate(6)"><rect x="-62" y="-78" width="124" height="156" rx="18" fill="#1E2A4F"/><rect x="-55" y="-71" width="110" height="142" rx="13" fill="#FFC93C"/><text x="0" y="28" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="84" fill="#FFFFFF">?</text></g>
+<g transform="translate(258 292) rotate(-6)"><rect x="-62" y="-78" width="124" height="156" rx="18" fill="#1E2A4F"/><rect x="-55" y="-71" width="110" height="142" rx="13" fill="#FFFFFF"/><image href="gulabjamun.png" x="-52" y="-52" width="104" height="104"/></g>
+</svg>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy policy · Pip's Puzzles</title>
+  <meta name="description" content="How Pip's Puzzles, a puzzle game for young children, handles data: no names, no accounts, no ads, only anonymous play stats that grown-ups can switch off.">
+  <style>
+    :root { --ink: #1E2A4F; --soft: #4A5A7F; --bg: #FFF7EA; --card: #FFFFFF; --line: #F0DDBB; --accent: #FF7A59; }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink: #EEF1F8; --soft: #B6BFD6; --bg: #151C33; --card: #1E2742; --line: #2E3A5F; --accent: #FF9B80; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+    h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 4px; }
+    h2 { font-size: 1.2rem; margin: 32px 0 8px; }
+    p, li { color: var(--ink); }
+    .muted { color: var(--soft); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px; margin: 20px 0; }
+    .card li { margin: 4px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+    th, td { text-align: left; vertical-align: top; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+    th { color: var(--soft); font-weight: 600; }
+    a { color: var(--accent); }
+    code { font-size: .9em; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Privacy policy</h1>
+  <p class="muted">Pip's Puzzles · last updated {{ updated|date:"j F Y" }}</p>
+
+  <p>Pip's Puzzles is a puzzle game for young children, made by {{ owner }}. This page explains what information the game uses, and what it doesn't. It is written for parents and guardians.</p>
+
+  <div class="card">
+    <strong>In short</strong>
+    <ul>
+      <li>No names, email addresses, photos, contacts or location. The game never asks for them.</li>
+      <li>No accounts, no ads, no in-app purchases, no chat and no links to social media.</li>
+      <li>No third-party advertising or analytics tools are built into the game.</li>
+      <li>The game sends <strong>anonymous play stats</strong> (which puzzles are started and finished) to help make the puzzles better. Grown-ups can switch this off at any time.</li>
+    </ul>
+  </div>
+
+  <h2>What stays on the device</h2>
+  <p>Your child's stars, which puzzles and Learn with Bit lessons are unlocked, and the game settings (sound, music, picture hint, play stats) are saved only on the phone or tablet. They are not sent anywhere. <em>Grown-ups → Settings → Reset progress</em> clears the stars and locks; uninstalling the game removes everything.</p>
+
+  <h2>Learn with Bit</h2>
+  <p>In Learn with Bit, your child teaches a cartoon robot by sorting pictures, and the robot then sorts new pictures by comparing them with those examples. This all happens inside the app, on the device. Nothing your child does in a lesson is sent anywhere except the anonymous play stats described below, and no outside AI service is used.</p>
+
+  <h2>What the game downloads</h2>
+  <p>When the device is online, the game downloads the latest list of puzzles and their pictures from our server, so new puzzles can arrive without updating the app. Nothing about your child is sent to do this. Without internet the game uses the puzzles already on the device.</p>
+
+  <h2>Anonymous play stats</h2>
+  <p>Unless a grown-up switches it off, the game sends a short note to our server when a puzzle or a Learn with Bit lesson is started, finished or left unfinished. Each note contains only:</p>
+  <table>
+    <thead><tr><th>Item</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td>A random id made up by the game the first time it opens. It is not linked to the device's hardware, advertising id, phone number or any account.</td><td><code>3f6c…</code></td></tr>
+      <tr><td>Which puzzle or lesson, and whether it was started, finished or left</td><td>Easy 1, finished</td></tr>
+      <tr><td>Stars earned and seconds spent in the puzzle</td><td>3 stars, 45 seconds</td></tr>
+      <tr><td>When it happened</td><td>14 Oct, 10:32</td></tr>
+      <tr><td>The kind of device system and the game's version</td><td>android, 1.0.0</td></tr>
+    </tbody>
+  </table>
+  <p>We use these stats only to see which puzzles and lessons children enjoy and where they get stuck, so we can fix the ones that are too hard. We don't use them for advertising, we don't sell or share them, and they can't tell us who your child is. If the device is offline the notes wait on the device and are sent later.</p>
+  <p><strong>To switch it off:</strong> open <em>Grown-ups</em> (the sliders button on the home screen), answer the grown-ups check, tap <em>Open settings</em> and turn off <em>Share play stats</em>. The game then stops sending stats at once and deletes any that were not sent yet.</p>
+
+  <h2>Information our servers see</h2>
+  <p>Like any website, our server receives the device's IP address when the game connects. We use it only for a short time to stop the server being flooded with requests. It is not saved with play stats. Our hosting provider may keep ordinary technical logs for a short time to keep the service running and secure.</p>
+
+  <h2>Where the information is kept</h2>
+  <p>The server is hosted by Render (in Singapore). Play stats and puzzle pictures are stored with Supabase (in South Korea). Both act only on our instructions. Play stats are kept for as long as they help us improve the game.</p>
+
+  <h2>Children</h2>
+  <p>The game is made for children, and it is designed so that it does not collect personal information from them. The settings for play stats, sound and progress are behind a grown-ups check.</p>
+
+  <h2>Your choices</h2>
+  <ul>
+    <li>Switch off play stats in the grown-ups settings, as described above.</li>
+    <li>Reset progress in the grown-ups settings to clear the stars, or uninstall the game to remove everything saved on the device.</li>
+    <li>Because play stats carry no name or contact details, we can't match them to a particular family. If you have a question or want to know more, please write to us.</li>
+  </ul>
+
+  <h2>Changes</h2>
+  <p>If the game changes what it collects (for example, if optional parent accounts are added), we will update this page first and change the date at the top.</p>
+
+  <h2>Contact</h2>
+  <p>{{ owner }} · <a href="mailto:{{ email }}">{{ email }}</a></p>
+</main>
+</body>
+</html>

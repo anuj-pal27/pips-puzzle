@@ -1,11 +1,38 @@
-// Logic tests for the jigsaw geometry and the maze rules. Run with:  npm run test:logic
+// Logic tests for every puzzle kind's rules. Run with:  npm run test:logic
 // Plain Node (no test framework needed). Fails with a non-zero exit code if anything is wrong.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
+import { isLevelDone, isLevelUnlocked, levelsIn, nextPuzzle, puzzleAfter, readServerPuzzles, unlockNeed, type KnownIds } from '../../data/catalog.ts';
+import { FRIEND_NAMES, GIFT_NAMES, RANGOLI_GAMES, SLIDE_GAMES, SNACK_NAMES, TRACK_GAMES } from '../../data/games.ts';
+import { friendsMet, LEVELS } from '../../data/levels.ts';
 import { MAZES } from '../../data/mazes.ts';
-import { jigsawStars, pieceMargin, piecePath, slotPath, trayLayout } from '../jigsaw.ts';
+import { PICTURE_INFO, PUZZLES, type MemoryPuzzle, type Puzzle, type ShadowPuzzle } from '../../data/puzzles.ts';
+import { toSeed } from '../../data/seed.ts';
+import {
+  checkRangoli,
+  classKey,
+  hitClass,
+  newRangoli,
+  paint,
+  paintClasses,
+  palette,
+  rangoliDone,
+  rangoliProgress,
+  rangoliStars,
+  slotClass,
+  slots,
+  targetColor,
+  type RangoliConfig,
+} from '../rangoli.ts';
+import { jigsawStars, nearHome, pieceMargin, piecePath, slotPath, startTurns, trayLayout } from '../jigsaw.ts';
+import { canFlip, flipCard, memoryDone, memoryStars, newMemory, pairResult, seededRandom, settle } from '../memory.ts';
+import { nearestSlot, pickDecoy, shadowStars, trayOrder } from '../shadow.ts';
+import { BLANK, canSlide, isSolvable, isSolved, neighbours, scrambleSlide, slidePar, slideStars, slideTile, solvedBoard } from '../slide.ts';
+import { guess, LESSONS, lessonOpen, likeness, teachOrder, teachStars, THINGS, type Example } from '../teach.ts';
+import { initTracks, isTrack, openings, SCENERY, scrambleTracks, solvedTracks, tapPiece, traceTracks, tracksPar, tracksStars } from '../tracks.ts';
 import type { Cell, Dir, MazeConfig, MazeState } from '../maze.ts';
-import { findTile, gateIsOpen, initMaze, leverGate, monkeyCell, stepMaze, tileAt } from '../maze.ts';
+import { findTile, gateIsOpen, initMaze, lanternLit, leverGate, monkeyCell, stepMaze, tileAt } from '../maze.ts';
 
 let passed = 0;
 function test(name: string, fn: () => void) {
@@ -17,8 +44,11 @@ function test(name: string, fn: () => void) {
 // ---------------------------------------------------------------- jigsaw
 for (const g of [
   { cols: 3, rows: 2, pw: 110, ph: 110 },
+  { cols: 3, rows: 3, pw: 110, ph: 73 },
   { cols: 4, rows: 3, pw: 82, ph: 73 },
+  { cols: 5, rows: 3, pw: 66, ph: 73 },
   { cols: 5, rows: 4, pw: 66, ph: 66 },
+  { cols: 6, rows: 4, pw: 55, ph: 55 },
 ]) {
   const n = g.cols * g.rows;
   test(`jigsaw ${n} pieces: outlines stay inside each piece's drawing box`, () => {
@@ -29,17 +59,40 @@ for (const g of [
       assert.ok(Math.max(...nums) <= Math.max(g.pw, g.ph) + 2 * m, 'outline goes past the right/bottom');
     }
   });
-  test(`jigsaw ${n} pieces: tray holds every piece exactly once`, () => {
-    const spots = trayLayout(g, 390, 380);
-    assert.equal(spots.length, n);
-    assert.deepEqual(new Set(spots.map((s) => s.id)).size, n);
-    assert.ok(slotPath(g).startsWith('M 0 0'));
-  });
+  for (const style of ['grid', 'pile'] as const) {
+    test(`jigsaw ${n} pieces, ${style}: every piece once, inside the tray, never near its own spot, new mix each play`, () => {
+      const rand = seededRandom(n);
+      const firsts = new Set<string>();
+      for (let play = 0; play < 40; play++) {
+        const spots = trayLayout(g, 390, 380, rand, style);
+        assert.equal(spots.length, n);
+        assert.equal(new Set(spots.map((s) => s.id)).size, n);
+        for (const s of spots) {
+          assert.ok(s.cx > 0 && s.cx < 390 && s.cy > 0 && s.cy < 380, 'piece outside the tray');
+          const home = { x: ((s.id % g.cols) + 0.5) / g.cols, y: (Math.floor(s.id / g.cols) + 0.5) / g.rows };
+          assert.ok(Math.hypot(home.x - s.cx / 390, home.y - s.cy / 380) >= nearHome(g), `piece ${s.id} starts near its spot`);
+        }
+        firsts.add(spots.map((s) => s.id).join());
+      }
+      assert.ok(firsts.size > 30, 'the tray order hardly changes between plays');
+    });
+  }
+  test(`jigsaw ${n} pieces: board outline`, () => assert.ok(slotPath(g).startsWith('M 0 0')));
 }
 test('jigsaw stars', () => {
   assert.equal(jigsawStars(false, 0), 3);
   assert.equal(jigsawStars(true, 0), 2);
   assert.equal(jigsawStars(true, 20), 1);
+});
+test('spin jigsaw: most pieces start turned, some upright, different each play', () => {
+  const rand = seededRandom(5);
+  for (const n of [6, 12, 20]) {
+    const turns = startTurns(n, rand);
+    assert.notDeepEqual(turns, startTurns(n, rand));
+    assert.ok(turns.every((t) => Number.isInteger(t) && t >= 0 && t <= 3));
+    const turned = turns.filter(Boolean).length;
+    assert.ok(turned >= n * 0.5 && turned < n, `${turned} of ${n} turned`);
+  }
 });
 
 // ---------------------------------------------------------------- mazes
@@ -139,5 +192,540 @@ for (const cfg of Object.values(MAZES)) {
     }
   });
 }
+
+// ---------------------------------------------------------------- fix the tracks
+for (const cfg of Object.values(TRACK_GAMES)) {
+  const route = traceTracks(cfg, solvedTracks(cfg)).cells;
+  const onRoute = new Set(route.map(([c, r]) => `${c},${r}`));
+  const period = (ch: string) => (ch === '|' || ch === '-' ? 2 : 4);
+
+  test(`tracks ${cfg.id}: map and taps line up, only known pieces, scenery never needs taps`, () => {
+    assert.equal(cfg.taps.length, cfg.map.length);
+    cfg.map.forEach((row, r) => {
+      assert.equal(row.length, cfg.map[0].length);
+      assert.equal(cfg.taps[r].length, row.length);
+      row.split('').forEach((ch, c) => {
+        assert.ok(isTrack(ch) || (SCENERY as readonly string[]).includes(ch), `unknown tile '${ch}'`);
+        assert.match(cfg.taps[r][c], /[0-3]/);
+        if (!isTrack(ch)) assert.equal(cfg.taps[r][c], '0', `scenery ${c},${r} has taps`);
+      });
+    });
+  });
+  test(`tracks ${cfg.id}: the drawn route reaches the stall; the start doesn't; every route piece starts wrong`, () => {
+    assert.ok(traceTracks(cfg, solvedTracks(cfg)).reached);
+    assert.ok(!traceTracks(cfg, initTracks(cfg)).reached);
+    route.forEach(([c, r]) => assert.notEqual(Number(cfg.taps[r][c]) % period(cfg.map[r][c]), 0, `route piece ${c},${r} already right`));
+    assert.ok(route.length >= Math.min(8, 2 * cfg.map.length - 1), 'route is too short to be interesting');
+  });
+  test(`tracks ${cfg.id}: tapping each route piece the right number of times fixes it in exactly par taps`, () => {
+    let s = initTracks(cfg);
+    for (const [c, r] of route) for (let k = 0; k < Number(cfg.taps[r][c]) % period(cfg.map[r][c]); k++) s = tapPiece(s, c, r);
+    assert.ok(traceTracks(cfg, s).reached);
+    assert.equal(s.taps, tracksPar(cfg));
+  });
+  test(`tracks ${cfg.id}: random scrambles start broken, differ each play, and fix in exactly par taps`, () => {
+    const rand = seededRandom(21);
+    const seen = new Set<string>();
+    for (let play = 0; play < 50; play++) {
+      const play_ = scrambleTracks(cfg, rand);
+      assert.deepEqual(play_.map, cfg.map);
+      assert.ok(!traceTracks(play_, initTracks(play_)).reached, 'starts already fixed');
+      let s = initTracks(play_);
+      for (const [c, r] of route) for (let k = 0; k < Number(play_.taps[r][c]) % period(cfg.map[r][c]); k++) s = tapPiece(s, c, r);
+      assert.ok(traceTracks(play_, s).reached);
+      assert.equal(s.taps, tracksPar(play_));
+      seen.add(play_.taps.join());
+    }
+    assert.ok(seen.size > 40, 'scrambles repeat');
+  });
+  test(`tracks ${cfg.id}: taps turn pieces clockwise and leave scenery alone`, () => {
+    const s = initTracks(cfg);
+    cfg.map.forEach((row, r) =>
+      row.split('').forEach((ch, c) => {
+        const after = tapPiece(s, c, r);
+        if (!isTrack(ch)) return assert.equal(after, s);
+        assert.equal(after.taps, 1);
+        const [a, b] = openings(s.pieces[r][c]!);
+        const [a2, b2] = openings(after.pieces[r][c]!);
+        assert.deepEqual([a2, b2], [(a + 1) % 4, (b + 1) % 4]);
+      }),
+    );
+  });
+  test(`tracks ${cfg.id}: 300 random games: the joined-up line is always a real chain of track`, () => {
+    const rand = seededRandom(11);
+    const rows = cfg.map.length;
+    const cols = cfg.map[0].length;
+    for (let game = 0; game < 300; game++) {
+      let s = initTracks(cfg);
+      for (let n = 0; n < 60; n++) {
+        s = tapPiece(s, Math.floor(rand() * cols), Math.floor(rand() * rows));
+        const t = traceTracks(cfg, s);
+        t.cells.forEach(([c, r], i) => {
+          assert.ok(s.pieces[r][c], 'line runs through scenery');
+          if (i) assert.equal(Math.abs(c - t.cells[i - 1][0]) + Math.abs(r - t.cells[i - 1][1]), 1, 'line jumps');
+        });
+        assert.equal(new Set(t.cells.map(String)).size, t.cells.length, 'line loops');
+        if (t.reached) assert.deepEqual(t.cells.at(-1), [cfg.goal, rows - 1]);
+      }
+    }
+  });
+  if (cfg.id === 'hard' || cfg.id === 'hills') {
+    test(`tracks ${cfg.id}: has decoy pieces off the route`, () => {
+      const decoys = cfg.map.join('').split('').filter((ch, i) => isTrack(ch) && !onRoute.has(`${i % cfg.map[0].length},${Math.floor(i / cfg.map[0].length)}`));
+      assert.ok(decoys.length >= (cfg.id === 'hard' ? 8 : 5), `${decoys.length} decoys`);
+    });
+  }
+}
+test('tracks stars', () => {
+  assert.equal(tracksStars(13, 13), 3);
+  assert.equal(tracksStars(25, 13), 2);
+  assert.equal(tracksStars(80, 13), 1);
+});
+
+// ---------------------------------------------------------------- snack snap (memory)
+const MEMORY = PUZZLES.filter((p): p is MemoryPuzzle => p.kind === 'memory');
+for (const game of MEMORY) {
+  test(`snack snap ${game.id}: every deal has two of each snack and no pair side by side`, () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const cards = newMemory(game.snacks, seededRandom(seed), game.cols).cards;
+      assert.equal(cards.length, game.snacks.length * 2);
+      game.snacks.forEach((sn) => assert.equal(cards.filter((c) => c === sn).length, 2));
+      cards.forEach((c, i) => {
+        if (i % game.cols < game.cols - 1) assert.notEqual(cards[i + 1], c, `seed ${seed}: pair side by side`);
+      });
+    }
+  });
+  test(`snack snap ${game.id}: a player with perfect memory always finishes, mismatches are counted`, () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      const rand = seededRandom(seed * 7);
+      let s = newMemory(game.snacks, rand, game.cols);
+      const seen = new Map<number, string>();
+      let guard = 0;
+      while (!memoryDone(s) && guard++ < 200) {
+        // flip an unknown card, then its partner if we've seen it, else another unknown card
+        const hidden = s.cards.map((_, i) => i).filter((i) => !s.matched.includes(i));
+        const known = [...seen.entries()].filter(([i]) => hidden.includes(i));
+        const pair = known.find(([i, sn]) => known.some(([j, sn2]) => j !== i && sn2 === sn));
+        const first = pair ? pair[0] : hidden.find((i) => !seen.has(i))!;
+        s = flipCard(s, first);
+        seen.set(first, s.cards[first]);
+        const partner = hidden.find((i) => i !== first && seen.get(i) === s.cards[first]);
+        const second = partner ?? hidden.find((i) => i !== first && !seen.has(i))!;
+        s = flipCard(s, second);
+        seen.set(second, s.cards[second]);
+        assert.ok(pairResult(s));
+        assert.ok(!canFlip(s, hidden.find((i) => i !== first && i !== second) ?? -1), 'a third card could be flipped');
+        s = settle(s);
+        assert.equal(s.up.length, 0);
+      }
+      assert.ok(memoryDone(s), 'never finished');
+      assert.ok(s.mismatches <= game.snacks.length, `perfect memory needed ${s.mismatches} misses`);
+    }
+  });
+}
+test('snack snap: matched and face-up cards cannot be flipped again', () => {
+  let s = newMemory(['jalebi', 'laddoo'], seededRandom(3), 2);
+  const a = 0;
+  const b = s.cards.indexOf(s.cards[0], 1);
+  s = settle(flipCard(flipCard(s, a), b));
+  assert.deepEqual(s.matched.sort(), [a, b].sort());
+  assert.equal(flipCard(s, a), s);
+  const c = [0, 1, 2, 3].find((i) => !s.matched.includes(i))!;
+  s = flipCard(s, c);
+  assert.equal(flipCard(s, c), s);
+  assert.equal(memoryStars(3, 3), 3);
+  assert.equal(memoryStars(3, 6), 2);
+  assert.equal(memoryStars(3, 7), 1);
+});
+
+test('lantern walk: Gappu sees two steps around him, one around each diya he left, and always the jalebis', () => {
+  const cfg = MAZES.medium;
+  const start = findTile(cfg, 'S');
+  const lit = lanternLit(cfg, start, []);
+  assert.ok(lit.has(`${start[0]},${start[1]}`));
+  const goal = findTile(cfg, 'J');
+  assert.ok(lit.has(`${goal[0]},${goal[1]}`));
+  for (const k of lit) {
+    const [c, r] = k.split(',').map(Number);
+    const near = Math.abs(c - start[0]) + Math.abs(r - start[1]) <= 2;
+    assert.ok(near || (c === goal[0] && r === goal[1]), `${k} should be dark`);
+  }
+  const far = [0, 0] as Cell;
+  const withTrail = lanternLit(cfg, start, ['0,0']);
+  assert.ok(withTrail.has('0,0') && withTrail.has('1,0') && withTrail.has('0,1'));
+  assert.ok(lanternLit(cfg, far, []).size < cfg.map.length * cfg.map[0].length / 2);
+});
+
+// ---------------------------------------------------------------- who's that shadow?
+test("shadow: friends never start under their own shadow; drops find the closest shadow", () => {
+  for (let n = 2; n <= 6; n++) {
+    const items = Array.from({ length: n }, (_, i) => i);
+    const rand = seededRandom(n);
+    const seen = new Set<string>();
+    for (let play = 0; play < 30; play++) {
+      const order = trayOrder(items, rand);
+      assert.deepEqual([...order].sort(), items);
+      order.forEach((v, i) => assert.notEqual(v, i, `size ${n}: item ${v} in its own spot`));
+      seen.add(order.join());
+      const decoy = pickDecoy(items, [...items, 99], rand)!;
+      assert.equal(decoy, 99);
+      const withDecoy = trayOrder(items, rand, [decoy]);
+      assert.equal(withDecoy.length, n + 1);
+      items.forEach((v, i) => assert.notEqual(withDecoy[i], v));
+    }
+    if (n >= 3) assert.ok(seen.size > 1, `size ${n}: always the same order`);
+  }
+  assert.equal(pickDecoy([1, 2], [1, 2], Math.random), undefined);
+  for (const game of PUZZLES.filter((p): p is ShadowPuzzle => p.kind === 'shadow')) {
+    assert.equal(new Set(game.friends).size, game.friends.length);
+    // A decoy is someone met already on the journey who isn't on the wall: there must be one to pick.
+    if (game.level >= 3) assert.ok(friendsMet(game.level).some((f) => !game.friends.includes(f)), `${game.id} has no decoy to pick`);
+    game.friends.forEach((f) => assert.ok(friendsMet(game.level).includes(f), `${game.id}: ${f} hasn't been met by level ${game.level}`));
+  }
+  const slots = [{ x: 0, y: 0 }, { x: 100, y: 0 }];
+  assert.equal(nearestSlot(slots, 70, 10, 50), 1);
+  assert.equal(nearestSlot(slots, 50, 200, 50), -1);
+  assert.deepEqual([shadowStars(0), shadowStars(1), shadowStars(3), shadowStars(4)], [3, 3, 2, 1]);
+});
+
+// ---------------------------------------------------------------- slide puzzle
+function slideDistance(board: number[], n: number): number {
+  const key = (b: number[]) => b.join(',');
+  const goal = key(solvedBoard(n));
+  const seen = new Set([key(board)]);
+  let frontier = [board];
+  for (let d = 0; frontier.length; d++) {
+    if (frontier.some((b) => key(b) === goal)) return d;
+    const next: number[][] = [];
+    for (const b of frontier) {
+      for (const spot of neighbours(n, b.indexOf(BLANK))) {
+        const nb = slideTile(b, n, spot);
+        if (!seen.has(key(nb))) {
+          seen.add(key(nb));
+          next.push(nb);
+        }
+      }
+    }
+    frontier = next;
+  }
+  return -1;
+}
+for (const game of Object.values(SLIDE_GAMES)) {
+  test(`slide ${game.id}: start is solvable, mixed up, and the best solution is exactly par (${game.par}) moves`, () => {
+    const n = game.size;
+    assert.deepEqual([...game.start].sort((a, b) => a - b), [...solvedBoard(n)].sort((a, b) => a - b));
+    assert.ok(isSolvable(game.start, n));
+    assert.ok(!isSolved(game.start));
+    assert.equal(game.start.filter((t, i) => t === i).length, 0, 'some tiles start in place');
+    assert.equal(slideDistance(game.start, n), game.par);
+  });
+}
+test('slide: only tiles next to the gap move; solvability check agrees with real play', () => {
+  const n = 3;
+  const b = solvedBoard(n);
+  assert.ok(isSolved(b));
+  assert.ok(canSlide(b, n, 5) && canSlide(b, n, 7));
+  assert.ok(!canSlide(b, n, 0) && !canSlide(b, n, 4));
+  assert.equal(slideTile(b, n, 0), b);
+  const moved = slideTile(b, n, 7);
+  assert.deepEqual(moved.slice(6), [6, BLANK, 7]);
+  const rand = seededRandom(5);
+  for (let k = 0; k < 40; k++) {
+    let x = solvedBoard(n);
+    for (let m = 0; m < 30; m++) {
+      const options = neighbours(n, x.indexOf(BLANK));
+      x = slideTile(x, n, options[Math.floor(rand() * options.length)]);
+    }
+    assert.ok(isSolvable(x, n), 'a reachable board was called unsolvable');
+    const swapped = x.slice();
+    const [i, j] = [0, 1, 2, 3].filter((s) => swapped[s] !== BLANK).slice(0, 2);
+    [swapped[i], swapped[j]] = [swapped[j], swapped[i]];
+    assert.ok(!isSolvable(swapped, n), 'a board with two tiles swapped was called solvable');
+  }
+  assert.deepEqual([slideStars(10, 10), slideStars(25, 10), slideStars(90, 10)], [3, 2, 1]);
+});
+
+test('slide: the solver finds the true best solution (checked against a full search)', () => {
+  const rand = seededRandom(9);
+  for (let k = 0; k < 25; k++) {
+    let x = solvedBoard(3);
+    for (let m = 0; m < 25; m++) {
+      const options = neighbours(3, x.indexOf(BLANK));
+      x = slideTile(x, 3, options[Math.floor(rand() * options.length)]);
+    }
+    assert.equal(slidePar(x, 3), slideDistance(x, 3));
+  }
+  assert.equal(slidePar(solvedBoard(3), 3), 0);
+});
+test('slide: a new scramble every play, solvable, about as hard as the set par, with the right par', () => {
+  const rand = seededRandom(3);
+  const starts = new Set<string>();
+  for (let play = 0; play < 20; play++) {
+    const s = scrambleSlide(3, 10, rand)!;
+    assert.ok(s, 'no scramble');
+    assert.ok(isSolvable(s.start, 3) && !isSolved(s.start));
+    assert.ok(s.par >= 8 && s.par <= 13, `par ${s.par} far from 10`);
+    assert.equal(slideDistance(s.start, 3), s.par);
+    starts.add(s.start.join());
+  }
+  assert.ok(starts.size > 15, 'scrambles repeat');
+});
+
+// ---------------------------------------------------------------- teach the robot
+for (const lesson of LESSONS) {
+  test(`teach ${lesson.id}: taught right, Bit sorts every new picture right${lesson.muddle ? ' (after getting muddled first)' : ''}`, () => {
+    for (const b of lesson.baskets) assert.ok(THINGS[b.icon], `basket icon ${b.icon}`);
+    const examples: Example[] = [];
+    lesson.rounds.forEach((round, r) => {
+      for (const item of [...(round.presorted ?? []), ...round.teach]) {
+        assert.ok(THINGS[item.thing], `unknown thing ${item.thing}`);
+        assert.ok(item.answer >= 0 && item.answer < lesson.baskets.length);
+        examples.push({ thing: item.thing, basket: item.answer });
+      }
+      const results = round.test.map((t) => ({ ...t, g: guess(examples, t.thing) }));
+      for (const t of results) {
+        if (t.g.basket !== null) assert.equal(examples.find((e) => e.thing === t.g.because)?.basket, t.g.basket, 'Bit points at the wrong example');
+      }
+      const wrong = results.filter((t) => t.g.basket !== t.answer).map((t) => t.thing);
+      if (lesson.muddle && r === 0) assert.deepEqual(wrong, ['redball'], 'the muddle round should only get the red ball wrong');
+      else assert.deepEqual(wrong, [], `round ${r + 1}: Bit got ${wrong.join(', ')} wrong`);
+      // A picture Bit is tested on is never one it was already shown (except fixing the muddle).
+      for (const t of round.test) if (!lesson.muddle) assert.ok(!examples.some((e) => e.thing === t.thing), `${t.thing} was already taught`);
+    });
+  });
+}
+test('teach: Bit copies the child\'s mistakes, and isn\'t sure when nothing looks alike', () => {
+  const lesson = LESSONS[0];
+  const flipped: Example[] = lesson.rounds[0].teach.map((t) => ({ thing: t.thing, basket: 1 - t.answer }));
+  for (const t of lesson.rounds[0].test) assert.equal(guess(flipped, t.thing).basket, 1 - t.answer);
+  assert.deepEqual(guess([{ thing: 'apple', basket: 0 }], 'snowman'), { basket: null, because: null });
+  assert.equal(guess([{ thing: 'apple', basket: 0 }, { thing: 'cherry', basket: 1 }], 'mango').basket, null); // a draw
+  assert.equal(likeness(THINGS.apple, THINGS.cherry), 5);
+  assert.equal(likeness(THINGS.apple, THINGS.redball), 3);
+});
+test('teach: new order every play, stars, and lessons open one after another', () => {
+  const rand = seededRandom(4);
+  const orders = new Set<string>();
+  for (let i = 0; i < 20; i++) orders.add(teachOrder(LESSONS[0].rounds[0], rand).map((t) => t.thing).join());
+  assert.ok(orders.size > 10);
+  assert.deepEqual([teachStars(0), teachStars(1), teachStars(4)], [3, 2, 1]);
+  assert.ok(lessonOpen(0, {}));
+  assert.ok(!lessonOpen(1, {}));
+  assert.ok(lessonOpen(1, { 'lab-1': 2 }));
+  assert.equal(new Set(LESSONS.map((l) => l.id)).size, LESSONS.length);
+});
+
+// ---------------------------------------------------------------- rangoli
+const RANGOLIS: RangoliConfig[] = Object.values(RANGOLI_GAMES);
+for (const cfg of RANGOLIS) {
+  test(`rangoli ${cfg.id}: a good pattern; every shape belongs to a class with a colour; the palette has every colour`, () => {
+    assert.deepEqual(checkRangoli(cfg), []);
+    const classes = paintClasses(cfg).map(classKey);
+    assert.equal(new Set(classes).size, classes.length);
+    for (const s of slots(cfg)) assert.ok(classes.includes(classKey(slotClass(cfg, s))));
+    for (const c of paintClasses(cfg)) assert.ok(palette(cfg).includes(targetColor(cfg, c)));
+    assert.ok(palette(cfg).length > new Set(cfg.rings.flatMap((r) => r.colors)).size, 'needs one colour that is not in the picture');
+  });
+  test(`rangoli ${cfg.id}: tapping the middle of any shape paints that shape's class`, () => {
+    for (const s of slots(cfg)) assert.deepEqual(hitClass(cfg, s.x, s.y), slotClass(cfg, s), `ring ${s.ring} shape ${s.index}`);
+    assert.equal(hitClass(cfg, 120, 0), null, 'a tap outside the pattern paints nothing');
+  });
+  test(`rangoli ${cfg.id}: painting the picture's colours finishes it; wrong colours are counted and can be fixed`, () => {
+    let st = newRangoli();
+    const classes = paintClasses(cfg);
+    const wrong = palette(cfg).find((c) => c !== targetColor(cfg, classes[0]))!;
+    st = paint(cfg, st, classes[0], wrong);
+    assert.equal(st.misses, 1);
+    assert.equal(paint(cfg, st, classes[0], wrong), st, 'the same colour again changes nothing');
+    for (const c of classes) st = paint(cfg, st, c, targetColor(cfg, c));
+    assert.ok(rangoliDone(cfg, st));
+    assert.equal(rangoliProgress(cfg, st), classes.length);
+    assert.equal(st.misses, 1);
+    assert.equal(rangoliStars(st.misses), 3);
+  });
+}
+test('rangoli: stars, and broken patterns are caught', () => {
+  assert.deepEqual([rangoliStars(0), rangoliStars(1), rangoliStars(3), rangoliStars(4)], [3, 3, 2, 1]);
+  const ok = RANGOLI_GAMES.mandana;
+  assert.ok(checkRangoli({ ...ok, style: 'graffiti' as never }).length);
+  assert.ok(checkRangoli({ ...ok, rings: [ok.rings[0]] }).length, 'only a centre');
+  assert.ok(checkRangoli({ ...ok, rings: [ok.rings[0], { shape: 'petal', count: 7, colors: ['red', 'white'] }] }).length, 'odd two-colour ring');
+  assert.ok(checkRangoli({ ...ok, rings: [ok.rings[0], { shape: 'petal', count: 8, colors: ['gold'] }] }).length, 'unknown colour');
+  assert.ok(checkRangoli({ ...ok, rings: [ok.rings[0], { shape: 'star' as never, count: 8, colors: ['red'] }] }).length, 'unknown shape');
+});
+
+// ---------------------------------------------------------------- the levels and their story
+const LEGACY_IDS = ['easy-1', 'easy-2', 'easy-3', 'easy-4', 'easy-5', 'medium-1', 'medium-2', 'medium-3', 'medium-4', 'medium-5', 'hard-1', 'hard-2', 'hard-3', 'hard-4', 'hard-5'];
+const KNOWN: KnownIds = {
+  pictures: Object.keys(PICTURE_INFO),
+  friends: Object.keys(FRIEND_NAMES),
+  snacks: Object.keys(SNACK_NAMES),
+  gifts: Object.keys(GIFT_NAMES),
+  levels: LEVELS.length,
+};
+const pieces = (p: Puzzle) => (p.kind === 'jigsaw' ? p.cols * p.rows : 0);
+
+test('levels: ten stops, each with a place, story, finale, colours, and a new friend from level 2 to 9', () => {
+  assert.deepEqual(LEVELS.map((l) => l.n), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  for (const l of LEVELS) {
+    assert.ok(l.place && l.title && l.done && l.gift && l.story.length >= 2, `level ${l.n} is missing its story`);
+    assert.ok(l.story.every((line) => line.length <= 90), `level ${l.n}: story lines are short enough to read aloud`);
+    assert.ok(l.picture in PICTURE_INFO, `level ${l.n}: picture ${l.picture}`);
+    assert.ok(l.friend in FRIEND_NAMES);
+    assert.equal(l.joins, l.n >= 2 && l.n <= 9);
+    if (l.joins) assert.ok(l.giftArt && l.giftArt in GIFT_NAMES, `level ${l.n}: gift picture`);
+  }
+  assert.equal(new Set(LEVELS.filter((l) => l.joins).map((l) => l.friend)).size, 8, 'a different new friend at every stop');
+  assert.equal(LEVELS.filter((l) => l.theme.id === 'diwali').length, 1);
+  assert.equal(LEVELS[9].theme.id, 'diwali', 'the journey ends at home on Diwali night');
+});
+
+test('levels: five or six puzzles each, no two in a row the same kind, and each new friend has a "Meet" jigsaw first', () => {
+  const ids = PUZZLES.map((p) => p.id);
+  assert.equal(new Set(ids).size, ids.length, 'ids are unique');
+  for (const l of LEVELS) {
+    const mine = PUZZLES.filter((p) => p.level === l.n).sort((a, b) => a.order - b.order);
+    assert.ok(mine.length >= 5 && mine.length <= 6, `level ${l.n} has ${mine.length} puzzles`);
+    assert.deepEqual(mine.map((p) => p.order), mine.map((_, i) => i + 1), `level ${l.n}: orders 1, 2, 3...`);
+    mine.forEach((p, i) => i && assert.notEqual(p.kind, mine[i - 1].kind, `${p.id} plays like the puzzle before it`));
+    if (l.joins) assert.ok(mine[0].kind === 'jigsaw' && mine[0].picture === l.friend && mine[0].title === `Meet ${FRIEND_NAMES[l.friend]}`, `level ${l.n} starts by meeting ${l.friend}`);
+    for (const p of mine) {
+      assert.ok(p.title && p.cheer && p.blurb, `${p.id} is missing its finish-screen text`);
+      assert.ok(p.fact && p.fact.length <= 160, `${p.id} needs a Pip's fact (160 letters at most)`);
+      assert.ok(p.cheer.length <= 40 && p.blurb.length <= 120 && p.title.length <= 80, `${p.id}: text too long for the server`);
+    }
+  }
+  assert.ok(LEGACY_IDS.every((id) => ids.includes(id)), "the 15 puzzles from before the levels keep their ids, so children keep their stars");
+  assert.equal(PUZZLES.at(-1)!.id, 'level-10-6');
+  assert.ok(PUZZLES.at(-1)!.kind === 'jigsaw' && PUZZLES.at(-1)!.picture === 'big-picture', 'the very last puzzle is The Big Picture');
+});
+
+test('levels: get harder as you go (jigsaws grow, snap gets more pairs, shadows get more friends)', () => {
+  const most = (kind: Puzzle['kind'], size: (p: Puzzle) => number) =>
+    LEVELS.map((l) => Math.max(0, ...PUZZLES.filter((p) => p.level === l.n && p.kind === kind).map(size)));
+  const rising = (xs: number[], what: string) => {
+    let best = 0;
+    xs.forEach((x, i) => {
+      if (!x) return;
+      assert.ok(x >= best, `${what} gets easier at level ${i + 1}`);
+      best = x;
+    });
+  };
+  rising(most('jigsaw', pieces), 'jigsaw pieces');
+  rising(most('memory', (p) => (p.kind === 'memory' ? p.snacks.length : 0)), 'snap pairs');
+  rising(most('shadow', (p) => (p.kind === 'shadow' ? p.friends.length : 0)), 'shadow friends');
+  rising(most('slide', (p) => (p.kind === 'slide' ? p.par : 0)), 'slide moves');
+  rising(most('rangoli', (p) => (p.kind === 'rangoli' ? paintClasses(p.rangoli).length : 0)), 'rangoli colours');
+  assert.equal(pieces(PUZZLES.at(-1)!), 24);
+});
+
+// ---------------------------------------------------------------- puzzles from the server
+const SEED = JSON.parse(readFileSync(new URL('../../../../backend/content/seed.json', import.meta.url), 'utf8'));
+
+test('server seed: matches the built-in puzzles exactly (run `npm run seed` after changing them)', () => {
+  assert.deepEqual(SEED, JSON.parse(JSON.stringify(PUZZLES.map(toSeed))));
+});
+test('server seed: every puzzle reads cleanly into the same game the app has built in', () => {
+  const { puzzles, skipped } = readServerPuzzles(SEED, KNOWN);
+  assert.deepEqual(skipped, []);
+  assert.equal(puzzles.length, PUZZLES.length);
+  const byId = new Map(PUZZLES.map((p) => [p.id, p]));
+  for (const p of puzzles) {
+    const built = byId.get(p.id)!;
+    // Settings inside a puzzle (a maze, a track map) carry their own id: the server's copy uses the slug.
+    const strip = ({ id, ...rest }: Puzzle) => ({ id, ...JSON.parse(JSON.stringify(rest, (k, v) => (k === 'id' ? undefined : v))) });
+    assert.deepEqual(strip(p), strip({ ...built, ...(built.kind === 'jigsaw' ? { spin: !!built.spin } : {}) } as Puzzle), p.id);
+  }
+});
+test('server seed: an app that has never heard of a level, a kind or a picture skips just those puzzles', () => {
+  const small = { ...KNOWN, levels: 3, pictures: ['gappu', 'chunnu', 'station', 'bholu', 'kesar'] };
+  const { puzzles, skipped } = readServerPuzzles(SEED, small);
+  assert.ok(puzzles.every((p) => p.level <= 3));
+  assert.deepEqual(levelsIn(puzzles), [1, 2, 3]);
+  assert.ok(skipped.length > 30 && skipped.every((s) => s.reason));
+});
+
+test('server puzzles: anything the app cannot play is skipped, not crashed on', () => {
+  const ok = { slug: 'level-1-7', level: 1, order: 7, kind: 'shadow', title: 'More shadows', cheer: '', blurb: '', config: { friends: ['gappu', 'gauri'] } };
+  const { puzzles, skipped } = readServerPuzzles(
+    [
+      ok,
+      { ...ok, slug: 'level-1-7' }, // twice
+      { ...ok, slug: 'x1', kind: 'racing' },
+      { ...ok, slug: 'x2', config: { friends: ['gappu', 'motu'] } },
+      { ...ok, slug: 'x3', kind: 'jigsaw', picture: 'dragon', cols: 3, rows: 2, image: null },
+      { ...ok, slug: 'x4', kind: 'jigsaw', picture: 'gappu', cols: 12, rows: 2, image: null },
+      { ...ok, slug: 'x5', kind: 'tracks', config: { map: ['|x'], taps: ['10'], start: 0, goal: 0 } },
+      { ...ok, slug: 'x6', kind: 'maze', maze: { map: ['S..', '...'] } },
+      { ...ok, slug: 'x7', kind: 'slide', picture: 'tillu', config: { size: 2, start: [0, 1, 2, -1] } }, // no par
+      { ...ok, slug: 'x8', level: 11 },
+      { ...ok, slug: 'x9', level: undefined, tier: 'expert' },
+      { ...ok, slug: 'x10', kind: 'rangoli', config: { style: 'rangoli', rings: [{ shape: 'disc', count: 1, colors: ['gold'] }] } },
+      'not a puzzle',
+    ],
+    KNOWN,
+  );
+  assert.deepEqual(puzzles.map((p) => p.id), ['level-1-7']);
+  assert.deepEqual(skipped.map((s) => s.slug), ['level-1-7', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8', 'x9', 'x10', '?']);
+  assert.match(skipped.find((s) => s.slug === 'x8')!.reason, /newer app/);
+  assert.equal(puzzles[0].cheer, 'Found them all!', 'a blank cheer gets the kind\'s default');
+  assert.equal(puzzles[0].kind === 'shadow' && puzzles[0].cols, 3);
+});
+
+test('server puzzles: a list from a server before the levels is ignored, so the built-in levels are played', () => {
+  const old = [
+    { slug: 'easy-1', tier: 'easy', order: 1, kind: 'jigsaw', title: 'Gappu', cheer: '', blurb: '', picture: 'gappu', cols: 3, rows: 2, image: null, config: {} },
+    { slug: 'hard-2', tier: 'hard', order: 2, kind: 'slide', title: 'Tillu', cheer: '', blurb: '', picture: 'tillu', image: null, config: { size: 3, start: [4, 3, 1, 0, 7, 2, -1, 6, 5], par: 10 } },
+  ];
+  const { puzzles, skipped } = readServerPuzzles(old, KNOWN);
+  assert.deepEqual(puzzles, []);
+  assert.ok(skipped.every((s) => /no level/.test(s.reason)));
+});
+test('server puzzles: a maze goal the app has no picture for falls back to jalebis', () => {
+  const item = { slug: 'level-2-9', level: 2, order: 9, kind: 'maze', title: 'Walk', cheer: '', blurb: '', maze: { ...MAZES.medium, goal: 'unicorn' } };
+  const maze = readServerPuzzles([item], KNOWN).puzzles[0];
+  assert.ok(maze.kind === 'maze' && maze.maze.goal === undefined);
+  const dhol = readServerPuzzles([{ ...item, maze: { ...MAZES.medium, goal: 'dhol' } }], KNOWN).puzzles[0];
+  assert.ok(dhol.kind === 'maze' && dhol.maze.goal === 'dhol');
+});
+
+test('server puzzles: an uploaded picture wins over a bundled one', () => {
+  const item = { slug: 'level-1-8', level: 1, order: 8, kind: 'jigsaw', title: 'New', picture: 'gappu', cols: 3, rows: 2, config: {} };
+  const up = readServerPuzzles([{ ...item, image: 'http://server/media/puzzles/new.png', image_width: 900, image_height: 600 }], KNOWN);
+  const p = up.puzzles[0];
+  assert.ok(p.kind === 'jigsaw' && p.picture === 'upload:level-1-8');
+  assert.deepEqual(up.pictures['upload:level-1-8'], { id: 'upload:level-1-8', title: 'New', image: { uri: 'http://server/media/puzzles/new.png' }, width: 900, height: 600 });
+  const bundled = readServerPuzzles([{ ...item, image: null }], KNOWN).puzzles[0];
+  assert.ok(bundled.kind === 'jigsaw' && bundled.picture === 'gappu');
+});
+
+test('unlocking: a level opens once four puzzles of the level before have stars; extra puzzles never lock it again', () => {
+  const puzzles = PUZZLES;
+  const L1 = puzzles.filter((p) => p.level === 1).map((p) => p.id);
+  assert.equal(unlockNeed(puzzles, 2), 4);
+  assert.equal(unlockNeed(puzzles, 1), 0);
+  const three = Object.fromEntries(L1.slice(0, 3).map((id) => [id, 2]));
+  assert.ok(!isLevelUnlocked(puzzles, 2, three));
+  assert.equal(nextPuzzle(puzzles, three)?.id, L1[3]);
+  assert.equal(puzzleAfter(puzzles, L1[L1.length - 1], three), undefined, 'level 2 is still locked');
+  const four = { ...three, [L1[4]]: 1 };
+  assert.ok(isLevelUnlocked(puzzles, 2, four), 'any four of level 1 open level 2');
+  assert.ok(isLevelDone(puzzles, 1, four));
+  assert.equal(puzzleAfter(puzzles, L1[L1.length - 1], four)?.id, 'level-2-1');
+  assert.ok(!isLevelUnlocked(puzzles, 3, four));
+  // Adding a seventh puzzle to level 1 doesn't lock level 2 again.
+  const extra = { ...(puzzles[0] as Puzzle), id: 'level-1-7', order: 7 } as Puzzle;
+  assert.ok(isLevelUnlocked([...puzzles, extra], 2, four));
+  // A level with fewer than four puzzles needs all of them.
+  const short = puzzles.filter((p) => p.level !== 1 || p.order <= 2);
+  assert.equal(unlockNeed(short, 2), 2);
+  // A level the server left empty is skipped over.
+  const gap = puzzles.filter((p) => p.level !== 2);
+  assert.ok(isLevelUnlocked(gap, 3, four));
+  // The last level is only done when every puzzle in it (The Big Picture too) has a star.
+  const all = Object.fromEntries(puzzles.map((p) => [p.id, 3]));
+  assert.ok(isLevelDone(puzzles, 10, all));
+  assert.ok(!isLevelDone(puzzles, 10, { ...all, 'level-10-6': 0 }));
+});
 
 console.log(`\n${passed} checks passed`);

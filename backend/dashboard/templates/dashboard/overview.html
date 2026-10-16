@@ -1,0 +1,130 @@
+{% extends "dashboard/base.html" %}
+{% load dash %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<div class="head">
+  <div>
+    <h1>How the game is doing</h1>
+    <p class="muted">{% if last_event %}Last play {{ last_event|timesince }} ago.{% else %}No play data yet.{% endif %}
+      {{ puzzle_counts.live }} of {{ puzzle_counts.total }} puzzles are live on phones.</p>
+  </div>
+  <div class="row">
+    {% include "dashboard/_range.html" %}
+    <a class="btn btn-small" href="{% url 'dashboard:export' %}?days={{ days }}">Download CSV</a>
+  </div>
+</div>
+
+{% if not last_event %}
+<section class="card">
+  <h2>Waiting for the first plays</h2>
+  <p class="muted">The game sends a short, anonymous note to this server when a child starts, finishes or leaves a puzzle
+    (no names, no accounts: just a random id per phone). Notes are kept on the phone while it's offline and sent later.
+    Open the game on a phone connected to this server and play a puzzle, and the numbers appear here.</p>
+  <p class="muted small">Want to see the dashboard with numbers first? <code>python manage.py demo_analytics</code> adds made-up plays (and <code>--clear</code> removes them).</p>
+</section>
+{% endif %}
+
+<section class="tiles" aria-label="Key numbers">
+  {% with c=changes %}
+  <div class="tile"><div class="label">Players</div><div class="value num">{{ now.devices|compact }}</div>
+    <div class="delta {% if c.devices > 0 %}up{% elif c.devices < 0 %}down{% endif %}">{% if c.devices is not None %}{{ c.devices|delta }} vs previous {{ days }} days{% else %}phones that played{% endif %}</div></div>
+  <div class="tile"><div class="label">New players</div><div class="value num">{{ now.new_devices|compact }}</div>
+    <div class="delta {% if c.new_devices > 0 %}up{% elif c.new_devices < 0 %}down{% endif %}">{% if c.new_devices is not None %}{{ c.new_devices|delta }} vs previous{% else %}first play in this time{% endif %}</div></div>
+  <div class="tile"><div class="label">Puzzles started</div><div class="value num">{{ now.starts|compact }}</div>
+    <div class="delta {% if c.starts > 0 %}up{% elif c.starts < 0 %}down{% endif %}">{% if c.starts is not None %}{{ c.starts|delta }} vs previous{% else %}&nbsp;{% endif %}</div></div>
+  <div class="tile"><div class="label">Puzzles finished</div><div class="value num">{{ now.finishes|compact }}</div>
+    <div class="delta {% if c.finishes > 0 %}up{% elif c.finishes < 0 %}down{% endif %}">{% if c.finishes is not None %}{{ c.finishes|delta }} vs previous{% else %}&nbsp;{% endif %}</div></div>
+  <div class="tile"><div class="label">Finish rate</div><div class="value num">{{ now.completion|pct }}</div>
+    <div class="delta {% if c.completion > 0 %}up{% elif c.completion < 0 %}down{% endif %}">{% if c.completion is not None %}{{ c.completion|delta }} vs previous{% else %}finished ÷ started{% endif %}</div></div>
+  <div class="tile"><div class="label">Average stars</div><div class="value num">{{ now.avg_stars|one_decimal }}<span class="muted small"> / 3</span></div>
+    <div class="delta">typical time {{ now.median_seconds|duration }}</div></div>
+  {% endwith %}
+</section>
+
+<section class="card">
+  <header><div><h2>Plays per day</h2><p class="muted small">Last {{ chart_days }} days{% if days == "all" %} (all-time totals are in the tiles){% endif %}. Point at a day to see its numbers.</p></div></header>
+  {% include "dashboard/_linechart.html" with aria="Puzzles started and finished per day" %}
+</section>
+
+<div class="grid grid-2">
+  <section class="card">
+    <header><div><h2>Where children get stuck</h2><p class="muted small">Lowest finish rate first (puzzles with at least 5 starts).</p></div>
+      <a class="small" href="{% url 'dashboard:puzzles' %}?days={{ days }}">All puzzles →</a></header>
+    {% if hardest %}
+    <div class="bars">
+      {% for r in hardest %}
+      <div class="bar-row">
+        <a href="{% url 'dashboard:puzzle' r.puzzle.slug %}?days={{ days }}"><strong>{{ r.puzzle.title }}</strong> <span class="chip chip-l{{ r.puzzle.level }}">Level {{ r.puzzle.level }}.{{ r.puzzle.order }}</span></a>
+        <div class="bar-track" title="{{ r.finishes }} finished of {{ r.starts }} started"><div class="bar-fill" style="width: {{ r.completion|pct_width }}%"></div></div>
+        <span class="bar-value">{{ r.completion|pct }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="faint small">Bars show the share of starts that were finished. Look at these puzzles first if children are giving up.</p>
+    {% else %}<p class="muted">Not enough plays yet to tell.</p>{% endif %}
+  </section>
+
+  <section class="card">
+    <header><div><h2>How far players get</h2><p class="muted small">Phones that reached each step, out of everyone who played.</p></div></header>
+    {% if funnel.0.devices %}
+    <div class="bars">
+      {% for f in funnel %}
+      <div class="bar-row">
+        <span>{{ f.label }}</span>
+        <div class="bar-track"><div class="bar-fill" style="width: {{ f.share|pct_width }}%"></div></div>
+        <span class="bar-value">{{ f.devices|compact }} <span class="faint small">{{ f.share|pct }}</span></span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}<p class="muted">No players yet.</p>{% endif %}
+  </section>
+</div>
+
+<section class="card">
+  <header><div><h2>Learn with Bit</h2><p class="muted small">Teach the Robot lessons (built into the app, version 1.2 and later). Not counted in the puzzle numbers above.</p></div></header>
+  <table>
+    <thead><tr><th>Lesson</th><th class="r">Started</th><th class="r">Finished</th><th class="r">Finish %</th><th class="r">Children</th><th class="r">Avg stars</th></tr></thead>
+    <tbody>{% for l in lab %}<tr><td>{{ forloop.counter }}. {{ l.title }}</td><td class="r num">{{ l.starts|compact }}</td><td class="r num">{{ l.finishes|compact }}</td><td class="r num">{{ l.completion|pct }}</td><td class="r num">{{ l.players|compact }}</td><td class="r num">{{ l.avg_stars|one_decimal }}</td></tr>{% endfor %}</tbody>
+  </table>
+</section>
+
+<div class="grid grid-3">
+  <section class="card">
+    <header><h2>By level</h2></header>
+    <table>
+      <thead><tr><th>Level</th><th class="r">Puzzles</th><th class="r">Started</th><th class="r">Finish %</th></tr></thead>
+      <tbody>{% for t in levels %}<tr><td><span class="chip chip-l{{ t.level }}">{{ t.label }}</span></td><td class="r num">{{ t.puzzles }}</td><td class="r num">{{ t.starts|compact }}</td><td class="r num">{{ t.completion|pct }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </section>
+  <section class="card">
+    <header><h2>Phones</h2></header>
+    {% if platforms %}
+    <table><tbody>{% for p in platforms %}<tr><td>{{ p.platform }}</td><td class="r num">{{ p.devices|compact }}</td></tr>{% endfor %}</tbody></table>
+    {% else %}<p class="muted">No players yet.</p>{% endif %}
+  </section>
+  <section class="card">
+    <header><h2>Parent accounts</h2></header>
+    <table><tbody>
+      <tr><td>Parents signed up</td><td class="r num">{{ accounts.parents }}</td></tr>
+      <tr><td>Children added</td><td class="r num">{{ accounts.children }}</td></tr>
+      <tr><td>Children with cloud-saved stars</td><td class="r num">{{ accounts.synced }}</td></tr>
+    </tbody></table>
+    <p class="faint small">Accounts are optional and not in the app yet; play stats above don't need them.</p>
+  </section>
+</div>
+
+<section class="card">
+  <header><h2>Latest plays</h2><a class="small" href="{% url 'admin:analytics_playevent_changelist' %}">All events in Django admin →</a></header>
+  {% if recent %}
+  <ul class="feed">
+    {% for e in recent %}
+    <li><time datetime="{{ e.played_at|date:'c' }}">{{ e.played_at|date:"j M, H:i" }}</time>
+      <span>Phone <code>{{ e.device|slice:":6" }}</code> {% if e.type == "finish" %}finished{% elif e.type == "quit" %}left{% else %}started{% endif %}
+      {% if e.puzzle %}<a href="{% url 'dashboard:puzzle' e.puzzle.slug %}">{{ e.puzzle.title }}</a>{% elif e.lab_title %}Learn with Bit: {{ e.lab_title }}{% else %}{{ e.puzzle_slug }} <span class="faint">(deleted)</span>{% endif %}
+      {% if e.type == "finish" %}with {{ e.stars }} star{{ e.stars|pluralize }}{% endif %}{% if e.seconds is not None and e.type != "start" %} after {{ e.seconds|duration }}{% endif %}
+      {% if e.is_demo %}<span class="chip chip-demo">demo</span>{% endif %}</span></li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="muted">Nothing yet.</p>{% endif %}
+</section>
+{% endblock %}

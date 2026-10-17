@@ -130,14 +130,27 @@ export const goalName = (g: GoalId) => GOAL_WORDS[g] ?? (g in GIFT_NAMES ? GIFT_
 // Fix the Tracks maps, by name. See src/game/tracks.ts for the legend. `taps` is the starting turn of each
 // piece for the built-in copy; the game makes a new scramble every play anyway.
 export const TRACK_GAMES = {
+  // In trip order, each a little harder than the one before.
   // 4 x 4, a short line through the mustard fields (Punjab)
   fields: { id: 'fields', start: 2, goal: 3, map: ['FFac', 'THH|', 'TFbd', 'HFac'], taps: ['0022', '0001', '0031', '0021'] },
-  // 5 x 5, rooftops and a winding line, no decoys (Gujarat)
-  kites: { id: 'kites', start: 0, goal: 0, map: ['acPFF', 'bdTHF', 'a-cHT', 'FbdTP', 'bdFPH'], taps: ['13000', '23000', '11100', '02100', '33000'] },
-  // 5 x 5 with decoy pieces (Mumbai)
-  monsoon: { id: 'monsoon', start: 1, goal: 2, map: ['bdH.H', 'ac.FT', 'FacFT', 'Hba-c', 'HHb-d'], taps: ['23000', '33000', '01100', '02212', '00213'] },
-  // 6 x 6, past ponds and palms, a few decoys (Kerala)
-  backwaters: { id: 'backwaters', start: 5, goal: 3, map: ['HFTFP|', 'TFFdbd', 'FTabdb', 'Fbc|T.', 'H|adHT', 'Fa-cPT'], taps: ['000001', '000123', '002312', '012100', '012300', '031300'] },
+  // 5 x 5, one winding line up the hill, no decoys (the Hills)
+  hills: { id: 'hills', start: 0, goal: 0, map: ['acPFF', 'bdTHF', 'a-cHT', 'FbdTP', 'bdFPH'], taps: ['13000', '23000', '11100', '02100', '33000'] },
+  // 5 x 5 with decoy pieces (Kolkata)
+  howrah: { id: 'howrah', start: 1, goal: 2, map: ['bdH.H', 'ac.FT', 'FacFT', 'Hba-c', 'HHb-d'], taps: ['23000', '33000', '01100', '02212', '00213'] },
+  // 6 x 6 over the rooftops, a few decoys (Gujarat)
+  kites: { id: 'kites', start: 5, goal: 3, map: ['HFTFP|', 'TFFdbd', 'FTabdb', 'Fbc|T.', 'H|adHT', 'Fa-cPT'], taps: ['000001', '000123', '002312', '012100', '012300', '031300'] },
+  // 6 x 6 with decoys (Mumbai)
+  monsoon: { id: 'monsoon', start: 4, goal: 3, map: ['Tb--da', 'bddFHT', 'acH|bP', 'bdFHHH', 'a-cTdP', 'HHacTH'], taps: ['031110', '222000', '120110', '220000', '211030', '003200'] },
+  // 6 x 6, a longer line plus decoy pieces that lead nowhere (Tamil Nadu)
+  temple: {
+    id: 'temple',
+    start: 0,
+    goal: 5,
+    map: ['|Tb-cH', 'a-dP||', '|b-bdd', 'T-c|-F', 'aH|a-c', 'F-dTH|'],
+    taps: ['102110', '112011', '121121', '002110', '301211', '012001'],
+  },
+  // 6 x 6, past ponds and palms, lots of decoys (Kerala)
+  backwaters: { id: 'backwaters', start: 2, goal: 3, map: ['FbdbcF', '|a-dac', 'T-TTbd', 'PTbHac', 'HcHHbd', 'TFTbd|'], taps: ['011230', '221113', '020032', '003021', '030012', '000123'] },
   // 5 x 5, one winding line (Diwali Express)
   medium: {
     id: 'medium',
@@ -146,43 +159,45 @@ export const TRACK_GAMES = {
     map: ['T|HFT', 'Ha-cP', 'FTbdH', 'PHacT', 'TFT|F'],
     taps: ['01000', '01120', '00310', '00210', '00010'],
   },
-  // 6 x 6 with decoys (Tamil Nadu)
-  temple: { id: 'temple', start: 4, goal: 3, map: ['Tb--da', 'bddFHT', 'acH|bP', 'bdFHHH', 'a-cTdP', 'HHacTH'], taps: ['031110', '222000', '120110', '220000', '211030', '003200'] },
-  // 6 x 6, a longer line plus decoy pieces that lead nowhere (Howrah Express)
-  hard: {
-    id: 'hard',
-    start: 0,
-    goal: 5,
-    map: ['|Tb-cH', 'a-dP||', '|b-bdd', 'T-c|-F', 'aH|a-c', 'F-dTH|'],
-    taps: ['102110', '112011', '121121', '002110', '301211', '012001'],
-  },
-  // 6 x 6, the toy train's loops in the hills, lots of decoys
-  hills: { id: 'hills', start: 2, goal: 3, map: ['FbdbcF', '|a-dac', 'T-TTbd', 'PTbHac', 'HcHHbd', 'TFTbd|'], taps: ['011230', '221113', '020032', '003021', '030012', '000123'] },
 } satisfies Record<string, TrackConfig>;
 
 // Slide puzzles: 3 x 3, start position chosen so the best solution is `par` moves (checked by the tests).
 export type SlideGame = { id: string; picture: string; size: number; start: number[]; par: number };
 export const SLIDE_GAMES = {
-  kites: { id: 'kites', picture: 'kites', size: 3, start: [3, 0, 1, 6, -1, 2, 7, 4, 5], par: 8 },
-  'boat-race': { id: 'boat-race', picture: 'boat-race', size: 3, start: [4, 3, 1, 0, 7, 2, -1, 6, 5], par: 10 },
-  'toy-train': { id: 'toy-train', picture: 'toy-train', size: 3, start: [6, 0, 1, 4, -1, 2, 7, 3, 5], par: 12 },
+  'toy-train': { id: 'toy-train', picture: 'toy-train', size: 3, start: [3, 0, 1, 6, -1, 2, 7, 4, 5], par: 8 },
+  kites: { id: 'kites', picture: 'kites', size: 3, start: [4, 3, 1, 0, 7, 2, -1, 6, 5], par: 10 },
+  'boat-race': { id: 'boat-race', picture: 'boat-race', size: 3, start: [6, 0, 1, 4, -1, 2, 7, 3, 5], par: 12 },
 } satisfies Record<string, SlideGame>;
 
 // Rangoli patterns (src/game/rangoli.ts). Ring 0 is the centre. A ring with two colours alternates them.
+// In trip order: each one has more to colour in than the one before.
 export const RANGOLI_GAMES = {
-  // Rajasthan: white and yellow on red earth; three plain rings
+  // Bengal: alpana, white rice paste with turmeric yellow, on a red floor; three plain rings
+  alpana: {
+    id: 'alpana',
+    style: 'alpana',
+    rings: [
+      { shape: 'disc', count: 1, colors: ['yellow'] },
+      { shape: 'petal', count: 8, colors: ['white'] },
+      { shape: 'dot', count: 16, colors: ['yellow'] },
+      { shape: 'drop', count: 16, colors: ['white'] },
+    ],
+    extra: ['orange'],
+  },
+  // Rajasthan: mandana, white and yellow on red earth; one ring in two colours
   mandana: {
     id: 'mandana',
     style: 'mandana',
     rings: [
       { shape: 'disc', count: 1, colors: ['yellow'] },
       { shape: 'petal', count: 6, colors: ['white'] },
-      { shape: 'dot', count: 12, colors: ['yellow'] },
+      { shape: 'diamond', count: 12, colors: ['white', 'yellow'] },
       { shape: 'drop', count: 12, colors: ['white'] },
+      { shape: 'dot', count: 24, colors: ['yellow'] },
     ],
     extra: ['orange'],
   },
-  // Mumbai, Ganesh Chaturthi: bright powder colours, one ring in two colours
+  // Mumbai, Ganesh Chaturthi: bright powder colours, two rings in two colours
   chaturthi: {
     id: 'chaturthi',
     style: 'rangoli',
@@ -191,22 +206,9 @@ export const RANGOLI_GAMES = {
       { shape: 'petal', count: 8, colors: ['pink'] },
       { shape: 'diamond', count: 8, colors: ['orange', 'yellow'] },
       { shape: 'drop', count: 16, colors: ['green'] },
-      { shape: 'dot', count: 16, colors: ['white'] },
+      { shape: 'dot', count: 16, colors: ['white', 'blue'] },
     ],
-    extra: ['blue'],
-  },
-  // Kerala, Onam: a flower carpet, with a ring of leaves
-  onam: {
-    id: 'onam',
-    style: 'pookalam',
-    rings: [
-      { shape: 'disc', count: 1, colors: ['purple'] },
-      { shape: 'petal', count: 8, colors: ['white'] },
-      { shape: 'petal', count: 8, colors: ['yellow', 'orange'] },
-      { shape: 'leaf', count: 16, colors: ['green'] },
-      { shape: 'drop', count: 16, colors: ['orange', 'red'] },
-    ],
-    extra: ['pink'],
+    extra: ['red'],
   },
   // Tamil Nadu, Pongal: a kolam on a dark doorstep, mostly white with a little colour
   pongal: {
@@ -222,18 +224,18 @@ export const RANGOLI_GAMES = {
     ],
     extra: ['green'],
   },
-  // Bengal: alpana, white rice paste with turmeric yellow, on a red floor
-  alpana: {
-    id: 'alpana',
-    style: 'alpana',
+  // Kerala, Onam: a flower carpet, with a ring of leaves and a ring of marigold dots
+  onam: {
+    id: 'onam',
+    style: 'pookalam',
     rings: [
-      { shape: 'disc', count: 1, colors: ['yellow'] },
+      { shape: 'disc', count: 1, colors: ['purple'] },
       { shape: 'petal', count: 8, colors: ['white'] },
-      { shape: 'dot', count: 16, colors: ['white', 'yellow'] },
-      { shape: 'leaf', count: 16, colors: ['white'] },
-      { shape: 'drop', count: 16, colors: ['yellow', 'white'] },
-      { shape: 'dot', count: 24, colors: ['white'] },
+      { shape: 'petal', count: 8, colors: ['yellow', 'orange'] },
+      { shape: 'leaf', count: 16, colors: ['green'] },
+      { shape: 'drop', count: 16, colors: ['orange', 'red'] },
+      { shape: 'dot', count: 24, colors: ['yellow'] },
     ],
-    extra: ['orange'],
+    extra: ['pink'],
   },
 } satisfies Record<string, RangoliConfig>;

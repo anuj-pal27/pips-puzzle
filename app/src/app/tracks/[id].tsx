@@ -7,10 +7,11 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { playSound, useMusic } from '@/audio/sound';
 import { Pill } from '@/components/Buttons';
 import { Diya, ThemeBackdrop } from '@/components/Festive';
-import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
+import { GameHeader, TipBubble, useFinish, useHowTo } from '@/components/GameChrome';
 import { Txt } from '@/components/Txt';
 import { SceneryArt, TrackArt } from '@/components/TrackParts';
 import { TRAIN_ART } from '@/data/art';
+import { HOW_TO } from '@/data/howTo';
 import type { TracksPuzzle } from '@/data/puzzles';
 import { themeFor } from '@/data/levels';
 import { initTracks, scrambleTracks, tapPiece, traceTracks, tracksPar, tracksStars, type TrackPiece, type TrackState } from '@/game/tracks';
@@ -37,6 +38,7 @@ function TracksGame({ puzzle }: { puzzle: TracksPuzzle }) {
   const finish = useFinish(puzzle.id);
   const theme = themeFor(puzzle.level);
   useMusic(theme.music);
+  const howTo = useHowTo(puzzle);
   // Diwali Night: the board is dark, and each piece lights up (with a diya) as it joins the line.
   const night = theme.id === 'diwali';
   const insets = useSafeAreaInsets();
@@ -99,7 +101,7 @@ function TracksGame({ puzzle }: { puzzle: TracksPuzzle }) {
   const tip = won
     ? 'Choo choo! Here comes the jalebi train!'
     : trace.cells.length === 0
-      ? 'Tap the tracks to turn them. Start next to the station!'
+      ? HOW_TO.tracks.en
       : `${trace.cells.length} ${trace.cells.length === 1 ? 'piece' : 'pieces'} joined up. Keep going to the jalebi stall!`;
 
   let house = 0;
@@ -109,6 +111,7 @@ function TracksGame({ puzzle }: { puzzle: TracksPuzzle }) {
       <GameHeader
         title={puzzle.title || 'Fix the Tracks'}
         level={puzzle.level}
+        howTo={howTo}
         right={
           <Pill>
             <Image source={TRAIN_ART.engine} style={{ width: 34, height: 34 }} />

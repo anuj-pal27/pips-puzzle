@@ -1,26 +1,30 @@
 # Pip's Puzzles
 
-A puzzle game for kids aged 3–7. **Pip's Big Picture**: Pip and Gappu ride the Jalebi Express round India to invite a
-friend from every corner to the Friendship Mela at Diwali. **10 levels**, one stop each, 52 puzzles, 14 friends
-(the story, cast and every level are in [STORY.md](STORY.md)):
+A puzzle game for kids aged 3–7. **Pip's Big Picture**: Pip, a puzzle piece, sets off from Jalebi Junction in the
+snowy mountains of Jammu & Kashmir to meet a friend in every place, and the Jalebi Express rides down India to the
+Friendship Mela at Kanyakumari on Diwali night. **10 levels**, one stop each, 52 puzzles, 14 friends (the story,
+cast and every level are in [STORY.md](STORY.md); the stops still to come are in [ROUTE.md](ROUTE.md)):
 
 | Level | Stop | New friend | Puzzles |
 |---|---|---|---|
-| 1 | Jalebi Junction | (home: Gappu, Mithu, Tillu, Chunnu, Gauri, Pip) | Jigsaws, shadows, snap, maze, the station jigsaw |
+| 1 | Jammu & Kashmir: Jalebi Junction | (home: Gappu, Mithu, Tillu, Chunnu, Gauri, Pip) | Jigsaws, shadows, snap, maze, the station jigsaw |
 | 2 | Punjab: Golden Fields | Bholu the buffalo | Jigsaw, Baisakhi snap, shadows, first tracks, find the dhol maze |
-| 3 | Rajasthan: Desert Fair | Kesar the camel | Jigsaw, **Mandana rangoli**, shadows with a decoy, snap, puppet maze |
-| 4 | Gujarat: Kite Festival | Raja the lion | Jigsaw, tracks, farsan snap, shadows, kites slide puzzle |
-| 5 | Mumbai: Monsoon City | Chikki the mouse | Jigsaw, modak maze (2 levers), rangoli, snap, tracks with decoys |
-| 6 | Kerala: Backwaters | Appu the elephant | Jigsaw, shadows, **pookalam**, snake-boat slide, tracks |
-| 7 | Tamil Nadu: Temple Town | Mayil the peacock | Jigsaw (20), **kolam**, tracks, shadows, tiffin snap |
-| 8 | Kolkata: City of Joy | Bagha the tiger | Jigsaw, mishti snap, shadows, **alpana**, Howrah Express |
-| 9 | The Hills | Momo the red panda | Jigsaw (24), toy-train slide, picnic snap (8 pairs), hill maze (switch), loops tracks |
-| 10 | Home for Diwali | (everyone) | Diwali shop, Diwali Express, lamplight shadows, mithai snap, Lantern Walk, **The Big Picture** |
+| 3 | The Hills | Momo the red panda | Jigsaw, toy-train slide, picnic snap, hill maze (2 monkeys), loops tracks |
+| 4 | Kolkata: City of Joy | Bagha the tiger | Jigsaw (12), mishti snap, shadows with a decoy, **alpana rangoli**, Howrah Express |
+| 5 | Rajasthan: Desert Fair | Kesar the camel | Jigsaw, **mandana**, shadows, snap, puppet maze (2 levers) |
+| 6 | Gujarat: Kite Festival | Raja the lion | Jigsaw (15), tracks, farsan snap, shadows, kites slide puzzle |
+| 7 | Mumbai: Monsoon City | Chikki the mouse | Jigsaw (20), modak maze (switch), rangoli, snap, tracks with decoys |
+| 8 | Tamil Nadu: Temple Town | Mayil the peacock | Jigsaw (20), **kolam**, tracks, shadows, tiffin snap |
+| 9 | Kerala: Backwaters | Appu the elephant | Jigsaw (24), shadows, **pookalam**, snake-boat slide, tracks |
+| 10 | Kanyakumari: Diwali by the Sea | (everyone) | Diwali shop, Diwali Express, lamplight shadows, mithai snap, Lantern Walk, **The Big Picture** |
 
 Seven kinds of game, and no two in a row in a level play the same way: jigsaw (spin jigsaws in level 10), Who's That
 Shadow?, Snack Snap, Fix the Tracks, slide puzzle, maze, and **Rangoli** (colour a festival floor pattern to match
-the picture, in five regional styles). Each level opens with a story card to read aloud and ends with its new friend
-hopping on the train with a gift for the Mela.
+the picture, in five regional styles). An opening story (Pip's Big Idea) comes first. Each level opens with a story
+card to read aloud and ends with its new friend hopping on the train with a gift for the Mela.
+
+Levels keep the id they were released with, so stars stay put when stops move: the table is in trip order, and the
+Hills, for example, are level 9 in the code and on the server (`app/src/data/levels.ts` explains).
 
 ```
 pips-puzzles/
@@ -311,7 +315,7 @@ they saved. The 1.4 app ignores a list from a server that hasn't been updated, a
 |---|---|
 | `app/` | Screens (Expo Router: every file is a screen) |
 | `app/index.tsx` | Home: two doors, **Puzzles** (Pip) and **Learn with Bit** (the robot) |
-| `app/map.tsx` | The journey map: a card per level joined by a railway, the new friend's face, a Story button, the next stop's friend as a mystery shadow, and the train of friends who have joined |
+| `app/map.tsx` | The journey screen: the map of India with the whole trip and a Play button for the next puzzle, then a card per level joined by a railway (the new friend's face, a Story button, the next stop's friend as a mystery shadow), the train of friends who have joined, and the stops coming soon |
 | `app/story/[level].tsx` | A level's story card (picture and lines to read aloud), shown before its first puzzle and from the map |
 | `app/puzzle/[id].tsx` | Drag-and-drop jigsaw (6 to 24 pieces; "spin" jigsaws: tap a piece to turn it) |
 | `app/shadow/[id].tsx` | Who's That Shadow? (drag friends onto their shadows) |
@@ -324,12 +328,16 @@ they saved. The 1.4 app ignores a list from a server that hasn't been updated, a
 | `app/lab/index.tsx` | Learn with Bit: the robot lab, lesson path and badges |
 | `app/lab/[id].tsx` | Teach the Robot: the child sorts pictures, then Bit sorts new ones by itself |
 | `app/grown-ups/` | Parental gate + settings (incl. "What your child learned with Bit") |
-| `data/levels.ts` | The 10 levels: place, friend, story card, finale, and each level's look (colours, decoration, maze houses, music); level 10 is Diwali night |
-| `data/puzzles.ts` | The 52 built-in puzzles in level order (used until a server has been reached) |
+| `data/levels.ts` | The 10 levels in trip order: place, friend, story card, finale, and each level's look (colours, decoration, maze houses, music); the last is Diwali night |
+| `data/opening.ts` | The opening story's five pages (`app/opening.tsx` shows them) |
+| `data/howTo.ts` | The short "how to play" line each game says when it opens, in English and Hindi (Grown-ups > Spoken help picks which); `components/GameChrome.tsx` plays it and has the speaker button to hear it again |
+| `data/puzzles.ts` | The 52 built-in puzzles in trip order (used until a server has been reached) |
 | `data/catalog.ts` | Reads and checks the server's puzzle list; play order and unlock rules (no React, unit-tested) |
 | `data/games.ts` | Friends, snacks and gifts; track maps, slide boards and rangoli patterns |
 | `data/mazes.ts` | The maze maps (six of them) |
 | `data/art.ts` | Pictures, friend cut-outs, snacks, gifts and the train set |
+| `data/route.ts` | The whole trip through India (ROUTE.md): all 35 stops and 2 islands in order, where each one is, and which level it is once built |
+| `data/indiaOutline.ts` | India's outline for the journey map, made by `npm run india-map` (see below); don't edit by hand |
 | `data/seed.ts` | A puzzle in the server's shape: `npm run seed` writes `backend/content/seed.json` from the built-in list |
 | `game/jigsaw.ts` | Piece shapes, board guides, tray layout, spin turns, stars |
 | `game/maze.ts` | Maze rules: levers, gates, the switch, monkeys, laddoos |
@@ -346,6 +354,7 @@ they saved. The 1.4 app ignores a list from a server that hasn't been updated, a
 | `components/LevelParty.tsx` | A level's finale: the new friend joins the train with their gift; level 10 ends the story with fireworks and The Big Picture |
 | `components/PuzzleThumb.tsx` | Map tiles drawn from the puzzle itself (its friends, snacks, track map, maze or rangoli), so every puzzle gets a thumbnail |
 | `components/RangoliArt.tsx` | Draws a rangoli from its rings |
+| `components/IndiaMap.tsx` | The journey map of India (stops to play, grey "coming soon" stops, the train at the current stop) and the little "you are here" map on each story card |
 
 **Unlocking:** a level opens once 4 puzzles of the level before have at least one star (all of them, if it has fewer than 4), so one tricky puzzle never blocks a child. Adding more puzzles to a level never locks one a child has already opened. Levels 1 and 2 are gentler: a peek at the Snack Snap cards, jigsaw pieces laid out in a grid, and no decoy shadow.
 **Stars** (always at least 1 for finishing):
@@ -359,9 +368,11 @@ they saved. The 1.4 app ignores a list from a server that hasn't been updated, a
 - Rangoli: 3 for at most one wrong colour, 2 for at most three.
 - Learn with Bit: 3 if Bit sorts everything right the first time, 2 after one re-teach, 1 after that. Lessons open one after another; the lab itself is always open.
 
-**The story** ([STORY.md](STORY.md)): each level has a story card (shown before its first puzzle, and from the map's Story button), puzzles that each tell a small moment with a true Pip's fact about the place, and a one-time finale when it's done. Level 10, Home for Diwali, is the night level: Diwali Express lights a diya on every joined piece, Lantern Walk is a dark maze, and finishing The Big Picture plays the "Happy Diwali!" fireworks.
+**The story** ([STORY.md](STORY.md)): each level has a story card (shown before its first puzzle, and from the map's Story button), puzzles that each tell a small moment with a true Pip's fact about the place, and a one-time finale when it's done. The last stop, Diwali at Kanyakumari, is the night level: Diwali Express lights a diya on every joined piece, Lantern Walk is a dark maze, and finishing The Big Picture plays the "Happy Diwali!" fireworks.
 
 **The art kit** (`app/scripts/art/`): the friends, places, snacks and gifts are drawn in TypeScript from small reusable parts (`kit.ts`: faces, bodies, Indian motifs such as torans, bunting, diyas, kites, palms, gopurams, kolams), so a new friend or a new place is a few lines. `npm run art` renders everything to `app/assets/images/game/` with resvg (installed by `npm install`, no system tools); `npm run art -- bholu --preview` redraws just the matching pictures and writes a contact sheet. Hand-written SVGs in the same folder are rendered too, and can use existing pictures by file name (`<image href="shop.png">`).
+
+**The map of India** (`npm run india-map`): the journey map's outline comes from Natural Earth's public-domain "India point of view" country boundaries, which draw India the way India's official maps do (all of Jammu & Kashmir and Ladakh, and Arunachal Pradesh). Download `ne_10m_admin_0_countries_ind.geojson` (about 13 MB, not committed) from github.com/nvkelso/natural-earth-vector, then run `npm run india-map -- path/to/ne_10m_admin_0_countries_ind.geojson`. The script refuses a file that isn't India's official outline, and checks every stop in `data/route.ts` is on land. To add a stop to the map, add it to `data/route.ts`; the map shows it as "coming soon" until its level is built.
 
 **How Bit learns** (`game/teach.ts`): each picture has a few things you can see (colour, shape, wings, wheels, a stem…). For a new picture Bit finds the taught example that shares the most, colour counting less than shape, and copies its basket. So Bit really does copy the child's mistakes. Lesson 4 is set up so Bit first learns from red fruits only and wrongly calls a red ball a fruit; the logic tests check every lesson works out the way the story needs.
 

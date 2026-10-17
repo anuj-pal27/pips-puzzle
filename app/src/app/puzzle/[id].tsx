@@ -9,11 +9,12 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { playSound, useMusic } from '@/audio/sound';
 import { ChunkyButton, CircleButton, Pill } from '@/components/Buttons';
-import { TipBubble } from '@/components/GameChrome';
+import { HowToButton, TipBubble, useHowTo } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
 import { ThemeBackdrop } from '@/components/Festive';
 import { PieceArt } from '@/components/PieceArt';
 import { Txt } from '@/components/Txt';
+import { HOW_TO } from '@/data/howTo';
 import type { JigsawPuzzle } from '@/data/puzzles';
 import { isGentle, themeFor } from '@/data/levels';
 import { jigsawStars, pieceMargin, piecePath, slotPath, startTurns, trayLayout, type JigsawGrid } from '@/game/jigsaw';
@@ -40,6 +41,7 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
   const picture = useCatalog().getPicture(puzzle.picture);
   const theme = themeFor(puzzle.level);
   useMusic(theme.music);
+  const howTo = useHowTo(puzzle);
   const { width } = useWindowDimensions();
 
   // Board size follows the screen width; pieces follow the board.
@@ -63,7 +65,7 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
   const [seed, setSeed] = useState(newSeed);
   // Spin jigsaws: quarter-turns per piece. Only ever counts up, so pieces always spin the same way.
   const [turns, setTurns] = useState<number[]>(() => (spin ? startTurns(total, Math.random) : Array(total).fill(0)));
-  const [tip, setTip] = useState('Some pieces are turned round. Tap a piece to spin it!');
+  const [tip, setTip] = useState(HOW_TO['jigsaw-spin'].en);
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const done = placed.length === total;
 
@@ -118,7 +120,10 @@ function Jigsaw({ puzzle }: { puzzle: JigsawPuzzle }) {
       <View style={styles.root}>
         {/* top bar */}
         <View style={styles.header}>
-          <CircleButton icon="pause" label="Pause" onPress={() => setPaused(true)} />
+          <View style={styles.headerLeft}>
+            <CircleButton icon="pause" label="Pause" onPress={() => setPaused(true)} />
+            <HowToButton clip={howTo} />
+          </View>
           <Pill>
             <Icon name="piece" size={26} fill={theme.accent} />
             <View style={styles.progressTrack}>
@@ -414,6 +419,7 @@ function TrayPiece({
 }
 
 const styles = StyleSheet.create({
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   screen: { flex: 1, backgroundColor: colors.sand },
   root: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 14, gap: 12 },

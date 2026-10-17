@@ -54,7 +54,7 @@
     <div class="bars">
       {% for r in hardest %}
       <div class="bar-row">
-        <a href="{% url 'dashboard:puzzle' r.puzzle.slug %}?days={{ days }}"><strong>{{ r.puzzle.title }}</strong> <span class="chip chip-l{{ r.puzzle.level }}">Level {{ r.puzzle.level }}.{{ r.puzzle.order }}</span></a>
+        <a href="{% url 'dashboard:puzzle' r.puzzle.slug %}?days={{ days }}"><strong>{{ r.puzzle.title }}</strong> <span class="chip chip-l{{ r.puzzle.level }}">Level {{ r.puzzle.stop }}.{{ r.puzzle.order }}</span></a>
         <div class="bar-track" title="{{ r.finishes }} finished of {{ r.starts }} started"><div class="bar-fill" style="width: {{ r.completion|pct_width }}%"></div></div>
         <span class="bar-value">{{ r.completion|pct }}</span>
       </div>

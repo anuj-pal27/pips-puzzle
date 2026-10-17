@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="990" height="792" viewBox="0 0 990 792">
+<!-- All Aboard at Jalebi Junction, in the snowy mountains of Jammu & Kashmir: the hand-made picture (station-base.png) with snow on top. -->
+<image href="station-base.png" width="990" height="792"/>
+<g fill="#FFFFFF">
+  <!-- snow on the bench -->
+  <path d="M22,602 Q22,590 40,589 L588,589 Q604,590 606,602 Z"/>
+  <circle cx="60" cy="590" r="7"/><circle cx="306" cy="590" r="8"/><circle cx="576" cy="590" r="7"/>
+  <!-- on the train's roof and chimney -->
+  <path d="M796,292 Q796,278 812,276 L990,276 L990,292 Z"/>
+  <circle cx="830" cy="278" r="9"/><circle cx="890" cy="276" r="12"/><circle cx="950" cy="278" r="10"/>
+  <path d="M650,298 Q650,284 664,283 L716,283 Q730,284 730,298 Z"/>
+  <circle cx="676" cy="285" r="8"/><circle cx="704" cy="284" r="9"/>
+  <!-- in drifts on the platform -->
+  <ellipse cx="160" cy="772" rx="90" ry="13"/><ellipse cx="440" cy="764" rx="64" ry="10"/>
+  <ellipse cx="700" cy="770" rx="70" ry="11"/><ellipse cx="910" cy="748" rx="76" ry="12"/>
+</g>
+<!-- falling snow, only where there's sky -->
+<g fill="#FFFFFF" opacity="0.95">
+  <circle cx="40" cy="150" r="6"/><circle cx="84" cy="214" r="5"/><circle cx="30" cy="284" r="7"/><circle cx="96" cy="334" r="5"/>
+  <circle cx="52" cy="404" r="6"/><circle cx="62" cy="474" r="5"/>
+  <circle cx="262" cy="142" r="5"/><circle cx="300" cy="292" r="6"/><circle cx="252" cy="362" r="5"/><circle cx="284" cy="424" r="6"/>
+  <circle cx="480" cy="148" r="6"/><circle cx="542" cy="196" r="5"/><circle cx="562" cy="284" r="6"/><circle cx="534" cy="344" r="5"/>
+  <circle cx="570" cy="412" r="6"/>
+  <circle cx="632" cy="152" r="5"/><circle cx="640" cy="252" r="6"/><circle cx="760" cy="336" r="5"/>
+  <circle cx="902" cy="232" r="6"/><circle cx="952" cy="182" r="5"/><circle cx="920" cy="150" r="4"/>
+</g>
+</svg>

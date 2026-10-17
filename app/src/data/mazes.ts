@@ -11,6 +11,7 @@ const PURPLE: Omit<GateDef, 'lever' | 'openWhen'> = { name: 'purple', color: '#9
 const GREEN: Omit<GateDef, 'lever' | 'openWhen'> = { name: 'green', color: '#3DBE7E', glyph: 'M6 0.8L11.2 6L6 11.2L0.8 6z' }; // diamond
 
 export const MAZES = {
+  // In trip order, each with something new to work out.
   // 7 x 9: one lever and gate, one monkey, one cow
   easy: {
     id: 'easy',
@@ -50,11 +51,11 @@ export const MAZES = {
     monkeys: [{ axis: 'h', line: 5, min: 4, max: 6, start: 5, dir: 1 }],
   },
 
-  // 8 x 9 (Rajasthan): a lost puppet at the fair; one lever, two monkeys
-  fair: {
-    id: 'fair',
-    intro: 'A puppet is lost at the fair! The lever is near the start.',
-    goal: 'puppet',
+  // 8 x 9 (the Hills): momos up the hill; one lever, two monkeys
+  hills: {
+    id: 'hills',
+    intro: 'Gappu can smell momos up the hill! The lever is near the start.',
+    goal: 'momos',
     map: [
       '..o#...J',
       '.#.#.#..',
@@ -73,11 +74,11 @@ export const MAZES = {
     ],
   },
 
-  // 8 x 10 (Mumbai): two railway lines for the local trains, two levers in order, two monkeys, a cow
-  monsoon: {
-    id: 'monsoon',
-    intro: 'Two railway lines! Find the yellow lever, then the blue one.',
-    goal: 'modak',
+  // 8 x 10 (Rajasthan): a lost puppet at the fair; two railway lines, two levers in order, two monkeys, a cow
+  fair: {
+    id: 'fair',
+    intro: 'A puppet is lost at the fair! Find the yellow lever, then the blue one.',
+    goal: 'puppet',
     map: [
       'J..#o..#',
       '.#....C#',
@@ -97,34 +98,11 @@ export const MAZES = {
     ],
   },
 
-  // 8 x 10: two railways, two colour-matched levers, two monkeys
-  medium: {
-    id: 'medium',
-    intro: "It's dark! Two gates this time. Find the yellow lever first.",
-    map: [
-      'o..#...J',
-      '.#...#.#',
-      'RRRBRRRR',
-      'o.......',
-      '.#.#.#..',
-      '...#..#b',
-      'RRARRRRR',
-      '.....#Ca',
-      '.#.#.#o.',
-      'S..#....',
-    ],
-    gates: { A: { ...YELLOW, lever: 'a' }, B: { ...BLUE, lever: 'b' } },
-    monkeys: [
-      { axis: 'h', line: 3, min: 1, max: 7, start: 4, dir: 1 },
-      { axis: 'v', line: 4, min: 7, max: 9, start: 8, dir: 1 },
-    ],
-  },
-
-  // 9 x 11: a switch that opens purple and shuts green (and back), plus a yellow lever, two monkeys, two cows
-  hard: {
-    id: 'hard',
+  // 9 x 11 (Mumbai): a switch that opens purple and shuts green (and back), plus a yellow lever, two monkeys, two cows
+  monsoon: {
+    id: 'monsoon',
     intro: 'The switch opens one gate and shuts the other. Think first!',
-    goal: 'momos',
+    goal: 'modak',
     map: [
       'o..#..C.J',
       '.#.......',
@@ -146,6 +124,29 @@ export const MAZES = {
     monkeys: [
       { axis: 'h', line: 4, min: 4, max: 8, start: 6, dir: 1 },
       { axis: 'v', line: 6, min: 8, max: 10, start: 9, dir: 1 },
+    ],
+  },
+
+  // 8 x 10 (Diwali, the Lantern Walk, in the dark): two railways, two colour-matched levers, two monkeys
+  medium: {
+    id: 'medium',
+    intro: "It's dark! Two gates this time. Find the yellow lever first.",
+    map: [
+      'o..#...J',
+      '.#...#.#',
+      'RRRBRRRR',
+      'o.......',
+      '.#.#.#..',
+      '...#..#b',
+      'RRARRRRR',
+      '.....#Ca',
+      '.#.#.#o.',
+      'S..#....',
+    ],
+    gates: { A: { ...YELLOW, lever: 'a' }, B: { ...BLUE, lever: 'b' } },
+    monkeys: [
+      { axis: 'h', line: 3, min: 1, max: 7, start: 4, dir: 1 },
+      { axis: 'v', line: 4, min: 7, max: 9, start: 8, dir: 1 },
     ],
   },
 } satisfies Record<string, MazeConfig>;

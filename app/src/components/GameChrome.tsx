@@ -1,25 +1,60 @@
 import { router } from 'expo-router';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { AccessibilityInfo, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
 
-import { themeFor } from '@/data/levels';
+import { hasVoice, playSound, speak, useVoice } from '@/audio/sound';
+import { howToClip, howToFor } from '@/data/howTo';
+import { stopNumber, themeFor } from '@/data/levels';
+import type { Puzzle } from '@/data/puzzles';
+import type { VoiceClip } from '@/data/voice';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 import { CircleButton } from './Buttons';
+import { Icon } from './Icon';
 import { Txt } from './Txt';
+
+/**
+ * Say how to play, a moment after a game opens (src/data/howTo.ts), in the language grown-ups picked.
+ * Returns the clip, for a HowToButton.
+ */
+export function useHowTo(puzzle: Puzzle): VoiceClip {
+  const { settings } = useProgress();
+  const clip = howToClip(howToFor(puzzle), settings.helpLanguage);
+  useVoice(clip, 800);
+  return clip;
+}
+
+/** A small speaker button next to the level badge: hear how to play again. */
+export function HowToButton({ clip }: { clip: VoiceClip }) {
+  const { settings } = useProgress();
+  if (!settings.voice || !hasVoice(clip)) return null;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Hear how to play"
+      hitSlop={10}
+      onPress={() => {
+        playSound('tap');
+        speak(clip);
+      }}
+      style={({ pressed }) => [styles.howTo, pressed && { transform: [{ translateY: 2 }] }]}>
+      <Icon name="sound" size={17} />
+    </Pressable>
+  );
+}
 
 /** The level a puzzle is in, as a small coloured badge. */
 export function LevelBadge({ level }: { level: number }) {
   const theme = themeFor(level);
   return (
     <View style={[styles.levelBadge, { backgroundColor: theme.accent }]}>
-      <Txt weight="extrabold" size={13} color={colors.ink}>Level {level}</Txt>
+      <Txt weight="extrabold" size={13} color={colors.ink}>Level {stopNumber(level)}</Txt>
     </View>
   );
 }
 
-/** Top bar shared by the games: back button, game name with its level, and a counter on the right. */
-export function GameHeader({ title, level, right }: { title: string; level: number; right?: ReactNode }) {
+/** Top bar shared by the games: back button, game name with its level (and how to play), and a counter on the right. */
+export function GameHeader({ title, level, right, howTo }: { title: string; level: number; right?: ReactNode; howTo?: VoiceClip }) {
   const theme = themeFor(level);
   return (
     <View style={styles.header}>
@@ -35,7 +70,10 @@ export function GameHeader({ title, level, right }: { title: string; level: numb
           style={theme.dark ? { textShadowColor: 'rgba(5, 8, 30, 0.9)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } } : undefined}>
           {title}
         </Txt>
-        <LevelBadge level={level} />
+        <View style={styles.badgeRow}>
+          <LevelBadge level={level} />
+          {howTo ? <HowToButton clip={howTo} /> : null}
+        </View>
       </View>
       {right ?? <View style={{ width: 56 }} />}
     </View>
@@ -83,6 +121,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, gap: 10 },
   title: { flex: 1, alignItems: 'center', gap: 2 },
   levelBadge: { paddingHorizontal: 10, borderRadius: 999 },
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  howTo: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', boxShadow: `0px 3px 0px ${colors.sandShadow}` },
   tipRow: { alignItems: 'center', paddingHorizontal: 16, marginTop: 12, minHeight: 44 },
   tip: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 18, boxShadow: `0px 3px 0px ${colors.sandShadow}`, maxWidth: 440 },
 });

@@ -1,6 +1,7 @@
 // Places on the journey (STORY.md), 990 x 660 like the original pictures (gappu.png): each new friend at
 // home in their part of India (used for "Meet ..." jigsaws and the level story cards), wider scenes for
-// the slide puzzles, and the finale, The Big Picture, with every friend at the Friendship Mela.
+// the slide puzzles, the opening story's old map, and the finale, The Big Picture, with every friend at the
+// Friendship Mela.
 
 import { CAST, ORIGINAL_FRIENDS } from './cast.ts';
 import {
@@ -9,6 +10,7 @@ import {
   circle,
   cloud,
   doc,
+  el,
   ellipse,
   field,
   groundShadow,
@@ -22,6 +24,7 @@ import {
   mountain,
   palm,
   path,
+  polar,
   pot,
   put,
   radialGradient,
@@ -30,6 +33,7 @@ import {
   ringOf,
   seeded,
   shade,
+  sparkle,
   stringLights,
   sun,
   toran,
@@ -505,6 +509,88 @@ const toyTrainScene = () => {
   ]);
 };
 
+// ---------------------------------------------------------------- the opening story
+
+/** A five-pointed star, for the end of the dotted line on the map. */
+const starShape = (cx: number, cy: number, r: number, fill: string) =>
+  path(
+    `M${Array.from({ length: 10 }, (_, i) => polar(cx, cy, i % 2 ? r * 0.45 : r, -90 + i * 36).join(',')).join(' L')} Z`,
+    fill,
+    { stroke: INK, 'stroke-width': 4, 'stroke-linejoin': 'round' },
+  );
+
+/**
+ * Gappu shows Pip an old map of the world (the opening story, page 3). A treasure map, not a real one: seas,
+ * snowy mountains, a palm and a dotted way to go, but no countries or borders. Snowy peaks in the window,
+ * because Jalebi Junction is in the mountains of Jammu & Kashmir.
+ */
+const oldMap = () => {
+  const r = seeded(9);
+  const paper = '#F6E2B3';
+  return doc(W, H, [
+    rect(0, 0, W, H, '#FFE7C2'),
+    ...[90, 270, 450].map((x) => rect(x, 0, 90, 540, '#FFDDB0')),
+    // the window onto the mountains
+    rect(640, 36, 300, 236, '#8A5A2B', { rx: 14 }),
+    linearGradient('win', [[0, '#9ED4FF'], [1, '#E6F4FF']]),
+    el('defs', {}, el('clipPath', { id: 'pane' }, rect(656, 52, 268, 204, WHITE, { rx: 6 }))),
+    group(
+      [
+        rect(656, 52, 268, 204, 'url(#win)'),
+        mountain(720, 262, 230, 170, '#8C9CC4'),
+        mountain(860, 262, 250, 200, '#7C8DB5'),
+        ...Array.from({ length: 22 }, () => circle(660 + r() * 260, 56 + r() * 196, 3 + r() * 3, WHITE, { opacity: 0.9 })),
+      ],
+      { 'clip-path': 'url(#pane)' },
+    ),
+    line('M790,52 V256 M656,154 H924', '#8A5A2B', 8),
+    rect(628, 266, 324, 18, '#A0714A', { rx: 8 }),
+    // Gappu, behind the table
+    friend('gappu', 215, 140, 0.7),
+    // Pip, peeping over the end of the map
+    friend('pip', 922, 236, 0.28, true),
+    // the table
+    rect(0, 540, W, 120, '#C9803C'),
+    rect(0, 530, W, 22, '#E09A50', { rx: 6 }),
+    // the map, a little crooked, rolled up at both ends
+    put(
+      [
+        ellipse(0, 186, 280, 18, INK, { opacity: 0.12 }),
+        rect(-260, -170, 520, 340, paper, { rx: 8 }),
+        rect(-260, -170, 520, 340, 'none', { rx: 8, stroke: '#D9B77A', 'stroke-width': 8 }),
+        // seas, with little waves
+        path('M-252,58 Q-170,28 -100,68 T40,92 Q64,130 44,162 L-252,162 Z', '#A9D8E8'),
+        path('M118,-162 L252,-162 L252,-36 Q196,-56 166,-98 T118,-162 Z', '#A9D8E8'),
+        ...[[-200, 110], [-120, 132], [-30, 118], [190, -120], [220, -80]].map(([x, y]) => line(`M${x - 18},${y} q9,-8 18,0 t18,0`, '#6FB6D0', 4)),
+        // mountains and a palm
+        mountain(-130, -24, 120, 96, '#A8957A'),
+        mountain(-52, -24, 92, 66, '#BBA584'),
+        palm(92, 150, 120, 8, 0.42),
+        // the way to go, from a red dot to a gold star
+        line('M-206,-118 C-120,-160 -24,-92 36,-62 S172,-12 118,48 S188,118 212,96', '#E8574F', 7, { 'stroke-dasharray': '2 16' }),
+        circle(-206, -118, 11, '#E8574F', { stroke: INK, 'stroke-width': 3 }),
+        starShape(212, 92, 30, '#FFC93C'),
+        sparkle(250, 50, 10),
+        sparkle(-160, -150, 8),
+        // a compass in the corner
+        put(
+          [
+            circle(0, 0, 30, '#FFF6DC', { stroke: '#8A5A2B', 'stroke-width': 4 }),
+            path('M0,-24 L7,0 L0,24 L-7,0 Z', '#8A5A2B'),
+            path('M0,-24 L7,0 L-7,0 Z', '#E8574F'),
+            path('M-24,0 L0,-6 L24,0 L0,6 Z', '#8A5A2B', { opacity: 0.6 }),
+          ],
+          { x: -210, y: -20 },
+        ),
+        // rolled ends
+        rect(-284, -180, 34, 360, '#E8C98A', { rx: 17, stroke: '#D9B77A', 'stroke-width': 4 }),
+        rect(250, -180, 34, 360, '#E8C98A', { rx: 17, stroke: '#D9B77A', 'stroke-width': 4 }),
+      ],
+      { x: 610, y: 372, r: -5 },
+    ),
+  ]);
+};
+
 // ---------------------------------------------------------------- the finale
 
 const bigPicture = () => {
@@ -558,5 +644,6 @@ export const SCENES: Record<string, () => string> = {
   kites,
   'boat-race': boatRace,
   'toy-train': toyTrainScene,
+  'old-map': oldMap,
   'big-picture': bigPicture,
 };

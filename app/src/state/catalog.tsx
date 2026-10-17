@@ -6,7 +6,7 @@ import { fetchPuzzles } from '@/api/client';
 import * as list from '@/data/catalog';
 import { PICTURES } from '@/data/art';
 import { FRIEND_NAMES, GIFT_NAMES, SNACK_NAMES } from '@/data/games';
-import { LEVEL_COUNT } from '@/data/levels';
+import { LEVELS } from '@/data/levels';
 import { PUZZLES, type Picture, type Puzzle } from '@/data/puzzles';
 
 // Which puzzles the game plays. It starts with the last list the server sent (saved on the phone),
@@ -43,7 +43,7 @@ const KNOWN: list.KnownIds = {
   friends: Object.keys(FRIEND_NAMES),
   snacks: Object.keys(SNACK_NAMES),
   gifts: Object.keys(GIFT_NAMES),
-  levels: LEVEL_COUNT,
+  levels: LEVELS.map((l) => l.n),
 };
 const BUILT_IN: Catalog = { puzzles: PUZZLES, pictures: PICTURES, source: 'built-in' };
 

@@ -49,6 +49,7 @@
     "art": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/art/build.ts",
     "voice": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/make-voice.ts",
     "seed": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/export-seed.ts",
+    "india-map": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/make-india-map.ts",
     "build:apk": "npx eas-cli@latest build -p android --profile preview",
     "build:apk:local": "node scripts/build-apk-local.mjs",
     "build:store": "npx eas-cli@latest build -p android --profile production"

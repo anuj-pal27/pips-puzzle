@@ -1,6 +1,6 @@
 // Make the narrator's voice files (assets/voice/*.mp3) from the lines in src/data/voice.ts, with Sarvam AI's
 // Bulbul text-to-speech: one cheerful female voice reading Hindi, Punjabi, Gujarati, Marathi, Malayalam,
-// Tamil and Bengali. ffmpeg evens out their loudness and makes them small. Then writes src/audio/voiceClips.ts
+// Tamil, Bengali and English. ffmpeg evens out their loudness and makes them small. Then writes src/audio/voiceClips.ts
 // so the app can find them.
 //
 //   npm run voice            only lines that changed since last time

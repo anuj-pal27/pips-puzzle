@@ -3,6 +3,7 @@ import type { GateDef, MazeConfig, MonkeyLane } from '../game/maze';
 import { checkRangoli, type RangoliConfig } from '../game/rangoli.ts';
 import type { TrackConfig } from '../game/tracks';
 import type { FriendId, SnackId } from './games';
+import { routeIndex } from './levels.ts';
 import type { Picture, Puzzle, PuzzleKind } from './puzzles';
 
 // The puzzle list the game plays: the one sent by the Django server (backend/content), or the
@@ -12,17 +13,18 @@ import type { Picture, Puzzle, PuzzleKind } from './puzzles';
 /** A level opens once this many puzzles in the level before have a star (or all of them, if it has fewer). */
 export const UNLOCK_AFTER = 4;
 
+/** Stop by stop in the order the train visits them (levels.ts), then puzzle by puzzle. */
 export function inPlayOrder(list: Puzzle[]): Puzzle[] {
-  return [...list].sort((a, b) => a.level - b.level || a.order - b.order);
+  return [...list].sort((a, b) => routeIndex(a.level) - routeIndex(b.level) || a.order - b.order);
 }
 
 export const puzzlesInLevel = (list: Puzzle[], level: number) => inPlayOrder(list.filter((p) => p.level === level));
 
-/** The levels that have puzzles, in order. */
-export const levelsIn = (list: Puzzle[]) => [...new Set(list.map((p) => p.level))].sort((a, b) => a - b);
+/** The levels that have puzzles, in trip order. */
+export const levelsIn = (list: Puzzle[]) => [...new Set(list.map((p) => p.level))].sort((a, b) => routeIndex(a) - routeIndex(b));
 
-/** The level with puzzles just before `level` (levels the server left empty are skipped), or undefined. */
-const levelBefore = (list: Puzzle[], level: number) => levelsIn(list).filter((n) => n < level).pop();
+/** The level with puzzles just before `level` on the trip (levels the server left empty are skipped), or undefined. */
+const levelBefore = (list: Puzzle[], level: number) => levelsIn(list).filter((n) => routeIndex(n) < routeIndex(level)).pop();
 
 /** How many puzzles of the level before need a star to open `level`. */
 export function unlockNeed(list: Puzzle[], level: number): number {
@@ -32,9 +34,13 @@ export function unlockNeed(list: Puzzle[], level: number): number {
 
 const starred = (list: Puzzle[], level: number, stars: Record<string, number>) => puzzlesInLevel(list, level).filter((p) => (stars[p.id] ?? 0) > 0).length;
 
+/**
+ * A level opens when enough of the level before it has stars. A level the child already has a star in stays
+ * open too, so nobody loses a stop they played when the trip's order changes or a new stop is added before it.
+ */
 export function isLevelUnlocked(list: Puzzle[], level: number, stars: Record<string, number>): boolean {
   const before = levelBefore(list, level);
-  return before === undefined || starred(list, before, stars) >= unlockNeed(list, level);
+  return before === undefined || starred(list, before, stars) >= unlockNeed(list, level) || starred(list, level, stars) > 0;
 }
 
 /**
@@ -64,7 +70,7 @@ export function puzzleAfter(list: Puzzle[], id: string, stars: Record<string, nu
 // ---------------------------------------------------------------- reading the server's list
 
 /** What this app has bundled, so a puzzle that needs something the app doesn't have is skipped. */
-export type KnownIds = { pictures: string[]; friends: string[]; snacks: string[]; gifts: string[]; levels: number };
+export type KnownIds = { pictures: string[]; friends: string[]; snacks: string[]; gifts: string[]; levels: number[] };
 
 export type ServerCatalog = {
   puzzles: Puzzle[];
@@ -171,7 +177,7 @@ function readLevel(item: RemotePuzzle, known: KnownIds): number {
   const level = item.level;
   need(level !== undefined && level !== null, 'has no level (the server needs updating)');
   need(isInt(level, 1, 99), 'level must be a whole number');
-  need((level as number) <= known.levels, `level ${level} needs a newer app`);
+  need(known.levels.includes(level as number), `level ${level} needs a newer app`);
   return level as number;
 }
 

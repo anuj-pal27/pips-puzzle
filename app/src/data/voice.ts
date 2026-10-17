@@ -1,12 +1,20 @@
-// What the narrator says at each stop of the Jalebi Express, in that stop's own language (STORY.md).
-// The words on screen stay in English (levels.ts); this is the same story, spoken the way a friend there
-// would say it, with a happy hello first. One cheerful female voice reads every language.
+// What the narrator says at each stop of the Jalebi Express, in that stop's own language (STORY.md), and the
+// opening story before the trip starts. The words on screen stay in English (levels.ts); this is the same
+// story, spoken the way a friend there would say it, with a happy hello first. One cheerful female voice
+// reads every language.
+//
+// The short "how to play" lines each game opens with live in howTo.ts; they're spoken from here too.
 //
 // After changing a line, run `npm run voice` (scripts/make-voice.ts) to make the audio again.
 // Plain data, so the script can read it.
 
-/** Sarvam's language codes. Rajasthan and the Hills have no voice of their own, so they use Hindi with local words. */
-export type VoiceLang = 'hi-IN' | 'pa-IN' | 'gu-IN' | 'mr-IN' | 'ml-IN' | 'ta-IN' | 'bn-IN';
+import { HOW_TO, howToClip, type HelpLanguage, type HowToId } from './howTo.ts';
+
+/**
+ * Sarvam's language codes. Jammu & Kashmir, Rajasthan and the Hills have no voice of their own, so they use Hindi
+ * (with local words in Rajasthan and the Hills).
+ */
+export type VoiceLang = 'hi-IN' | 'pa-IN' | 'gu-IN' | 'mr-IN' | 'ml-IN' | 'ta-IN' | 'bn-IN' | 'en-IN';
 
 export type LevelVoice = {
   level: number;
@@ -24,9 +32,9 @@ export const LEVEL_VOICES: LevelVoice[] = [
     lang: 'hi-IN',
     hello: 'नमस्ते दोस्तों!',
     story: [
-      'दिवाली आने वाली है, और जलेबी जंक्शन पर दोस्ती का मेला लगने वाला है!',
-      'पिप को एक बढ़िया बात सूझी: चलो, भारत के हर कोने से एक दोस्त को बुलाते हैं!',
-      'सब लोग जलेबियाँ बाँध लो! जलेबी एक्सप्रेस इंतज़ार कर रही है!',
+      'पहाड़ों पर बर्फ़, पेड़ों पर सेब: यह है जलेबी जंक्शन, पिप का घर।',
+      'आज जलेबी एक्सप्रेस भारत के हर कोने में एक नया दोस्त बनाने निकल रही है।',
+      'हर दोस्त को दिवाली पर, भारत के आख़िरी छोर पर, दोस्ती के मेले में बुलाया गया है!',
     ],
     yay: 'चलो चलो!',
     done: 'सब लोग ट्रेन में बैठ जाओ!',
@@ -138,26 +146,52 @@ export const LEVEL_VOICES: LevelVoice[] = [
   },
   {
     level: 10,
-    lang: 'hi-IN',
-    hello: 'शुभ दीपावली!',
+    lang: 'ta-IN', // Kanyakumari is in Tamil Nadu
+    hello: 'தீபாவளி நல்வாழ்த்துகள்!',
     story: [
-      'जलेबी एक्सप्रेस घर लौट आई, ठीक दिवाली पर!',
-      'सारे नए दोस्त यहाँ हैं, और हर दोस्त कोई तोहफ़ा लाया है।',
-      'दीये जलाओ! दोस्ती का मेला शुरू होने वाला है!',
+      'ஜலேபி எக்ஸ்பிரஸ், இந்தியாவின் கடைசி முனையான கன்னியாகுமரிக்கு, சரியாக தீபாவளி அன்று வந்து சேர்ந்தது!',
+      'புதிய நண்பர்கள் எல்லோரும் இங்கே இருக்கிறார்கள், ஒவ்வொருவரும் ஒரு பரிசு கொண்டு வந்திருக்கிறார்கள்.',
+      'விளக்குகளை ஏற்றுங்கள்! நட்புத் திருவிழா தொடங்கப் போகிறது!',
     ],
-    yay: 'वाह वाह!',
-    done: 'दिवाली की ढेर सारी शुभकामनाएँ!',
-    gift: 'हर दोस्त, बड़ी तस्वीर का एक टुकड़ा है।',
+    yay: 'ஆஹா!',
+    done: 'எல்லோருக்கும் இனிய தீபாவளி!',
+    gift: 'ஒவ்வொரு நண்பரும், பெரிய படத்தின் ஒரு துண்டு.',
   },
 ];
 
-/** One audio file each: the story card ('story-2') and the level's finale ('done-2'). */
-export type VoiceClip = `story-${number}` | `done-${number}`;
+/**
+ * The opening story (src/app/opening.tsx), one clip per page: why Pip sets off. Read in Hindi, like Pip's home
+ * stop. Pip is never "he" or "she", in any language.
+ */
+export const OPENING_VOICE: { lang: VoiceLang; pages: string[] } = {
+  lang: 'hi-IN',
+  pages: [
+    'भारत के सबसे ऊपर, बर्फ़ीले पहाड़ों में, एक छोटा-सा स्टेशन है। यही है पिप का घर।',
+    '"हर पज़ल का टुकड़ा किसी बड़ी तस्वीर का हिस्सा होता है," पिप ने कहा। "पर मेरी तस्वीर कहाँ है?"',
+    'गप्पू ने पिप को दुनिया का एक पुराना नक्शा दिखाया। "तुम्हारी बड़ी तस्वीर इस दुनिया में कहीं है!"',
+    '"चलो, हर जगह जाकर एक नया दोस्त बनाते हैं!" पिप ने कहा। "हम भी चलेंगे!" सब बोले।',
+    'गप्पू ने जलेबियों की टोकरी बाँधी, और जलेबी एक्सप्रेस चल पड़ी, छुक छुक छुक!',
+  ],
+};
+
+/**
+ * One audio file each: the story card ('story-2'), the level's finale ('done-2'), each opening page ('opening-1'),
+ * and each game's how-to line in English and Hindi ('help-maze-en').
+ */
+export type VoiceClip = `story-${number}` | `done-${number}` | `opening-${number}` | `help-${HowToId}-${HelpLanguage}`;
+
+const HELP_LANGS: Record<HelpLanguage, VoiceLang> = { en: 'en-IN', hi: 'hi-IN' };
 
 /** The words read in each clip. */
 export function voiceScripts(): { clip: VoiceClip; lang: VoiceLang; text: string }[] {
-  return LEVEL_VOICES.flatMap((v) => [
-    { clip: `story-${v.level}` as const, lang: v.lang, text: [v.hello, ...v.story].join(' ') },
-    { clip: `done-${v.level}` as const, lang: v.lang, text: [v.yay, v.done, v.gift].join(' ') },
-  ]);
+  return [
+    ...OPENING_VOICE.pages.map((text, i) => ({ clip: `opening-${i + 1}` as const, lang: OPENING_VOICE.lang, text })),
+    ...LEVEL_VOICES.flatMap((v) => [
+      { clip: `story-${v.level}` as const, lang: v.lang, text: [v.hello, ...v.story].join(' ') },
+      { clip: `done-${v.level}` as const, lang: v.lang, text: [v.yay, v.done, v.gift].join(' ') },
+    ]),
+    ...(Object.entries(HOW_TO) as [HowToId, Record<HelpLanguage, string>][]).flatMap(([id, lines]) =>
+      (Object.keys(HELP_LANGS) as HelpLanguage[]).map((l) => ({ clip: howToClip(id, l), lang: HELP_LANGS[l], text: lines[l] })),
+    ),
+  ];
 }

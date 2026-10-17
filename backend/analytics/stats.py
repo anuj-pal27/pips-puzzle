@@ -9,7 +9,7 @@ from django.db.models import Avg, Count, Min, Q
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 
-from content.ids import LAST_LEVEL, LEVELS
+from content.ids import LAST_LEVEL, LEVELS, STOP
 from content.models import Puzzle
 
 from .models import DEMO_PREFIX, LAB_LESSONS, LAB_PREFIX, PlayEvent
@@ -173,9 +173,9 @@ def funnel(w: Window) -> list[dict]:
     steps = [
         ("Played a puzzle", played),
         ("Finished a puzzle", finished_any),
-        ("Reached level 2", set().union(*(started[n] for n in LEVELS if n >= 2))),
-        ("Reached level 5", set().union(*(started[n] for n in LEVELS if n >= 5))),
-        (f"Reached level {LAST_LEVEL}", started[LAST_LEVEL]),
+        ("Reached level 2", set().union(*(started[n] for n in LEVELS if STOP[n] >= 2))),
+        ("Reached level 5", set().union(*(started[n] for n in LEVELS if STOP[n] >= 5))),
+        (f"Reached level {STOP[LAST_LEVEL]}", started[LAST_LEVEL]),
     ]
     return [{"label": label, "devices": len(devices), "share": _rate(len(devices), total)} for label, devices in steps]
 
@@ -194,7 +194,7 @@ def by_level(rows: list[dict]) -> list[dict]:
         if not mine:
             continue
         starts, finishes = sum(r["starts"] for r in mine), sum(r["finishes"] for r in mine)
-        out.append({"level": level, "label": f"{level}. {place}", "puzzles": len(mine), "starts": starts, "finishes": finishes, "completion": _rate(finishes, starts)})
+        out.append({"level": level, "label": f"{STOP[level]}. {place}", "puzzles": len(mine), "starts": starts, "finishes": finishes, "completion": _rate(finishes, starts)})
     return out
 
 

@@ -9,10 +9,11 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { playSound, useMusic } from '@/audio/sound';
 import { Pill } from '@/components/Buttons';
 import { ThemeBackdrop } from '@/components/Festive';
-import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
+import { GameHeader, TipBubble, useFinish, useHowTo } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
 import { RangoliArt } from '@/components/RangoliArt';
 import { Txt } from '@/components/Txt';
+import { HOW_TO } from '@/data/howTo';
 import { themeFor } from '@/data/levels';
 import type { RangoliPuzzle } from '@/data/puzzles';
 import { GROUND, hitClass, newRangoli, paint, PALETTE, paintClasses, palette, rangoliDone, rangoliProgress, rangoliStars, targetColor, type RangoliState } from '@/game/rangoli';
@@ -37,13 +38,14 @@ function RangoliGame({ puzzle }: { puzzle: RangoliPuzzle }) {
   const cfg = puzzle.rangoli;
   const theme = themeFor(puzzle.level);
   useMusic(theme.music);
+  const howTo = useHowTo(puzzle);
   const finish = useFinish(puzzle.id);
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const pots = palette(cfg);
   const [state, setState] = useState<RangoliState>(newRangoli);
   const [color, setColor] = useState(pots[0]);
-  const [tip, setTip] = useState<Tip>({ text: 'Pick a colour, then tap the pattern to make it like the picture!', tone: 'plain' });
+  const [tip, setTip] = useState<Tip>({ text: HOW_TO.rangoli.en, tone: 'plain' });
   const pop = useSharedValue(1);
   const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.get() }] }));
 
@@ -85,6 +87,7 @@ function RangoliGame({ puzzle }: { puzzle: RangoliPuzzle }) {
       <GameHeader
         title={puzzle.title || GROUND[cfg.style].title}
         level={puzzle.level}
+        howTo={howTo}
         right={
           <Pill>
             <Icon name="check" size={24} color={colors.green} />

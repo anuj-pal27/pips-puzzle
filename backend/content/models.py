@@ -1,11 +1,12 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Case, Value, When
 
 from . import builders
-from .ids import FRIENDS, LAST_LEVEL, LEVELS, SNACKS
+from .ids import FRIENDS, LEVELS, SNACKS, STOP
 
-LEVEL_CHOICES = [(n, f"Level {n}: {place}") for n, place in LEVELS.items()]
+LEVEL_CHOICES = [(n, f"Level {STOP[n]}: {place}") for n, place in LEVELS.items()]
 
 
 class PuzzleQuerySet(models.QuerySet):
@@ -13,8 +14,9 @@ class PuzzleQuerySet(models.QuerySet):
         return self.filter(is_published=True)
 
     def in_play_order(self):
-        """Level 1 to 10, then 1, 2, 3... inside each level."""
-        return self.order_by("level", "order")
+        """Stop by stop in the order the train visits them (ids.LEVELS), then 1, 2, 3... inside each level."""
+        trip = Case(*(When(level=n, then=Value(i)) for n, i in STOP.items()), default=Value(len(STOP) + 1))
+        return self.order_by(trip, "level", "order")
 
 
 class Puzzle(models.Model):
@@ -33,8 +35,8 @@ class Puzzle(models.Model):
     slug = models.SlugField(unique=True)
     level = models.PositiveSmallIntegerField(
         choices=LEVEL_CHOICES,
-        validators=[MinValueValidator(1), MaxValueValidator(LAST_LEVEL)],
-        help_text="Which stop on the journey (STORY.md). A level opens once 4 puzzles of the level before have a star.",
+        validators=[MinValueValidator(1), MaxValueValidator(max(LEVELS))],
+        help_text="Which stop on the journey (STORY.md). A level opens once 4 puzzles of the stop before have a star.",
     )
     order = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(99)],
@@ -87,7 +89,12 @@ class Puzzle(models.Model):
         constraints = [models.UniqueConstraint(fields=["level", "order"], name="one_puzzle_per_level_slot")]
 
     def __str__(self) -> str:
-        return f"Level {self.level}.{self.order}: {self.title}"
+        return f"Level {self.stop}.{self.order}: {self.title}"
+
+    @property
+    def stop(self) -> int:
+        """The level's place on the trip, as the app shows it ("Level 3" is the Hills, whose id is 9)."""
+        return STOP.get(self.level, self.level)
 
     def clean(self):
         config = self.config or {}

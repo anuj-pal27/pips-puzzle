@@ -7,11 +7,12 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { playSound, useMusic } from '@/audio/sound';
 import { Pill } from '@/components/Buttons';
 import { ThemeBackdrop } from '@/components/Festive';
-import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
+import { GameHeader, TipBubble, useFinish, useHowTo } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
 import { GAPPU_FACE, SNACK_ART } from '@/data/art';
 import { SNACK_NAMES, SNACK_PAIRS, type SnackId } from '@/data/games';
+import { HOW_TO } from '@/data/howTo';
 import type { MemoryPuzzle } from '@/data/puzzles';
 import { isGentle, themeFor, type Theme } from '@/data/levels';
 import { flipCard, memoryDone, memoryStars, newMemory, pairResult, settle, type MemoryState } from '@/game/memory';
@@ -38,6 +39,7 @@ function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
   const pairs = game.snacks.length;
   const theme = themeFor(puzzle.level);
   useMusic(theme.music);
+  const howTo = useHowTo(puzzle);
   const finish = useFinish(puzzle.id);
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -45,7 +47,7 @@ function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
   const [state, setState] = useState<MemoryState>(() => newMemory(game.snacks, Math.random, game.cols));
   // Levels 1 and 2: show every card for a moment first, so little ones get a head start.
   const [peeking, setPeeking] = useState(isGentle(puzzle.level));
-  const [tip, setTip] = useState<Tip>({ text: peeking ? 'Look! Remember where the snacks are…' : 'Find two of the same snack!', tone: 'plain' });
+  const [tip, setTip] = useState<Tip>({ text: peeking ? HOW_TO['snap-peek'].en : HOW_TO.snap.en, tone: 'plain' });
   const [eaten, setEaten] = useState<SnackId[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -60,7 +62,7 @@ function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
     if (!peeking) return;
     const t = setTimeout(() => {
       setPeeking(false);
-      setTip({ text: 'Find two of the same snack!', tone: 'plain' });
+      setTip({ text: HOW_TO.snap.en, tone: 'plain' });
     }, 2200);
     return () => clearTimeout(t);
   }, [peeking]);
@@ -112,6 +114,7 @@ function SnackSnap({ puzzle }: { puzzle: MemoryPuzzle }) {
       <GameHeader
         title={puzzle.title || 'Snack Snap'}
         level={puzzle.level}
+        howTo={howTo}
         right={
           <Pill>
             <Image source={SNACK_ART.jalebi} style={{ width: 32, height: 32 }} />

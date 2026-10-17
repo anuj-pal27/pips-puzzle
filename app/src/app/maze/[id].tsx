@@ -9,7 +9,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { playSound, useMusic } from '@/audio/sound';
 import { ChunkyButton, CircleButton, Pill } from '@/components/Buttons';
-import { LevelBadge } from '@/components/GameChrome';
+import { HowToButton, LevelBadge, useHowTo } from '@/components/GameChrome';
 import { LevelParty, useLevelFinale } from '@/components/LevelParty';
 import { Diya, ThemeBackdrop } from '@/components/Festive';
 import { Icon, type IconName } from '@/components/Icon';
@@ -65,6 +65,7 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
   const goal = goalArt(cfg.goal);
   const goalWord = cfg.goal ? goalName(cfg.goal as GoalId) : 'jalebis';
   useMusic(theme.music);
+  const howTo = useHowTo(puzzle);
   // Lantern Walk (Diwali Night): the maze is dark; Gappu's lantern lights the squares near him, and he
   // leaves a diya on every square he walks, so the way he came stays lit.
   const night = theme.id === 'diwali';
@@ -143,7 +144,10 @@ function MazeGame({ puzzle }: { puzzle: MazePuzzle }) {
             style={night ? { textShadowColor: 'rgba(5, 8, 30, 0.9)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } } : undefined}>
             {puzzle.title || 'Jalebi Hunt'}
           </Txt>
-          <LevelBadge level={puzzle.level} />
+          <View style={styles.badgeRow}>
+            <LevelBadge level={puzzle.level} />
+            <HowToButton clip={howTo} />
+          </View>
         </View>
         <Pill>
           <Image source={IMG.laddoo} style={{ width: 34, height: 34 }} />
@@ -383,6 +387,7 @@ function Token({ source, x, y, size, shake = 0 }: { source: ImageSourcePropType;
 }
 
 const styles = StyleSheet.create({
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   fact: { alignSelf: 'stretch', alignItems: 'center', gap: 2, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: '#FFF6E0', borderWidth: 2, borderColor: colors.coral },
   screen: { flex: 1, backgroundColor: colors.sand },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, gap: 12 },

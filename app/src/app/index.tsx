@@ -9,6 +9,7 @@ import { Bit } from '@/components/Bit';
 import { CircleButton } from '@/components/Buttons';
 import { OutlinedText } from '@/components/OutlinedText';
 import { Txt } from '@/components/Txt';
+import { OPENING_KEY } from '@/data/opening';
 import { useProgress } from '@/state/progress';
 import { colors, LAB } from '@/theme';
 
@@ -70,7 +71,7 @@ function Door({
 }
 
 export default function Home() {
-  const { settings, updateSettings, labStars } = useProgress();
+  const { settings, updateSettings, labStars, celebrated } = useProgress();
   const { height } = useWindowDimensions();
   const pipH = Math.max(110, Math.min(200, Math.round(height * 0.2)));
   const bob = useSharedValue(0);
@@ -90,13 +91,16 @@ export default function Home() {
 
       <SafeAreaView style={styles.safe}>
         <View style={styles.topBar}>
-          <CircleButton
-            icon={settings.sound ? 'sound' : 'soundOff'}
-            label="Sound"
-            selected={settings.sound}
-            shadow={colors.skyShadow}
-            onPress={() => updateSettings({ sound: !settings.sound })}
-          />
+          <View style={styles.topLeft}>
+            <CircleButton
+              icon={settings.sound ? 'sound' : 'soundOff'}
+              label="Sound"
+              selected={settings.sound}
+              shadow={colors.skyShadow}
+              onPress={() => updateSettings({ sound: !settings.sound })}
+            />
+            <CircleButton icon="book" label="Pip's story" shadow={colors.skyShadow} onPress={() => router.push('/opening')} />
+          </View>
           <CircleButton icon="sliders" label="Grown-ups" shadow={colors.skyShadow} onPress={() => router.push('/grown-ups')} />
         </View>
 
@@ -121,12 +125,13 @@ export default function Home() {
         <View style={styles.doors}>
           <Door
             title="Puzzles"
-            subtitle="A train ride round India"
+            subtitle="A train ride across India"
             color={colors.sun}
             shadow={colors.sunShadow}
             textColor={colors.ink}
             icon={<Image source={require('@/assets/images/game/pip.png')} style={{ width: 46, height: 48 }} />}
-            onPress={() => router.push('/map')}
+            // The very first time, Pip's story comes before the map.
+            onPress={() => (celebrated.includes(OPENING_KEY) ? router.push('/map') : router.push({ pathname: '/opening', params: { then: 'map' } }))}
           />
           <Door
             title="Learn with Bit"
@@ -148,6 +153,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.sky, overflow: 'hidden' },
   safe: { flex: 1, alignItems: 'center' },
   topBar: { alignSelf: 'stretch', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 8 },
+  topLeft: { flexDirection: 'row', gap: 12 },
   title: { alignItems: 'center', marginTop: 24, transform: [{ rotate: '-4deg' }] },
   friends: { marginTop: 8, flexDirection: 'row', alignItems: 'flex-end', gap: 6, flexShrink: 1 },
   doors: { marginTop: 'auto', marginBottom: 40, alignSelf: 'stretch', paddingHorizontal: 20, gap: 18, maxWidth: 440, width: '100%', alignItems: 'stretch' },

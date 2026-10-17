@@ -7,8 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { playSound, useMusic } from '@/audio/sound';
 import { Pill } from '@/components/Buttons';
 import { ThemeBackdrop } from '@/components/Festive';
-import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
+import { GameHeader, TipBubble, useFinish, useHowTo } from '@/components/GameChrome';
 import { Txt } from '@/components/Txt';
+import { HOW_TO } from '@/data/howTo';
 import { themeFor } from '@/data/levels';
 import type { SlidePuzzle } from '@/data/puzzles';
 import { BLANK, canSlide, isSolved, scrambleSlide, slideStars, slideTile } from '@/game/slide';
@@ -33,6 +34,7 @@ function SlideGame({ puzzle }: { puzzle: SlidePuzzle }) {
   const finish = useFinish(puzzle.id);
   const theme = themeFor(puzzle.level);
   useMusic(theme.music);
+  const howTo = useHowTo(puzzle);
   const { width } = useWindowDimensions();
   // A new scramble every play, about as hard as the puzzle's set par (falls back to its own start).
   const [setup] = useState(() => scrambleSlide(n, game.par, Math.random) ?? { start: game.start, par: game.par });
@@ -74,6 +76,7 @@ function SlideGame({ puzzle }: { puzzle: SlidePuzzle }) {
             <Txt weight="extrabold" size={20} accessibilityLabel={`${moves} moves`}>{moves}</Txt>
           </Pill>
         }
+        howTo={howTo}
       />
 
       <View style={styles.body}>
@@ -120,7 +123,7 @@ function SlideGame({ puzzle }: { puzzle: SlidePuzzle }) {
         </View>
 
         <TipBubble
-          text={solved ? 'The picture is back together!' : 'Tap a tile next to the gap to slide it in.'}
+          text={solved ? 'The picture is back together!' : HOW_TO.slide.en}
           tone={solved ? 'good' : 'plain'}
         />
       </View>

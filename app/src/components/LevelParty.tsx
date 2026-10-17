@@ -5,7 +5,7 @@ import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withDelay, withRepe
 import { playSound, useVoice } from '@/audio/sound';
 import { FRIEND_ART, GIFT_ART, PICTURES } from '@/data/art';
 import type { FriendId } from '@/data/games';
-import { friendsMet, getLevel, LEVELS } from '@/data/levels';
+import { friendsMet, getLevel, LAST_LEVEL, stopNumber } from '@/data/levels';
 import { useCatalog } from '@/state/catalog';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
@@ -15,10 +15,10 @@ import { OutlinedText } from './OutlinedText';
 import { Txt } from './Txt';
 
 // The end of a level: its new friend hops on the Jalebi Express with their gift for the Mela, and the narrator
-// cheers it in the level's own language. The last level (Home for Diwali) ends the story with fireworks and
-// The Big Picture. Each plays once, the first time the level is done (progress.celebrated remembers it).
+// cheers it in the level's own language. The last stop (Diwali at Kanyakumari) ends India's story with fireworks
+// and The Big Picture. Each plays once, the first time the level is done (progress.celebrated remembers it).
 
-const LAST = LEVELS[LEVELS.length - 1].n;
+const LAST = LAST_LEVEL;
 /** Diwali Night's finale was saved as 'diwali' before the levels, so it doesn't play twice for those children. */
 export const levelPartyKey = (level: number) => (level === LAST ? 'diwali' : `level-${level}`);
 
@@ -88,7 +88,7 @@ export function LevelParty({ level, onClose }: { level: number; onClose: () => v
         <Txt weight="extrabold" size={20} align="center" color={theme.text}>{info.gift}</Txt>
         <FriendTrain friends={finale ? riders : riders.slice(-6)} size={40} maxWidth={Math.min(width, 440) - 48} onDark={theme.dark} />
         <Txt weight="semibold" size={15} align="center" color={theme.textSoft}>
-          {finale ? 'You finished the whole journey! Thank you for helping every friend.' : `Level ${level} done! ${level < LAST ? `Level ${level + 1} is open.` : ''}`}
+          {finale ? 'You went all the way across India! Where next? The whole world. Coming soon!' : `Level ${stopNumber(level)} done! Level ${stopNumber(level) + 1} is open.`}
         </Txt>
         <ChunkyButton label="Yay!" icon="star" color={colors.sun} shadow={colors.sunShadow} height={70} width={200} fontSize={30} onPress={onClose} />
       </Animated.View>

@@ -8,6 +8,7 @@
 //   - the kit (cast.ts, scenes.ts, things.ts): friends, places, snacks and gifts, written as code
 //   - hand-written SVG files in this folder (e.g. diwali-shop.svg)
 // SVGs may use the game's existing PNGs by file name (<image href="shop.png">): they are inlined before drawing.
+// A PNG kept in this folder (like station-base.png, a hand-made picture) wins over one in assets/images/game.
 // Needs Node 22.6 or newer (it runs TypeScript directly), like `npm run test:logic`.
 
 import { Resvg } from '@resvg/resvg-js';
@@ -36,11 +37,11 @@ function kitPictures(): Record<string, () => string> {
   return out;
 }
 
-/** Inline <image href="name.png"> references to the game's existing pictures. */
+/** Inline <image href="name.png"> references to the game's existing pictures (or a source PNG in this folder). */
 function inlineImages(svg: string): string {
   return svg.replace(/href="([\w-]+\.png)"/g, (whole, file: string) => {
-    const p = join(OUT, file);
-    if (!existsSync(p)) throw new Error(`SVG uses ${file}, which isn't in assets/images/game`);
+    const p = [join(HERE, file), join(OUT, file)].find((f) => existsSync(f));
+    if (!p) throw new Error(`SVG uses ${file}, which isn't in scripts/art or assets/images/game`);
     return `href="data:image/png;base64,${readFileSync(p).toString('base64')}"`;
   });
 }

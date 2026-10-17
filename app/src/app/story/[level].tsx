@@ -7,17 +7,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { hasVoice, playSound, speak, useMusic, useVoice } from '@/audio/sound';
 import { ChunkyButton, CircleButton } from '@/components/Buttons';
 import { ThemeBackdrop } from '@/components/Festive';
+import { IndiaLocator } from '@/components/IndiaMap';
 import { OutlinedText } from '@/components/OutlinedText';
 import { Txt } from '@/components/Txt';
 import { PICTURES, PIP_ART } from '@/data/art';
-import { getLevel, LEVELS } from '@/data/levels';
+import { getLevel, LAST_LEVEL, LEVELS, stopNumber } from '@/data/levels';
 import { openPuzzle, storyKey } from '@/navigation';
 import { useCatalog } from '@/state/catalog';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 
-// A level's story card: where the Jalebi Express has stopped, a picture of the place and its new friend,
-// and two or three lines for a grown-up to read aloud. The narrator also reads them in the stop's own language
+// A level's story card: where the Jalebi Express has stopped (with a little map of India to show where), a
+// picture of the place and its new friend, and two or three lines for a grown-up to read aloud. The narrator also reads them in the stop's own language
 // (src/data/voice.ts). Shown before a level's first puzzle (then "Let's go!" opens that puzzle), and any time
 // from the map.
 
@@ -56,21 +57,25 @@ export default function StoryCard() {
         <View style={styles.header}>
           <CircleButton icon="back" label="Back to the map" onPress={() => (router.canGoBack() ? router.back() : router.replace('/map'))} />
           <View style={[styles.levelBadge, { backgroundColor: theme.accent }]}>
-            <Txt weight="display" size={20} color={colors.ink}>Level {level.n}</Txt>
+            <Txt weight="display" size={20} color={colors.ink}>Level {stopNumber(level.n)}</Txt>
           </View>
           {settings.voice && hasVoice(voice) ? <CircleButton icon="sound" label="Hear the story again" onPress={() => speak(voice)} /> : <View style={{ width: 56 }} />}
         </View>
         <ScrollView contentContainerStyle={styles.body}>
           <Animated.View entering={ZoomIn.springify()} style={{ alignItems: 'center' }}>
             <Txt weight="extrabold" size={18} color={theme.textSoft} align="center">
-              {level.n === 1 ? 'Where it all begins' : level.n === LEVELS.length ? 'Back home' : 'Next stop'}
+              {level.n === LEVELS[0].n ? 'Where it all begins' : level.n === LAST_LEVEL ? 'The very tip of India' : 'Next stop'}
             </Txt>
-            <OutlinedText size={width < 380 ? 38 : 46} color={colors.sun}>{level.place}</OutlinedText>
+            <OutlinedText size={width < 380 ? 38 : 46} color={colors.sun} align="center">{level.place}</OutlinedText>
             <Txt weight="display" size={24} color={theme.text} align="center" accessibilityRole="header">{level.title}</Txt>
           </Animated.View>
 
           <Animated.View entering={ZoomIn.delay(200).springify()} style={styles.photo}>
             <Image source={picture.image} style={{ width: photoW, height: (photoW * picture.height) / picture.width, borderRadius: 14 }} accessibilityLabel={picture.title} />
+            {/* Where this stop is in India, like a sticker on the photo. */}
+            <Animated.View entering={ZoomIn.delay(900).springify()} style={styles.locator}>
+              <IndiaLocator width={Math.round(Math.min(84, photoW * 0.24))} level={level.n} />
+            </Animated.View>
           </Animated.View>
 
           <View style={styles.story}>
@@ -95,6 +100,7 @@ const styles = StyleSheet.create({
   levelBadge: { paddingHorizontal: 16, paddingVertical: 2, borderRadius: 999 },
   body: { alignItems: 'center', gap: 16, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
   photo: { padding: 8, borderRadius: 22, backgroundColor: colors.white, boxShadow: '0px 8px 0px rgba(30, 42, 79, 0.2)', transform: [{ rotate: '-2deg' }] },
+  locator: { position: 'absolute', right: -12, top: -16, padding: 5, borderRadius: 14, backgroundColor: '#D4EEF9', borderWidth: 3, borderColor: colors.white, boxShadow: '0px 4px 0px rgba(30, 42, 79, 0.2)', transform: [{ rotate: '6deg' }] },
   story: { maxWidth: 420, gap: 8, padding: 16, paddingBottom: 18, borderRadius: 22, backgroundColor: colors.white, boxShadow: '0px 6px 0px rgba(30, 42, 79, 0.15)' },
   pip: { position: 'absolute', right: -18, bottom: -22, width: 52, height: 54, transform: [{ rotate: '10deg' }] },
 });

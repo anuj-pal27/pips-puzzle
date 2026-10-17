@@ -19,12 +19,18 @@ class SeedTests(TestCase):
         call_command("seed_puzzles", verbosity=0)
         call_command("seed_puzzles", verbosity=0)
         self.assertEqual(Puzzle.objects.count(), len(SEED))
-        self.assertEqual(sorted(set(Puzzle.objects.values_list("level", flat=True))), list(LEVELS))
+        self.assertEqual(sorted(set(Puzzle.objects.values_list("level", flat=True))), sorted(LEVELS))
         kinds = {n: list(Puzzle.objects.filter(level=n).order_by("order").values_list("kind", flat=True)) for n in LEVELS}
         self.assertEqual(kinds[1], ["jigsaw", "shadow", "memory", "jigsaw", "maze", "jigsaw"])
         self.assertEqual(kinds[3], ["jigsaw", "rangoli", "shadow", "memory", "maze"])
         self.assertEqual(kinds[10], ["jigsaw", "tracks", "shadow", "memory", "maze", "jigsaw"])
         self.assertEqual(Puzzle.objects.in_play_order().last().slug, "level-10-6")
+
+    def test_play_order_follows_the_trip(self):
+        call_command("seed_puzzles", verbosity=0)
+        levels = list(dict.fromkeys(Puzzle.objects.in_play_order().values_list("level", flat=True)))
+        self.assertEqual(levels, list(LEVELS))
+        self.assertEqual(levels[:3], [1, 2, 9], "Jammu & Kashmir, Punjab, then the Hills")
 
     def test_no_two_puzzles_in_a_row_play_the_same_way(self):
         call_command("seed_puzzles", verbosity=0)
@@ -108,13 +114,13 @@ class PuzzleApiTests(APITestCase):
         self.assertEqual(slugs[:7], ["easy-1", "easy-2", "easy-3", "easy-4", "easy-5", "hard-1", "level-2-1"])
         self.assertEqual(slugs[-1], "level-10-6")
         self.assertNotIn("hard-2", slugs)
-        self.assertEqual([p["level"] for p in res.json()], sorted(p["level"] for p in res.json()))
+        self.assertEqual(list(dict.fromkeys(p["level"] for p in res.json())), list(LEVELS), "stop by stop, in trip order")
         self.assertNotIn("tier", res.json()[0], "apps from before the levels ignore this list and keep their own puzzles")
         maze = next(p for p in res.json() if p["slug"] == "medium-5")
         self.assertEqual(len(maze["maze"]["map"]), 10)
         tracks = next(p for p in res.json() if p["slug"] == "hard-3")
         self.assertEqual(tracks["kind"], "tracks")
-        self.assertEqual(len(tracks["config"]["map"]), 6)
+        self.assertEqual(len(tracks["config"]["map"]), 5, "Kolkata is stop 4 now: a 5 x 5 track")
         spin = next(p for p in res.json() if p["slug"] == "level-10-6")
         self.assertEqual(spin["config"], {"spin": True})
         rangoli = next(p for p in res.json() if p["slug"] == "level-7-2")

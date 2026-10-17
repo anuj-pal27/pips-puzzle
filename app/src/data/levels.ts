@@ -1,9 +1,15 @@
 import type { MusicName } from '../audio/sound';
 import type { FriendId, GiftId } from './games';
 
-// The 10 levels: one stop each on the Jalebi Express's trip round India (STORY.md). Each level has its
-// place, the friend who stars in it, a story card to read aloud when it opens, the line shown when it's
-// done (the friend joins the train), and its own look and music. Plain data, so the logic tests can read it.
+// The levels: one stop each on the Jalebi Express's trip down India, from Jammu & Kashmir at the top to
+// Kanyakumari at the very tip (STORY.md; the stops still to come are in ROUTE.md). Each level has its place,
+// the friend who stars in it, a story card to read aloud when it opens, the line shown when it's done (the
+// friend joins the train), and its own look and music. Plain data, so the logic tests can read it.
+//
+// LEVELS is in the order the train visits them. A level's `n` is its id, not its place on the trip: it never
+// changes, because stars, story cards and voice clips are saved by it, and the server's puzzles say which
+// level they're in by it. So a new stop can go anywhere in the list with the next free id, and the number a
+// child sees ("Level 3") is `stopNumber(n)`.
 
 /** How a level looks: colours for the screens, the tray, and a decoration along the top. */
 export type Theme = {
@@ -48,19 +54,19 @@ const day = (t: Omit<Theme, 'dark' | 'text' | 'textSoft' | 'music'> & Partial<Th
 export const LEVELS: Level[] = [
   {
     n: 1,
-    place: 'Jalebi Junction',
-    title: 'Home Sweet Home',
+    place: 'Jammu & Kashmir',
+    title: 'Jalebi Junction',
     friend: 'gappu',
     joins: false,
     picture: 'station',
     story: [
-      'Diwali is coming, and Jalebi Junction is having a Friendship Mela!',
-      'Pip has a big idea: "Let\'s invite a friend from every corner of India!"',
-      'Pack the jalebis, everyone. The Jalebi Express is waiting!',
+      'Snow on the mountains, apples on the trees: this is Jalebi Junction, Pip\'s home.',
+      'Today the Jalebi Express sets off to meet a new friend in every corner of India.',
+      'Every friend is invited to a Friendship Mela at the very tip of India, on Diwali!',
     ],
     done: 'All aboard!',
     gift: 'Next stop: the golden fields of Punjab.',
-    theme: day({ id: 'town', bg: '#FFE7C2', tray: '#F7CF8F', accent: '#7ED957', deco: 'none', houses: TOWN_HOUSES }),
+    theme: day({ id: 'town', bg: '#FFE7C2', tray: '#F7CF8F', accent: '#7ED957', deco: 'snow', houses: TOWN_HOUSES }),
   },
   {
     n: 2,
@@ -84,6 +90,54 @@ export const LEVELS: Level[] = [
       accent: '#FFC107',
       deco: 'bunting',
       houses: [['#FF7A59', '#E05A3A'], ['#7ED957', '#5BB83A'], ['#FFC93C', '#E6A817'], ['#FF4F79', '#D93A60']],
+    }),
+  },
+  {
+    n: 9,
+    place: 'The Hills',
+    title: 'Up in the Clouds',
+    friend: 'momo',
+    joins: true,
+    picture: 'momo',
+    story: [
+      'Puff, puff! A little toy train climbs up into the hills.',
+      'There are tea gardens, snowy mountains and fluffy clouds.',
+      'Momo the red panda is waiting at the top, with a basket of momos.',
+    ],
+    done: 'Momo is coming to the Mela!',
+    gift: "She's bringing momos, still warm!",
+    giftArt: 'momos',
+    theme: day({
+      id: 'hills',
+      bg: '#E4F0FF',
+      tray: '#C4D9F0',
+      accent: '#7C8DB5',
+      deco: 'snow',
+      houses: [['#4FB55E', '#3E9B4F'], ['#E8336B', '#C2204F'], ['#8C9CC4', '#6C7CA4'], ['#C99248', '#A87430']],
+    }),
+  },
+  {
+    n: 8,
+    place: 'Kolkata',
+    title: 'City of Joy',
+    friend: 'bagha',
+    joins: true,
+    picture: 'bagha',
+    story: [
+      'The train rumbles over the big Howrah Bridge into Kolkata.',
+      "It's Durga Puja, and the whole city is dressed up in lights.",
+      "Bagha the tiger has come from the Sundarbans. He's a bit shy, so say hello!",
+    ],
+    done: 'Bagha is coming to the Mela!',
+    gift: "He's bringing a pot of spongy rasgullas.",
+    giftArt: 'rasgulla',
+    theme: day({
+      id: 'bengal',
+      bg: '#FCE6E0',
+      tray: '#F2C2B6',
+      accent: '#D7263D',
+      deco: 'lights',
+      houses: [['#FFD43B', '#E6B41C'], ['#E8574F', '#C23F38'], ['#F3EDE2', '#D9CFBF'], ['#9D7BD8', '#7E5CC0']],
     }),
   },
   {
@@ -159,30 +213,6 @@ export const LEVELS: Level[] = [
     }),
   },
   {
-    n: 6,
-    place: 'Kerala',
-    title: 'Backwaters',
-    friend: 'appu',
-    joins: true,
-    picture: 'appu',
-    story: [
-      'The train rolls south to Kerala, past coconut palms and quiet backwaters.',
-      "It's Onam! Families make flower carpets called pookalam.",
-      'Appu the elephant is cheering at the snake-boat race.',
-    ],
-    done: 'Appu is coming to the Mela!',
-    gift: "He's bringing flowers for a pookalam.",
-    giftArt: 'flowers',
-    theme: day({
-      id: 'kerala',
-      bg: '#E0F5D8',
-      tray: '#B8E2A8',
-      accent: '#3FAE5A',
-      deco: 'palms',
-      houses: [['#6CC15A', '#4FA03E'], ['#D4A256', '#B9853A'], ['#3FA7B5', '#2E8A96'], ['#F2C94C', '#D9A82A']],
-    }),
-  },
-  {
     n: 7,
     place: 'Tamil Nadu',
     title: 'Temple Town',
@@ -207,62 +237,38 @@ export const LEVELS: Level[] = [
     }),
   },
   {
-    n: 8,
-    place: 'Kolkata',
-    title: 'City of Joy',
-    friend: 'bagha',
+    n: 6,
+    place: 'Kerala',
+    title: 'Backwaters',
+    friend: 'appu',
     joins: true,
-    picture: 'bagha',
+    picture: 'appu',
     story: [
-      'The train rumbles over the big Howrah Bridge into Kolkata.',
-      "It's Durga Puja, and the whole city is dressed up in lights.",
-      "Bagha the tiger has come from the Sundarbans. He's a bit shy, so say hello!",
+      'The train rolls on to Kerala, past coconut palms and quiet backwaters.',
+      "It's Onam! Families make flower carpets called pookalam.",
+      'Appu the elephant is cheering at the snake-boat race.',
     ],
-    done: 'Bagha is coming to the Mela!',
-    gift: "He's bringing a pot of spongy rasgullas.",
-    giftArt: 'rasgulla',
+    done: 'Appu is coming to the Mela!',
+    gift: "He's bringing flowers for a pookalam.",
+    giftArt: 'flowers',
     theme: day({
-      id: 'bengal',
-      bg: '#FCE6E0',
-      tray: '#F2C2B6',
-      accent: '#D7263D',
-      deco: 'lights',
-      houses: [['#FFD43B', '#E6B41C'], ['#E8574F', '#C23F38'], ['#F3EDE2', '#D9CFBF'], ['#9D7BD8', '#7E5CC0']],
-    }),
-  },
-  {
-    n: 9,
-    place: 'The Hills',
-    title: 'Up in the Clouds',
-    friend: 'momo',
-    joins: true,
-    picture: 'momo',
-    story: [
-      'Puff, puff! A little toy train climbs up into the hills.',
-      'There are tea gardens, snowy mountains and fluffy clouds.',
-      'Momo the red panda is waiting at the top, with a basket of momos.',
-    ],
-    done: 'Momo is coming to the Mela!',
-    gift: "She's bringing momos, still warm!",
-    giftArt: 'momos',
-    theme: day({
-      id: 'hills',
-      bg: '#E4F0FF',
-      tray: '#C4D9F0',
-      accent: '#7C8DB5',
-      deco: 'snow',
-      houses: [['#4FB55E', '#3E9B4F'], ['#E8336B', '#C2204F'], ['#8C9CC4', '#6C7CA4'], ['#C99248', '#A87430']],
+      id: 'kerala',
+      bg: '#E0F5D8',
+      tray: '#B8E2A8',
+      accent: '#3FAE5A',
+      deco: 'palms',
+      houses: [['#6CC15A', '#4FA03E'], ['#D4A256', '#B9853A'], ['#3FA7B5', '#2E8A96'], ['#F2C94C', '#D9A82A']],
     }),
   },
   {
     n: 10,
-    place: 'Jalebi Junction',
-    title: 'Home for Diwali',
+    place: 'Kanyakumari',
+    title: 'Diwali by the Sea',
     friend: 'pip',
     joins: false,
     picture: 'diwali-shop',
     story: [
-      'The Jalebi Express is home, just in time for Diwali!',
+      'The train has reached Kanyakumari, the very tip of India, just in time for Diwali!',
       'Every new friend is here, and every friend has brought a gift.',
       'Light the diyas. The Friendship Mela is about to begin!',
     ],
@@ -283,16 +289,28 @@ export const LEVELS: Level[] = [
   },
 ];
 
-export const LEVEL_COUNT = LEVELS.length;
+/** The last stop: its finale ends the story (fireworks and The Big Picture). */
+export const LAST_LEVEL = LEVELS[LEVELS.length - 1].n;
 
-/** The level, or the nearest one there is (a server could send a level this app doesn't know yet). */
-export const getLevel = (n: number): Level => LEVELS[Math.min(LEVELS.length, Math.max(1, Math.round(n))) - 1];
+/** The level, or the first one if this app doesn't know it (a server could send a level from a newer app). */
+export const getLevel = (n: number): Level => LEVELS.find((l) => l.n === n) ?? LEVELS[0];
 export const themeFor = (n: number): Theme => getLevel(n).theme;
 
-/** Levels 1 and 2 are gentler: a peek at the memory cards, jigsaw pieces laid out in a grid, no decoy shadows. */
-export const isGentle = (n: number) => n <= 2;
+const ROUTE_INDEX = new Map(LEVELS.map((l, i) => [l.n, i]));
+/** Where a level is on the trip, from 0: what the game sorts levels by. Levels this app doesn't know go last. */
+export const routeIndex = (n: number): number => ROUTE_INDEX.get(n) ?? LEVELS.length + n;
+/** The number a child sees for a level ("Level 3"): its place on the trip, counting from 1. */
+export const stopNumber = (n: number): number => routeIndex(n) + 1;
+
+/** The first two stops are gentler: a peek at the memory cards, jigsaw pieces laid out in a grid, no decoy shadows. */
+export const isGentle = (n: number) => stopNumber(n) <= 2;
 
 const HOME_FRIENDS: FriendId[] = ['gappu', 'mithu', 'tillu', 'chunnu', 'gauri', 'pip'];
 
-/** Friends a child has met by `level`: the six from home, and the new friend of every level up to it. */
-export const friendsMet = (level: number): FriendId[] => [...HOME_FRIENDS, ...LEVELS.filter((l) => l.joins && l.n <= level).map((l) => l.friend)];
+/** Friends a child has met by `level`: the six from home, and the new friend of every stop up to it. */
+export const friendsMet = (level: number): FriendId[] => [
+  ...HOME_FRIENDS,
+  ...LEVELS.slice(0, routeIndex(level) + 1)
+    .filter((l) => l.joins)
+    .map((l) => l.friend),
+];

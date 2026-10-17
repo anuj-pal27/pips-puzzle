@@ -7,6 +7,7 @@ import { API_URL } from '@/api/client';
 import { CircleButton } from '@/components/Buttons';
 import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
+import type { HelpLanguage } from '@/data/howTo';
 import { LESSONS } from '@/game/teach';
 import { useCatalog, type CatalogSource } from '@/state/catalog';
 import { useProgress } from '@/state/progress';
@@ -50,6 +51,53 @@ function ToggleRow({ label, help, value, onChange, last }: { label: string; help
   );
 }
 
+/** A setting with a few choices, as a row of pills. */
+function ChoiceRow<T extends string>({
+  label,
+  help,
+  value,
+  choices,
+  onChange,
+  last,
+}: {
+  label: string;
+  help?: string;
+  value: T;
+  choices: { value: T; label: string; a11y: string }[];
+  onChange: (v: T) => void;
+  last?: boolean;
+}) {
+  return (
+    <View style={[styles.row, { flexWrap: 'wrap' }, !last && styles.divider]}>
+      <View style={{ flex: 1, minWidth: 160 }}>
+        <Txt size={19}>{label}</Txt>
+        {help ? <Txt weight="regular" size={15} color={colors.inkSoft}>{help}</Txt> : null}
+      </View>
+      <View style={styles.choices} accessibilityRole="radiogroup" accessibilityLabel={label}>
+        {choices.map((c) => {
+          const on = c.value === value;
+          return (
+            <Pressable
+              key={c.value}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: on }}
+              accessibilityLabel={c.a11y}
+              onPress={() => onChange(c.value)}
+              style={[styles.choice, on && styles.choiceOn]}>
+              <Txt size={16} weight="extrabold" color={on ? colors.white : colors.ink}>{c.label}</Txt>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const HELP_CHOICES: { value: HelpLanguage; label: string; a11y: string }[] = [
+  { value: 'en', label: 'English', a11y: 'English' },
+  { value: 'hi', label: 'हिंदी', a11y: 'Hindi' },
+];
+
 export default function GrownUpsSettings() {
   const { settings, updateSettings, resetProgress, totalStars, labStars } = useProgress();
   const { refresh, source, puzzles } = useCatalog();
@@ -84,9 +132,16 @@ export default function GrownUpsSettings() {
           <ToggleRow label="Music" value={settings.music} onChange={(music) => updateSettings({ music })} />
           <ToggleRow
             label="Voice"
-            help="Reads each stop's story aloud in the local language: Punjabi in Punjab, Gujarati in Gujarat, and so on"
+            help="Reads each stop's story aloud in the local language (Punjabi in Punjab, Gujarati in Gujarat, and so on), and says how to play each game"
             value={settings.voice}
             onChange={(voice) => updateSettings({ voice })}
+          />
+          <ChoiceRow
+            label="Spoken help"
+            help="The language each game uses to say how to play"
+            value={settings.helpLanguage}
+            choices={HELP_CHOICES}
+            onChange={(helpLanguage) => updateSettings({ helpLanguage })}
             last
           />
         </Section>
@@ -168,6 +223,9 @@ export default function GrownUpsSettings() {
 }
 
 const styles = StyleSheet.create({
+  choices: { flexDirection: 'row', gap: 8 },
+  choice: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.sand, boxShadow: `0px 3px 0px ${colors.sandShadow}` },
+  choiceOn: { backgroundColor: colors.green, boxShadow: '0px 3px 0px #1E7A4E' },
   screen: { flex: 1, backgroundColor: '#F2F6FA' },
   header: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },
   content: { paddingHorizontal: 20, paddingBottom: 40, gap: 22, width: '100%', maxWidth: 520, alignSelf: 'center' },

@@ -113,7 +113,7 @@
     "title": "All Aboard!",
     "cheer": "All aboard!",
     "blurb": "The Jalebi Express is ready to go.",
-    "fact": "Old steam trains ran on coal and water, and puffed out big clouds of steam.",
+    "fact": "The Chenab Bridge in Jammu & Kashmir is the highest railway bridge in the world.",
     "picture": "station",
     "cols": 3,
     "rows": 3,
@@ -241,97 +241,58 @@
     }
   },
   {
-    "slug": "level-3-1",
-    "level": 3,
+    "slug": "level-9-1",
+    "level": 9,
     "order": 1,
     "kind": "jigsaw",
-    "title": "Meet Kesar",
-    "cheer": "Hello, Kesar!",
-    "blurb": "Kesar loves the fair, and puppet shows most of all.",
-    "fact": "The camel is the state animal of Rajasthan. Camels can walk for days across the desert.",
-    "picture": "kesar",
+    "title": "Meet Momo",
+    "cheer": "Hello, Momo!",
+    "blurb": "Momo loves the mountains, and momos even more!",
+    "fact": "Red pandas spend most of their lives up in trees, and they love to eat bamboo.",
+    "picture": "momo",
     "cols": 3,
     "rows": 3,
     "config": {}
   },
   {
-    "slug": "level-3-2",
-    "level": 3,
+    "slug": "level-9-2",
+    "level": 9,
     "order": 2,
-    "kind": "rangoli",
-    "title": "Mandana Pattern",
-    "cheer": "Beautiful!",
-    "blurb": "White and yellow on red earth, just like in Rajasthan.",
-    "fact": "Mandana is a folk art from Rajasthan, painted with white chalk on red earth floors and walls.",
+    "kind": "slide",
+    "title": "Toy Train in the Hills",
+    "cheer": "Puff puff!",
+    "blurb": "The little train is climbing again!",
+    "fact": "The Darjeeling toy train has been puffing up the hills for more than 140 years.",
+    "picture": "toy-train",
     "config": {
-      "style": "mandana",
-      "rings": [
-        {
-          "shape": "disc",
-          "count": 1,
-          "colors": [
-            "yellow"
-          ]
-        },
-        {
-          "shape": "petal",
-          "count": 6,
-          "colors": [
-            "white"
-          ]
-        },
-        {
-          "shape": "dot",
-          "count": 12,
-          "colors": [
-            "yellow"
-          ]
-        },
-        {
-          "shape": "drop",
-          "count": 12,
-          "colors": [
-            "white"
-          ]
-        }
+      "size": 3,
+      "start": [
+        3,
+        0,
+        1,
+        6,
+        -1,
+        2,
+        7,
+        4,
+        5
       ],
-      "extra": [
-        "orange"
-      ]
+      "par": 8
     }
   },
   {
-    "slug": "level-3-3",
-    "level": 3,
+    "slug": "level-9-3",
+    "level": 9,
     "order": 3,
-    "kind": "shadow",
-    "title": "Desert Shadows",
-    "cheer": "Super spotting!",
-    "blurb": "Four friends, and one more who has no shadow!",
-    "fact": "A camel's hump stores fat, not water. It helps the camel go for days without food.",
-    "config": {
-      "friends": [
-        "kesar",
-        "bholu",
-        "mithu",
-        "tillu"
-      ],
-      "cols": 2
-    }
-  },
-  {
-    "slug": "level-3-4",
-    "level": 3,
-    "order": 4,
     "kind": "memory",
-    "title": "Desert Snack Snap",
+    "title": "Picnic Snap",
     "cheer": "Snack Snap!",
-    "blurb": "Four pairs of tasty treats from the fair.",
-    "fact": "Ghevar is a round, honeycomb sweet from Rajasthan, made for the rainy-season festival of Teej.",
+    "blurb": "Four pairs for a picnic up in the hills.",
+    "fact": "The hills around Darjeeling are covered in tea gardens. Tea from there goes all over the world.",
     "config": {
       "snacks": [
-        "ghevar",
-        "dalbaati",
+        "momos",
+        "chai",
         "lassi",
         "jalebi"
       ],
@@ -339,17 +300,17 @@
     }
   },
   {
-    "slug": "level-3-5",
-    "level": 3,
-    "order": 5,
+    "slug": "hard-5",
+    "level": 9,
+    "order": 4,
     "kind": "maze",
-    "title": "Puppet Hunt",
-    "cheer": "Found it!",
-    "blurb": "The puppet show can begin!",
-    "fact": "Kathputli are wooden string puppets from Rajasthan that dance and tell stories.",
+    "title": "Hill Hunt",
+    "cheer": "Momo time!",
+    "blurb": "Gappu found the momos, high up in the hills!",
+    "fact": "Kanchenjunga, in Sikkim, is the third highest mountain in the world.",
     "maze": {
-      "intro": "A puppet is lost at the fair! The lever is near the start.",
-      "goal": "puppet",
+      "intro": "Gappu can smell momos up the hill! The lever is near the start.",
+      "goal": "momos",
       "map": [
         "..o#...J",
         ".#.#.#..",
@@ -390,28 +351,14 @@
     }
   },
   {
-    "slug": "level-4-1",
-    "level": 4,
-    "order": 1,
-    "kind": "jigsaw",
-    "title": "Meet Raja",
-    "cheer": "Hello, Raja!",
-    "blurb": "Raja came all the way from the Gir forest to fly his kite.",
-    "fact": "The Gir forest in Gujarat is the only place in the world where Asiatic lions live in the wild.",
-    "picture": "raja",
-    "cols": 4,
-    "rows": 3,
-    "config": {}
-  },
-  {
-    "slug": "level-4-2",
-    "level": 4,
-    "order": 2,
+    "slug": "level-9-5",
+    "level": 9,
+    "order": 5,
     "kind": "tracks",
-    "title": "Kite Day Express",
+    "title": "Loops in the Hills",
     "cheer": "Choo choo!",
-    "blurb": "The train got to the rooftops in time for the kites.",
-    "fact": "At Uttarayan, families in Gujarat go up on their rooftops and fly kites all day long.",
+    "blurb": "Round and round, up and up the hill!",
+    "fact": "The toy train climbs so steeply that its track goes round in loops and zig-zags.",
     "config": {
       "map": [
         "acPFF",
@@ -429,6 +376,345 @@
       ],
       "start": 0,
       "goal": 0
+    }
+  },
+  {
+    "slug": "level-8-1",
+    "level": 8,
+    "order": 1,
+    "kind": "jigsaw",
+    "title": "Meet Bagha",
+    "cheer": "Hello, Bagha!",
+    "blurb": "Bagha is shy, but he loves a festival.",
+    "fact": "The Bengal tiger is the national animal of India. Every tiger has its own pattern of stripes.",
+    "picture": "bagha",
+    "cols": 4,
+    "rows": 3,
+    "config": {}
+  },
+  {
+    "slug": "level-8-2",
+    "level": 8,
+    "order": 2,
+    "kind": "memory",
+    "title": "Mishti Snap",
+    "cheer": "Mishti time!",
+    "blurb": "Six pairs of sweets. Bengal loves mishti!",
+    "fact": "Mishti doi is sweet yoghurt from Bengal, set in little clay pots.",
+    "config": {
+      "snacks": [
+        "rasgulla",
+        "mishtidoi",
+        "gulabjamun",
+        "kajukatli",
+        "laddoo",
+        "jalebi"
+      ],
+      "cols": 4
+    }
+  },
+  {
+    "slug": "level-8-3",
+    "level": 8,
+    "order": 3,
+    "kind": "shadow",
+    "title": "Shadows by the River",
+    "cheer": "Super spotting!",
+    "blurb": "Four friends by the river, and one with no shadow!",
+    "fact": "The Sundarbans is a huge mangrove forest, where Bengal tigers swim between the islands.",
+    "config": {
+      "friends": [
+        "bagha",
+        "momo",
+        "bholu",
+        "mithu"
+      ],
+      "cols": 2
+    }
+  },
+  {
+    "slug": "level-8-4",
+    "level": 8,
+    "order": 4,
+    "kind": "rangoli",
+    "title": "Durga Puja Alpana",
+    "cheer": "Beautiful!",
+    "blurb": "White alpana on a red floor, ready for Durga Puja.",
+    "fact": "Alpana is a floor art from Bengal, painted with a white paste made from rice.",
+    "config": {
+      "style": "alpana",
+      "rings": [
+        {
+          "shape": "disc",
+          "count": 1,
+          "colors": [
+            "yellow"
+          ]
+        },
+        {
+          "shape": "petal",
+          "count": 8,
+          "colors": [
+            "white"
+          ]
+        },
+        {
+          "shape": "dot",
+          "count": 16,
+          "colors": [
+            "yellow"
+          ]
+        },
+        {
+          "shape": "drop",
+          "count": 16,
+          "colors": [
+            "white"
+          ]
+        }
+      ],
+      "extra": [
+        "orange"
+      ]
+    }
+  },
+  {
+    "slug": "hard-3",
+    "level": 8,
+    "order": 5,
+    "kind": "tracks",
+    "title": "Howrah Express",
+    "cheer": "Choo choo!",
+    "blurb": "You found the one line that works!",
+    "fact": "Howrah Bridge in Kolkata has no nuts and bolts. It is held together with rivets!",
+    "config": {
+      "map": [
+        "bdH.H",
+        "ac.FT",
+        "FacFT",
+        "Hba-c",
+        "HHb-d"
+      ],
+      "taps": [
+        "23000",
+        "33000",
+        "01100",
+        "02212",
+        "00213"
+      ],
+      "start": 1,
+      "goal": 2
+    }
+  },
+  {
+    "slug": "level-3-1",
+    "level": 3,
+    "order": 1,
+    "kind": "jigsaw",
+    "title": "Meet Kesar",
+    "cheer": "Hello, Kesar!",
+    "blurb": "Kesar loves the fair, and puppet shows most of all.",
+    "fact": "The camel is the state animal of Rajasthan. Camels can walk for days across the desert.",
+    "picture": "kesar",
+    "cols": 4,
+    "rows": 3,
+    "config": {}
+  },
+  {
+    "slug": "level-3-2",
+    "level": 3,
+    "order": 2,
+    "kind": "rangoli",
+    "title": "Mandana Pattern",
+    "cheer": "Beautiful!",
+    "blurb": "White and yellow on red earth, just like in Rajasthan.",
+    "fact": "Mandana is a folk art from Rajasthan, painted with white chalk on red earth floors and walls.",
+    "config": {
+      "style": "mandana",
+      "rings": [
+        {
+          "shape": "disc",
+          "count": 1,
+          "colors": [
+            "yellow"
+          ]
+        },
+        {
+          "shape": "petal",
+          "count": 6,
+          "colors": [
+            "white"
+          ]
+        },
+        {
+          "shape": "diamond",
+          "count": 12,
+          "colors": [
+            "white",
+            "yellow"
+          ]
+        },
+        {
+          "shape": "drop",
+          "count": 12,
+          "colors": [
+            "white"
+          ]
+        },
+        {
+          "shape": "dot",
+          "count": 24,
+          "colors": [
+            "yellow"
+          ]
+        }
+      ],
+      "extra": [
+        "orange"
+      ]
+    }
+  },
+  {
+    "slug": "level-3-3",
+    "level": 3,
+    "order": 3,
+    "kind": "shadow",
+    "title": "Desert Shadows",
+    "cheer": "Super spotting!",
+    "blurb": "Five friends, and one more who has no shadow!",
+    "fact": "A camel's hump stores fat, not water. It helps the camel go for days without food.",
+    "config": {
+      "friends": [
+        "kesar",
+        "bagha",
+        "momo",
+        "bholu",
+        "tillu"
+      ],
+      "cols": 3
+    }
+  },
+  {
+    "slug": "level-3-4",
+    "level": 3,
+    "order": 4,
+    "kind": "memory",
+    "title": "Desert Snack Snap",
+    "cheer": "Snack feast!",
+    "blurb": "Six pairs of tasty treats from the fair.",
+    "fact": "Ghevar is a round, honeycomb sweet from Rajasthan, made for the rainy-season festival of Teej.",
+    "config": {
+      "snacks": [
+        "ghevar",
+        "dalbaati",
+        "lassi",
+        "jalebi",
+        "samosa",
+        "chai"
+      ],
+      "cols": 4
+    }
+  },
+  {
+    "slug": "level-3-5",
+    "level": 3,
+    "order": 5,
+    "kind": "maze",
+    "title": "Puppet Hunt",
+    "cheer": "Found it!",
+    "blurb": "The puppet show can begin!",
+    "fact": "Kathputli are wooden string puppets from Rajasthan that dance and tell stories.",
+    "maze": {
+      "intro": "A puppet is lost at the fair! Find the yellow lever, then the blue one.",
+      "goal": "puppet",
+      "map": [
+        "J..#o..#",
+        ".#....C#",
+        ".#.#....",
+        "RRRRRBRR",
+        "..b#....",
+        ".#.#.#.o",
+        "......#.",
+        "RARRRRRR",
+        "..#.a#..",
+        "S...o..."
+      ],
+      "gates": {
+        "A": {
+          "name": "yellow",
+          "color": "#FFC93C",
+          "glyph": "M1.5 6a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0 -9 0z",
+          "lever": "a"
+        },
+        "B": {
+          "name": "blue",
+          "color": "#4FA8F0",
+          "glyph": "M2 2h8v8H2z",
+          "lever": "b"
+        }
+      },
+      "monkeys": [
+        {
+          "axis": "h",
+          "line": 6,
+          "min": 0,
+          "max": 5,
+          "start": 3,
+          "dir": 1
+        },
+        {
+          "axis": "h",
+          "line": 1,
+          "min": 2,
+          "max": 5,
+          "start": 4,
+          "dir": -1
+        }
+      ]
+    }
+  },
+  {
+    "slug": "level-4-1",
+    "level": 4,
+    "order": 1,
+    "kind": "jigsaw",
+    "title": "Meet Raja",
+    "cheer": "Hello, Raja!",
+    "blurb": "Raja came all the way from the Gir forest to fly his kite.",
+    "fact": "The Gir forest in Gujarat is the only place in the world where Asiatic lions live in the wild.",
+    "picture": "raja",
+    "cols": 5,
+    "rows": 3,
+    "config": {}
+  },
+  {
+    "slug": "level-4-2",
+    "level": 4,
+    "order": 2,
+    "kind": "tracks",
+    "title": "Kite Day Express",
+    "cheer": "Choo choo!",
+    "blurb": "The train got to the rooftops in time for the kites.",
+    "fact": "At Uttarayan, families in Gujarat go up on their rooftops and fly kites all day long.",
+    "config": {
+      "map": [
+        "HFTFP|",
+        "TFFdbd",
+        "FTabdb",
+        "Fbc|T.",
+        "H|adHT",
+        "Fa-cPT"
+      ],
+      "taps": [
+        "000001",
+        "000123",
+        "002312",
+        "012100",
+        "012300",
+        "031300"
+      ],
+      "start": 5,
+      "goal": 3
     }
   },
   {
@@ -485,17 +771,17 @@
     "config": {
       "size": 3,
       "start": [
-        3,
-        0,
-        1,
-        6,
-        -1,
-        2,
-        7,
         4,
+        3,
+        1,
+        0,
+        7,
+        2,
+        -1,
+        6,
         5
       ],
-      "par": 8
+      "par": 10
     }
   },
   {
@@ -508,8 +794,8 @@
     "blurb": "Chikki loves the rain, and modaks even more.",
     "fact": "The monsoon brings heavy rain to Mumbai every year, from about June to September.",
     "picture": "chikki",
-    "cols": 4,
-    "rows": 3,
+    "cols": 5,
+    "rows": 4,
     "config": {}
   },
   {
@@ -522,19 +808,20 @@
     "blurb": "Gappu found the modaks. Chikki is so happy!",
     "fact": "Mumbai was once seven little islands. They were joined together long ago to make one city.",
     "maze": {
-      "intro": "Two railway lines! Find the yellow lever, then the blue one.",
+      "intro": "The switch opens one gate and shuts the other. Think first!",
       "goal": "modak",
       "map": [
-        "J..#o..#",
-        ".#....C#",
-        ".#.#....",
-        "RRRRRBRR",
-        "..b#....",
-        ".#.#.#.o",
-        "......#.",
-        "RARRRRRR",
-        "..#.a#..",
-        "S...o..."
+        "o..#..C.J",
+        ".#.......",
+        "RRRRRRARR",
+        "...#.#.#.",
+        "##.#.....",
+        "a..#.#.#C",
+        "..o#.....",
+        "RYRRRRRXR",
+        "...#.#...",
+        ".#.#x#.#.",
+        "S.......o"
       ],
       "gates": {
         "A": {
@@ -543,29 +830,35 @@
           "glyph": "M1.5 6a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0 -9 0z",
           "lever": "a"
         },
-        "B": {
-          "name": "blue",
-          "color": "#4FA8F0",
-          "glyph": "M2 2h8v8H2z",
-          "lever": "b"
+        "X": {
+          "name": "purple",
+          "color": "#9B7BFF",
+          "glyph": "M6 1.2L10.8 10.2H1.2z",
+          "openWhen": true
+        },
+        "Y": {
+          "name": "green",
+          "color": "#3DBE7E",
+          "glyph": "M6 0.8L11.2 6L6 11.2L0.8 6z",
+          "openWhen": false
         }
       },
       "monkeys": [
         {
           "axis": "h",
-          "line": 6,
-          "min": 0,
-          "max": 5,
-          "start": 3,
+          "line": 4,
+          "min": 4,
+          "max": 8,
+          "start": 6,
           "dir": 1
         },
         {
-          "axis": "h",
-          "line": 1,
-          "min": 2,
-          "max": 5,
-          "start": 4,
-          "dir": -1
+          "axis": "v",
+          "line": 6,
+          "min": 8,
+          "max": 10,
+          "start": 9,
+          "dir": 1
         }
       ]
     }
@@ -615,12 +908,13 @@
           "shape": "dot",
           "count": 16,
           "colors": [
-            "white"
+            "white",
+            "blue"
           ]
         }
       ],
       "extra": [
-        "blue"
+        "red"
       ]
     }
   },
@@ -656,165 +950,22 @@
     "fact": "Mumbai's local trains carry millions of people every single day.",
     "config": {
       "map": [
-        "bdH.H",
-        "ac.FT",
-        "FacFT",
-        "Hba-c",
-        "HHb-d"
+        "Tb--da",
+        "bddFHT",
+        "acH|bP",
+        "bdFHHH",
+        "a-cTdP",
+        "HHacTH"
       ],
       "taps": [
-        "23000",
-        "33000",
-        "01100",
-        "02212",
-        "00213"
+        "031110",
+        "222000",
+        "120110",
+        "220000",
+        "211030",
+        "003200"
       ],
-      "start": 1,
-      "goal": 2
-    }
-  },
-  {
-    "slug": "level-6-1",
-    "level": 6,
-    "order": 1,
-    "kind": "jigsaw",
-    "title": "Meet Appu",
-    "cheer": "Hello, Appu!",
-    "blurb": "Appu loves the backwaters, and boat races most of all.",
-    "fact": "The elephant is the state animal of Kerala. An elephant's trunk has thousands of muscles!",
-    "picture": "appu",
-    "cols": 5,
-    "rows": 3,
-    "config": {}
-  },
-  {
-    "slug": "level-6-2",
-    "level": 6,
-    "order": 2,
-    "kind": "shadow",
-    "title": "Backwater Shadows",
-    "cheer": "Super spotting!",
-    "blurb": "Shadows on the riverbank, and one friend with none!",
-    "fact": "Kerala's backwaters are rivers, lakes and canals, all joined up for hundreds of kilometres.",
-    "config": {
-      "friends": [
-        "appu",
-        "chikki",
-        "raja",
-        "kesar",
-        "bholu"
-      ],
-      "cols": 3
-    }
-  },
-  {
-    "slug": "level-6-3",
-    "level": 6,
-    "order": 3,
-    "kind": "rangoli",
-    "title": "Onam Pookalam",
-    "cheer": "Beautiful!",
-    "blurb": "A flower carpet for Onam, petal by petal.",
-    "fact": "At Onam, families in Kerala make a pookalam, a carpet of flowers, in front of their homes.",
-    "config": {
-      "style": "pookalam",
-      "rings": [
-        {
-          "shape": "disc",
-          "count": 1,
-          "colors": [
-            "purple"
-          ]
-        },
-        {
-          "shape": "petal",
-          "count": 8,
-          "colors": [
-            "white"
-          ]
-        },
-        {
-          "shape": "petal",
-          "count": 8,
-          "colors": [
-            "yellow",
-            "orange"
-          ]
-        },
-        {
-          "shape": "leaf",
-          "count": 16,
-          "colors": [
-            "green"
-          ]
-        },
-        {
-          "shape": "drop",
-          "count": 16,
-          "colors": [
-            "orange",
-            "red"
-          ]
-        }
-      ],
-      "extra": [
-        "pink"
-      ]
-    }
-  },
-  {
-    "slug": "hard-2",
-    "level": 6,
-    "order": 4,
-    "kind": "slide",
-    "title": "Snake Boat Race",
-    "cheer": "Row, row, row!",
-    "blurb": "Slow and steady wins the race. Well done!",
-    "fact": "Kerala's snake boats are so long that around 100 rowers can sit in one!",
-    "picture": "boat-race",
-    "config": {
-      "size": 3,
-      "start": [
-        4,
-        3,
-        1,
-        0,
-        7,
-        2,
-        -1,
-        6,
-        5
-      ],
-      "par": 10
-    }
-  },
-  {
-    "slug": "level-6-5",
-    "level": 6,
-    "order": 5,
-    "kind": "tracks",
-    "title": "Backwater Express",
-    "cheer": "Choo choo!",
-    "blurb": "Past the ponds and the palms, all the way through.",
-    "fact": "Coconut palms grow all over Kerala. The name Kerala may come from \"kera\", a word for coconut.",
-    "config": {
-      "map": [
-        "HFTFP|",
-        "TFFdbd",
-        "FTabdb",
-        "Fbc|T.",
-        "H|adHT",
-        "Fa-cPT"
-      ],
-      "taps": [
-        "000001",
-        "000123",
-        "002312",
-        "012100",
-        "012300",
-        "031300"
-      ],
-      "start": 5,
+      "start": 4,
       "goal": 3
     }
   },
@@ -905,23 +1056,23 @@
     "fact": "The tall, colourful towers over the gates of temples in Tamil Nadu are called gopurams.",
     "config": {
       "map": [
-        "Tb--da",
-        "bddFHT",
-        "acH|bP",
-        "bdFHHH",
-        "a-cTdP",
-        "HHacTH"
+        "|Tb-cH",
+        "a-dP||",
+        "|b-bdd",
+        "T-c|-F",
+        "aH|a-c",
+        "F-dTH|"
       ],
       "taps": [
-        "031110",
-        "222000",
-        "120110",
-        "220000",
-        "211030",
-        "003200"
+        "102110",
+        "112011",
+        "121121",
+        "002110",
+        "301211",
+        "012001"
       ],
-      "start": 4,
-      "goal": 3
+      "start": 0,
+      "goal": 5
     }
   },
   {
@@ -936,11 +1087,11 @@
     "config": {
       "friends": [
         "mayil",
-        "appu",
-        "raja",
         "chikki",
-        "bholu",
-        "kesar"
+        "raja",
+        "kesar",
+        "bagha",
+        "momo"
       ],
       "cols": 3
     }
@@ -967,78 +1118,57 @@
     }
   },
   {
-    "slug": "level-8-1",
-    "level": 8,
+    "slug": "level-6-1",
+    "level": 6,
     "order": 1,
     "kind": "jigsaw",
-    "title": "Meet Bagha",
-    "cheer": "Hello, Bagha!",
-    "blurb": "Bagha is shy, but he loves a festival.",
-    "fact": "The Bengal tiger is the national animal of India. Every tiger has its own pattern of stripes.",
-    "picture": "bagha",
-    "cols": 5,
+    "title": "Meet Appu",
+    "cheer": "Hello, Appu!",
+    "blurb": "Appu loves the backwaters, and boat races most of all.",
+    "fact": "The elephant is the state animal of Kerala. An elephant's trunk has thousands of muscles!",
+    "picture": "appu",
+    "cols": 6,
     "rows": 4,
     "config": {}
   },
   {
-    "slug": "level-8-2",
-    "level": 8,
+    "slug": "level-6-2",
+    "level": 6,
     "order": 2,
-    "kind": "memory",
-    "title": "Mishti Snap",
-    "cheer": "Mishti time!",
-    "blurb": "Six pairs of sweets. Bengal loves mishti!",
-    "fact": "Mishti doi is sweet yoghurt from Bengal, set in little clay pots.",
-    "config": {
-      "snacks": [
-        "rasgulla",
-        "mishtidoi",
-        "gulabjamun",
-        "kajukatli",
-        "laddoo",
-        "jalebi"
-      ],
-      "cols": 4
-    }
-  },
-  {
-    "slug": "level-8-3",
-    "level": 8,
-    "order": 3,
     "kind": "shadow",
-    "title": "Shadows by the River",
+    "title": "Backwater Shadows",
     "cheer": "Super spotting!",
-    "blurb": "Six friends by the river, and one with no shadow!",
-    "fact": "The Sundarbans is a huge mangrove forest, where Bengal tigers swim between the islands.",
+    "blurb": "Six friends on the riverbank, and one with no shadow!",
+    "fact": "Kerala's backwaters are rivers, lakes and canals, all joined up for hundreds of kilometres.",
     "config": {
       "friends": [
-        "bagha",
-        "mayil",
         "appu",
+        "mayil",
         "chikki",
         "raja",
-        "kesar"
+        "bagha",
+        "momo"
       ],
       "cols": 3
     }
   },
   {
-    "slug": "level-8-4",
-    "level": 8,
-    "order": 4,
+    "slug": "level-6-3",
+    "level": 6,
+    "order": 3,
     "kind": "rangoli",
-    "title": "Durga Puja Alpana",
+    "title": "Onam Pookalam",
     "cheer": "Beautiful!",
-    "blurb": "White alpana on a red floor, ready for Durga Puja.",
-    "fact": "Alpana is a floor art from Bengal, painted with a white paste made from rice.",
+    "blurb": "A flower carpet for Onam, petal by petal.",
+    "fact": "At Onam, families in Kerala make a pookalam, a carpet of flowers, in front of their homes.",
     "config": {
-      "style": "alpana",
+      "style": "pookalam",
       "rings": [
         {
           "shape": "disc",
           "count": 1,
           "colors": [
-            "yellow"
+            "purple"
           ]
         },
         {
@@ -1049,95 +1179,51 @@
           ]
         },
         {
-          "shape": "dot",
-          "count": 16,
+          "shape": "petal",
+          "count": 8,
           "colors": [
-            "white",
-            "yellow"
+            "yellow",
+            "orange"
           ]
         },
         {
           "shape": "leaf",
           "count": 16,
           "colors": [
-            "white"
+            "green"
           ]
         },
         {
           "shape": "drop",
           "count": 16,
           "colors": [
-            "yellow",
-            "white"
+            "orange",
+            "red"
           ]
         },
         {
           "shape": "dot",
           "count": 24,
           "colors": [
-            "white"
+            "yellow"
           ]
         }
       ],
       "extra": [
-        "orange"
+        "pink"
       ]
     }
   },
   {
-    "slug": "hard-3",
-    "level": 8,
-    "order": 5,
-    "kind": "tracks",
-    "title": "Howrah Express",
-    "cheer": "Choo choo!",
-    "blurb": "You found the one line that works!",
-    "fact": "Howrah Bridge in Kolkata has no nuts and bolts. It is held together with rivets!",
-    "config": {
-      "map": [
-        "|Tb-cH",
-        "a-dP||",
-        "|b-bdd",
-        "T-c|-F",
-        "aH|a-c",
-        "F-dTH|"
-      ],
-      "taps": [
-        "102110",
-        "112011",
-        "121121",
-        "002110",
-        "301211",
-        "012001"
-      ],
-      "start": 0,
-      "goal": 5
-    }
-  },
-  {
-    "slug": "level-9-1",
-    "level": 9,
-    "order": 1,
-    "kind": "jigsaw",
-    "title": "Meet Momo",
-    "cheer": "Hello, Momo!",
-    "blurb": "Momo loves the mountains, and momos even more!",
-    "fact": "Red pandas spend most of their lives up in trees, and they love to eat bamboo.",
-    "picture": "momo",
-    "cols": 6,
-    "rows": 4,
-    "config": {}
-  },
-  {
-    "slug": "level-9-2",
-    "level": 9,
-    "order": 2,
+    "slug": "hard-2",
+    "level": 6,
+    "order": 4,
     "kind": "slide",
-    "title": "Toy Train in the Hills",
-    "cheer": "Puff puff!",
-    "blurb": "The little train is climbing again!",
-    "fact": "The Darjeeling toy train has been puffing up the hills for more than 140 years.",
-    "picture": "toy-train",
+    "title": "Snake Boat Race",
+    "cheer": "Row, row, row!",
+    "blurb": "Slow and steady wins the race. Well done!",
+    "fact": "Kerala's snake boats are so long that around 100 rowers can sit in one!",
+    "picture": "boat-race",
     "config": {
       "size": 3,
       "start": [
@@ -1155,102 +1241,14 @@
     }
   },
   {
-    "slug": "level-9-3",
-    "level": 9,
-    "order": 3,
-    "kind": "memory",
-    "title": "Picnic Snap",
-    "cheer": "Snack feast!",
-    "blurb": "Eight pairs! Snacks from every stop on the trip.",
-    "fact": "The hills around Darjeeling are covered in tea gardens. Tea from there goes all over the world.",
-    "config": {
-      "snacks": [
-        "momos",
-        "chai",
-        "rasgulla",
-        "appam",
-        "dhokla",
-        "vadapav",
-        "lassi",
-        "ghevar"
-      ],
-      "cols": 4
-    }
-  },
-  {
-    "slug": "hard-5",
-    "level": 9,
-    "order": 4,
-    "kind": "maze",
-    "title": "Hill Hunt",
-    "cheer": "Momo time!",
-    "blurb": "Gappu found the momos, high up in the hills!",
-    "fact": "Kanchenjunga, in Sikkim, is the third highest mountain in the world.",
-    "maze": {
-      "intro": "The switch opens one gate and shuts the other. Think first!",
-      "goal": "momos",
-      "map": [
-        "o..#..C.J",
-        ".#.......",
-        "RRRRRRARR",
-        "...#.#.#.",
-        "##.#.....",
-        "a..#.#.#C",
-        "..o#.....",
-        "RYRRRRRXR",
-        "...#.#...",
-        ".#.#x#.#.",
-        "S.......o"
-      ],
-      "gates": {
-        "A": {
-          "name": "yellow",
-          "color": "#FFC93C",
-          "glyph": "M1.5 6a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0 -9 0z",
-          "lever": "a"
-        },
-        "X": {
-          "name": "purple",
-          "color": "#9B7BFF",
-          "glyph": "M6 1.2L10.8 10.2H1.2z",
-          "openWhen": true
-        },
-        "Y": {
-          "name": "green",
-          "color": "#3DBE7E",
-          "glyph": "M6 0.8L11.2 6L6 11.2L0.8 6z",
-          "openWhen": false
-        }
-      },
-      "monkeys": [
-        {
-          "axis": "h",
-          "line": 4,
-          "min": 4,
-          "max": 8,
-          "start": 6,
-          "dir": 1
-        },
-        {
-          "axis": "v",
-          "line": 6,
-          "min": 8,
-          "max": 10,
-          "start": 9,
-          "dir": 1
-        }
-      ]
-    }
-  },
-  {
-    "slug": "level-9-5",
-    "level": 9,
+    "slug": "level-6-5",
+    "level": 6,
     "order": 5,
     "kind": "tracks",
-    "title": "Loops in the Hills",
+    "title": "Backwater Express",
     "cheer": "Choo choo!",
-    "blurb": "Round and round, up and up the hill!",
-    "fact": "The toy train climbs so steeply that its track goes round in loops and zig-zags.",
+    "blurb": "Past the ponds and the palms, all the way through.",
+    "fact": "Coconut palms grow all over Kerala. The name Kerala may come from \"kera\", a word for coconut.",
     "config": {
       "map": [
         "FbdbcF",

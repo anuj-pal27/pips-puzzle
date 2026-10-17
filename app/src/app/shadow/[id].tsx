@@ -9,11 +9,12 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { playSound, useMusic } from '@/audio/sound';
 import { Pill } from '@/components/Buttons';
 import { Diya, ThemeBackdrop } from '@/components/Festive';
-import { GameHeader, TipBubble, useFinish } from '@/components/GameChrome';
+import { GameHeader, TipBubble, useFinish, useHowTo } from '@/components/GameChrome';
 import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
 import { FRIEND_ART, FRIEND_RATIO } from '@/data/art';
 import { FRIEND_NAMES, type FriendId } from '@/data/games';
+import { HOW_TO } from '@/data/howTo';
 import type { ShadowPuzzle } from '@/data/puzzles';
 import { friendsMet, isGentle, themeFor } from '@/data/levels';
 import { pickDecoy, shadowStars, trayOrder } from '@/game/shadow';
@@ -57,6 +58,7 @@ function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
   const { width } = useWindowDimensions();
   const theme = themeFor(puzzle.level);
   useMusic(theme.music);
+  const howTo = useHowTo(puzzle);
   const night = theme.id === 'diwali';
 
   const cols = game.cols;
@@ -70,7 +72,7 @@ function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
   const [found, setFound] = useState<FriendId[]>([]);
   const [misses, setMisses] = useState(0);
   const [tip, setTip] = useState<Tip>({
-    text: isGentle(puzzle.level) ? 'Drag each friend onto their shadow!' : 'Drag each friend onto their shadow. One friend has no shadow!',
+    text: HOW_TO[isGentle(puzzle.level) ? 'shadow' : 'shadow-decoy'].en,
     tone: 'plain',
   });
   const [panel, setPanel] = useState<Rect | null>(null);
@@ -130,6 +132,7 @@ function ShadowGame({ puzzle }: { puzzle: ShadowPuzzle }) {
         <GameHeader
           title={puzzle.title || "Who's That Shadow?"}
           level={puzzle.level}
+          howTo={howTo}
           right={
             <Pill>
               <Icon name="check" size={24} color={colors.green} />

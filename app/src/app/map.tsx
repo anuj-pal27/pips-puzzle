@@ -5,24 +5,27 @@ import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, w
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { playSound } from '@/audio/sound';
-import { CircleButton, Pill } from '@/components/Buttons';
+import { ChunkyButton, CircleButton, Pill } from '@/components/Buttons';
 import { StringLights } from '@/components/Festive';
 import { Icon } from '@/components/Icon';
+import { IndiaMap, type PinState } from '@/components/IndiaMap';
 import { FriendTrain } from '@/components/LevelParty';
 import { PuzzleThumb } from '@/components/PuzzleThumb';
 import { Stars } from '@/components/Stars';
 import { Txt } from '@/components/Txt';
 import { FRIEND_ART } from '@/data/art';
 import { FRIEND_NAMES } from '@/data/games';
-import { getLevel, LEVELS, type Level } from '@/data/levels';
+import { getLevel, LEVELS, stopNumber, type Level } from '@/data/levels';
 import { KIND_LABEL, type Puzzle } from '@/data/puzzles';
+import { INDIA_ROUTE } from '@/data/route';
 import { useOpenPuzzle } from '@/navigation';
 import { useCatalog } from '@/state/catalog';
 import { useProgress } from '@/state/progress';
 import { colors } from '@/theme';
 
-// The journey map: the Jalebi Express's stops round India, one card per level, joined by a railway.
-// Open levels show their puzzles; the next locked stop shows its new friend as a mystery shadow.
+// The journey screen: a map of India with the whole trip on it (stops to play, and stops coming soon), a big
+// "Play" button for the next puzzle, then one card per level in trip order, joined by a railway. Open levels show
+// their puzzles; the next locked stop shows its new friend as a mystery shadow.
 
 /** Chip on the tile: what kind of game it is (plain jigsaws don't need one). */
 const chipFor = (p: Puzzle) => (p.kind === 'jigsaw' ? (p.spin ? 'Spin' : null) : KIND_LABEL[p.kind]);
@@ -137,7 +140,7 @@ function LevelCard({ level, puzzles, tile, nextId }: { level: Level; puzzles: Pu
         <View pointerEvents="none" style={[styles.cardBand, { backgroundColor: theme.bg }]} />
       )}
       <View style={[styles.levelHead, night && { marginTop: 14 }]}>
-        <LevelNumber n={level.n} color={theme.accent} />
+        <LevelNumber n={stopNumber(level.n)} color={theme.accent} />
         <View style={{ flex: 1 }}>
           <Txt weight="display" size={22} color={theme.text} accessibilityRole="header" numberOfLines={1}>
             {level.place}
@@ -149,7 +152,7 @@ function LevelCard({ level, puzzles, tile, nextId }: { level: Level; puzzles: Pu
       <View style={styles.levelMeta}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Read the story of level ${level.n}`}
+          accessibilityLabel={`Read the story of level ${stopNumber(level.n)}`}
           onPress={() => {
             playSound('tap');
             router.push({ pathname: '/story/[level]', params: { level: String(level.n) } });
@@ -180,17 +183,17 @@ function LevelCard({ level, puzzles, tile, nextId }: { level: Level; puzzles: Pu
 function LockedLevel({ level, before, need, first }: { level: Level; before: Level; need: number; first: boolean }) {
   if (!first) {
     return (
-      <View style={styles.ticket} accessible accessibilityLabel={`Level ${level.n}, ${level.place}. Locked.`}>
-        <LevelNumber n={level.n} color={colors.lockedTile} size={34} />
+      <View style={styles.ticket} accessible accessibilityLabel={`Level ${stopNumber(level.n)}, ${level.place}. Locked.`}>
+        <LevelNumber n={stopNumber(level.n)} color={colors.lockedTile} size={34} />
         <Txt weight="display" size={18} color={colors.inkBrown} style={{ flex: 1 }} numberOfLines={1}>{level.place}</Txt>
         <Icon name="lock" size={22} color={colors.inkBrown} />
       </View>
     );
   }
   return (
-    <View style={styles.lockedCard} accessible accessibilityLabel={`Next stop: level ${level.n}, ${level.place}. Locked. Finish ${need} puzzles in level ${before.n} to unlock.`}>
+    <View style={styles.lockedCard} accessible accessibilityLabel={`Next stop: level ${stopNumber(level.n)}, ${level.place}. Locked. Finish ${need} puzzles in level ${stopNumber(before.n)} to unlock.`}>
       <View style={styles.levelHead}>
-        <LevelNumber n={level.n} color={colors.lockedTile} />
+        <LevelNumber n={stopNumber(level.n)} color={colors.lockedTile} />
         <View style={{ flex: 1 }}>
           <Txt weight="extrabold" size={14} color={colors.inkBrown}>Next stop</Txt>
           <Txt weight="display" size={22} color={colors.inkBrown} numberOfLines={1}>{level.place}</Txt>
@@ -200,7 +203,7 @@ function LockedLevel({ level, before, need, first }: { level: Level; before: Lev
       <View style={styles.lockedRow}>
         <Icon name="lock" size={22} color={colors.inkBrown} />
         <Txt size={15} weight="semibold" color={colors.inkBrown} style={{ flex: 1 }}>
-          Finish {need} puzzles in Level {before.n} to meet a new friend!
+          Finish {need} puzzles in Level {stopNumber(before.n)} to meet a new friend!
         </Txt>
       </View>
     </View>
@@ -226,6 +229,83 @@ function JourneyBanner() {
   );
 }
 
+/** The map of India with the trip on it, and a big button for the next puzzle. */
+function JourneyMap({ onPressLevel }: { onPressLevel: (level: number) => void }) {
+  const { stars } = useProgress();
+  const { levels, isLevelDone, isLevelUnlocked, nextPuzzle } = useCatalog();
+  const { width } = useWindowDimensions();
+  const open = useOpenPuzzle();
+  const next = nextPuzzle(stars);
+  const pins: Record<number, PinState> = Object.fromEntries(
+    levels.map((n) => [n, isLevelDone(n, stars) ? 'done' : isLevelUnlocked(n, stars) ? 'open' : 'locked'] as const),
+  );
+  // The train waits at the stop being played (or the last open one, once everything is done).
+  const current = next?.level ?? levels.filter((n) => isLevelUnlocked(n, stars)).at(-1);
+  const soon = INDIA_ROUTE.filter((s) => s.level === undefined || !levels.includes(s.level)).length;
+  const mapWidth = Math.min(width, 480) - 40 - 24;
+
+  return (
+    <View style={styles.mapCard}>
+      <Txt
+        weight="display"
+        size={20}
+        align="center"
+        accessibilityRole="header"
+        accessibilityLabel={`Map of India. The Jalebi Express goes from Jammu & Kashmir at the top down to Kanyakumari at the very tip. ${levels.length} stops to play, ${soon} more coming soon.`}>
+        Across India, top to tip
+      </Txt>
+      <IndiaMap width={mapWidth} pins={pins} current={current} onPressLevel={onPressLevel} />
+      <View style={styles.legend}>
+        <View style={styles.legendItem}>
+          <View style={styles.legendPin}>
+            <Txt weight="display" size={10} style={{ lineHeight: 12 }}>1</Txt>
+          </View>
+          <Txt weight="bold" size={14}>{levels.length} stops to play</Txt>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, styles.legendSoon]} />
+          <Txt weight="bold" size={14}>{soon} coming soon</Txt>
+        </View>
+      </View>
+      {next ? (
+        <ChunkyButton
+          label="Play"
+          icon="play"
+          color={colors.grass}
+          shadow={colors.grassShadow}
+          height={68}
+          width={210}
+          fontSize={30}
+          accessibilityLabel={`Play the next puzzle: ${next.title}`}
+          onPress={() => {
+            playSound('tap');
+            open(next);
+          }}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+/** At the end of the list: the stops still to come. */
+function ComingSoon() {
+  const { levels } = useCatalog();
+  const places = INDIA_ROUTE.filter((s) => s.level === undefined || !levels.includes(s.level)).map((s) => s.place);
+  if (!places.length) return null;
+  const named = places.slice(0, 3).join(', ');
+  return (
+    <View style={styles.comingSoon} accessible>
+      <Icon name="lock" size={22} color={colors.inkBrown} />
+      <View style={{ flex: 1 }}>
+        <Txt weight="display" size={18} color={colors.inkBrown}>More stops coming soon!</Txt>
+        <Txt weight="semibold" size={14} color={colors.inkBrown}>
+          {named} and {places.length - 3} more, all over India. And after India, the whole world!
+        </Txt>
+      </View>
+    </View>
+  );
+}
+
 export default function PuzzleMap() {
   const { stars, totalStars } = useProgress();
   const { levels, puzzlesInLevel, isLevelUnlocked, unlockNeed, nextPuzzle } = useCatalog();
@@ -234,7 +314,8 @@ export default function PuzzleMap() {
   const tile = Math.min(104, Math.floor((cardInner - 22) / 3));
   const next = nextPuzzle(stars);
   const scroll = useRef<ScrollView>(null);
-  const scrolled = useRef(false);
+  // Where each level's card is in the list, so a pin on the map can scroll to it.
+  const cardY = useRef<Record<number, number>>({});
 
   const firstLocked = levels.find((n) => !isLevelUnlocked(n, stars));
 
@@ -251,38 +332,23 @@ export default function PuzzleMap() {
 
       <ScrollView ref={scroll} contentContainerStyle={styles.list}>
         <JourneyBanner />
+        <JourneyMap onPressLevel={(n) => scroll.current?.scrollTo({ y: Math.max(0, (cardY.current[n] ?? 0) - 8), animated: true })} />
         {levels.map((n, i) => {
           const level = getLevel(n);
           const unlocked = isLevelUnlocked(n, stars);
           const link = i > 0 ? <RailLink done={unlocked} /> : null;
-          if (!unlocked) {
-            return (
-              <View key={n}>
-                {link}
-                <LockedLevel level={level} before={getLevel(levels[i - 1])} need={unlockNeed(n)} first={n === firstLocked} />
-              </View>
-            );
-          }
-          const isCurrent = next?.level === n && n !== levels[0];
           return (
-            <View
-              key={n}
-              // Open the map at the level being played (the one with the "play next" puzzle).
-              onLayout={
-                isCurrent
-                  ? (e) => {
-                      if (scrolled.current) return;
-                      scrolled.current = true;
-                      const y = e.nativeEvent.layout.y;
-                      setTimeout(() => scroll.current?.scrollTo({ y: Math.max(0, y - 8), animated: true }), 250);
-                    }
-                  : undefined
-              }>
+            <View key={n} onLayout={(e) => (cardY.current[n] = e.nativeEvent.layout.y + (link ? 30 : 0))}>
               {link}
-              <LevelCard level={level} puzzles={puzzlesInLevel(n)} tile={tile} nextId={next?.id} />
+              {unlocked ? (
+                <LevelCard level={level} puzzles={puzzlesInLevel(n)} tile={tile} nextId={next?.id} />
+              ) : (
+                <LockedLevel level={level} before={getLevel(levels[i - 1])} need={unlockNeed(n)} first={n === firstLocked} />
+              )}
             </View>
           );
         })}
+        <ComingSoon />
       </ScrollView>
     </SafeAreaView>
   );
@@ -292,6 +358,13 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.sand },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },
   list: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40, width: '100%', maxWidth: 480, alignSelf: 'center' },
+  mapCard: { alignItems: 'center', gap: 10, padding: 12, paddingTop: 10, borderRadius: 26, backgroundColor: '#D4EEF9', boxShadow: '0px 5px 0px #9CCBE0', marginBottom: 14 },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 18, rowGap: 4 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 2, borderColor: colors.white },
+  legendSoon: { backgroundColor: '#CFC6B4' },
+  legendPin: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: colors.coral, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
+  comingSoon: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14, padding: 14, borderRadius: 22, backgroundColor: colors.lockedCard, borderWidth: 2, borderStyle: 'dashed', borderColor: colors.sandShadow },
   banner: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, paddingLeft: 16, borderRadius: 22, backgroundColor: colors.white, boxShadow: `0px 5px 0px ${colors.sandShadow}`, marginBottom: 14, flexWrap: 'wrap', justifyContent: 'center' },
   card: { padding: 14, paddingTop: 12, borderRadius: 26, borderTopWidth: 6, boxShadow: `0px 6px 0px ${colors.sandShadow}`, gap: 10, overflow: 'hidden' },
   cardBand: { position: 'absolute', left: 0, right: 0, top: 0, height: 64 },

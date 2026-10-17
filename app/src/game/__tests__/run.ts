@@ -5,9 +5,14 @@ import { readFileSync } from 'node:fs';
 
 import { isLevelDone, isLevelUnlocked, levelsIn, nextPuzzle, puzzleAfter, readServerPuzzles, unlockNeed, type KnownIds } from '../../data/catalog.ts';
 import { FRIEND_NAMES, GIFT_NAMES, RANGOLI_GAMES, SLIDE_GAMES, SNACK_NAMES, TRACK_GAMES } from '../../data/games.ts';
-import { friendsMet, LEVELS } from '../../data/levels.ts';
+import { HOW_TO, howToClip, howToFor, type HowToId } from '../../data/howTo.ts';
+import { INDIA_OUTLINE, INDIA_SIZE, onMap } from '../../data/indiaOutline.ts';
+import { friendsMet, LEVELS, routeIndex, stopNumber } from '../../data/levels.ts';
+import { OPENING } from '../../data/opening.ts';
 import { MAZES } from '../../data/mazes.ts';
 import { PICTURE_INFO, PUZZLES, type MemoryPuzzle, type Puzzle, type ShadowPuzzle } from '../../data/puzzles.ts';
+import { INDIA_ROUTE, LINE_STOPS } from '../../data/route.ts';
+import { LEVEL_VOICES, OPENING_VOICE, voiceScripts } from '../../data/voice.ts';
 import { toSeed } from '../../data/seed.ts';
 import {
   checkRangoli,
@@ -269,10 +274,10 @@ for (const cfg of Object.values(TRACK_GAMES)) {
       }
     }
   });
-  if (cfg.id === 'hard' || cfg.id === 'hills') {
+  if (cfg.id === 'temple' || cfg.id === 'backwaters') {
     test(`tracks ${cfg.id}: has decoy pieces off the route`, () => {
       const decoys = cfg.map.join('').split('').filter((ch, i) => isTrack(ch) && !onRoute.has(`${i % cfg.map[0].length},${Math.floor(i / cfg.map[0].length)}`));
-      assert.ok(decoys.length >= (cfg.id === 'hard' ? 8 : 5), `${decoys.length} decoys`);
+      assert.ok(decoys.length >= (cfg.id === 'temple' ? 8 : 5), `${decoys.length} decoys`);
     });
   }
 }
@@ -561,23 +566,28 @@ const KNOWN: KnownIds = {
   friends: Object.keys(FRIEND_NAMES),
   snacks: Object.keys(SNACK_NAMES),
   gifts: Object.keys(GIFT_NAMES),
-  levels: LEVELS.length,
+  levels: LEVELS.map((l) => l.n),
 };
 const pieces = (p: Puzzle) => (p.kind === 'jigsaw' ? p.cols * p.rows : 0);
 
-test('levels: ten stops, each with a place, story, finale, colours, and a new friend from level 2 to 9', () => {
-  assert.deepEqual(LEVELS.map((l) => l.n), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-  for (const l of LEVELS) {
+test('levels: ten stops, each with a place, story, finale, colours, and a new friend at every stop between the first and last', () => {
+  assert.deepEqual(LEVELS.map((l) => l.place), ['Jammu & Kashmir', 'Punjab', 'The Hills', 'Kolkata', 'Rajasthan', 'Gujarat', 'Mumbai', 'Tamil Nadu', 'Kerala', 'Kanyakumari'], 'the trip runs from the top of India to the very tip');
+  assert.deepEqual(LEVELS.map((l) => l.n), [1, 2, 9, 8, 3, 4, 5, 7, 6, 10], 'level ids never change, so stars, story cards and voice clips stay with their stop');
+  LEVELS.forEach((l, i) => {
+    assert.equal(routeIndex(l.n), i);
+    assert.equal(stopNumber(l.n), i + 1);
+  });
+  for (const [i, l] of LEVELS.entries()) {
     assert.ok(l.place && l.title && l.done && l.gift && l.story.length >= 2, `level ${l.n} is missing its story`);
     assert.ok(l.story.every((line) => line.length <= 90), `level ${l.n}: story lines are short enough to read aloud`);
     assert.ok(l.picture in PICTURE_INFO, `level ${l.n}: picture ${l.picture}`);
     assert.ok(l.friend in FRIEND_NAMES);
-    assert.equal(l.joins, l.n >= 2 && l.n <= 9);
+    assert.equal(l.joins, i > 0 && i < LEVELS.length - 1);
     if (l.joins) assert.ok(l.giftArt && l.giftArt in GIFT_NAMES, `level ${l.n}: gift picture`);
   }
   assert.equal(new Set(LEVELS.filter((l) => l.joins).map((l) => l.friend)).size, 8, 'a different new friend at every stop');
   assert.equal(LEVELS.filter((l) => l.theme.id === 'diwali').length, 1);
-  assert.equal(LEVELS[9].theme.id, 'diwali', 'the journey ends at home on Diwali night');
+  assert.equal(LEVELS.at(-1)!.theme.id, 'diwali', 'the journey ends at Kanyakumari on Diwali night');
 });
 
 test('levels: five or six puzzles each, no two in a row the same kind, and each new friend has a "Meet" jigsaw first', () => {
@@ -619,6 +629,77 @@ test('levels: get harder as you go (jigsaws grow, snap gets more pairs, shadows 
   assert.equal(pieces(PUZZLES.at(-1)!), 24);
 });
 
+test('story: the opening has a narrator line for every page, and every stop has its story and finale read aloud', () => {
+  assert.equal(OPENING_VOICE.pages.length, OPENING.length);
+  assert.ok(OPENING.every((p) => p.text.length <= 90), 'opening pages are short enough to read aloud');
+  assert.deepEqual(LEVEL_VOICES.map((v) => v.level).sort((a, b) => a - b), LEVELS.map((l) => l.n).sort((a, b) => a - b));
+  for (const v of LEVEL_VOICES) assert.equal(v.story.length, LEVELS.find((l) => l.n === v.level)!.story.length, `level ${v.level}: one spoken line per story line`);
+  const clips = voiceScripts().map((c) => c.clip);
+  assert.equal(new Set(clips).size, clips.length);
+  assert.ok(clips.includes('opening-1') && clips.includes(`opening-${OPENING.length}`));
+});
+
+// ---------------------------------------------------------------- the map of India
+const OUTLINE_RINGS = INDIA_OUTLINE.split('Z')
+  .filter(Boolean)
+  .map((ring) => ring.replace('M', '').split('L').map((pt) => pt.split(' ').map(Number) as [number, number]));
+function onLand([x, y]: [number, number]) {
+  return OUTLINE_RINGS.some((ring) => {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [x1, y1] = ring[i];
+      const [x2, y2] = ring[j];
+      if (y1 > y !== y2 > y && x < ((x2 - x1) * (y - y1)) / (y2 - y1) + x1) inside = !inside;
+    }
+    return inside;
+  });
+}
+
+test('map: the built stops are on the route in the same order as the levels, from J&K to Kanyakumari', () => {
+  assert.deepEqual(INDIA_ROUTE.filter((s) => s.level !== undefined).map((s) => s.level), LEVELS.map((l) => l.n));
+  assert.equal(new Set(INDIA_ROUTE.map((s) => s.place)).size, INDIA_ROUTE.length, 'every stop once');
+  assert.equal(LINE_STOPS[0].level, LEVELS[0].n, 'the trip starts at Jalebi Junction');
+  assert.equal(LINE_STOPS.at(-1)!.level, LEVELS.at(-1)!.n, 'and ends at Kanyakumari');
+  assert.ok(INDIA_ROUTE.every((s, i) => !s.boat || (i > 0 && !INDIA_ROUTE[i - 1].boat && s.level === undefined)), 'boat trips leave from a stop on the line');
+  assert.equal(INDIA_ROUTE.length, 37, '35 stops and two islands (ROUTE.md)');
+});
+
+test("map: India's official outline, with every stop on the line on land", () => {
+  assert.ok(OUTLINE_RINGS.length >= 2 && OUTLINE_RINGS[0].length > 500, 'the mainland and the islands');
+  for (const [x, y] of OUTLINE_RINGS.flat()) assert.ok(x >= 0 && x <= INDIA_SIZE.width && y >= 0 && y <= INDIA_SIZE.height, 'inside the page');
+  // India's map includes all of Jammu & Kashmir and Ladakh, and Arunachal Pradesh.
+  for (const [lat, lon] of [[35.92, 74.31], [34.37, 73.47], [35.2, 79.4], [27.59, 91.86]]) assert.ok(onLand(onMap(lat, lon)), `${lat}, ${lon}`);
+  assert.ok(!onLand(onMap(31.55, 74.35)) && !onLand(onMap(27.7, 85.32)), 'Lahore and Kathmandu are not in India');
+  for (const s of LINE_STOPS) assert.ok(onLand(onMap(s.lat, s.lon)), `${s.place} is not on land`);
+});
+
+test('how to play: every game opens with a short spoken line, in English and Hindi, and every line gets used', () => {
+  const used = new Set<HowToId>(PUZZLES.map(howToFor));
+  assert.deepEqual([...used].sort(), (Object.keys(HOW_TO) as HowToId[]).sort(), 'a line no game says, or a game with no line');
+  for (const [id, line] of Object.entries(HOW_TO)) {
+    assert.ok(line.en.length <= 70, `${id}: short enough to say in one breath`);
+    assert.match(line.hi, /[\u0900-\u097F]/, `${id}: the Hindi line is in Devanagari`);
+  }
+  const byId = new Map(PUZZLES.map((p) => [p.id, howToFor(p)]));
+  assert.equal(byId.get('easy-2'), 'shadow', 'the first stops have no decoy shadow');
+  assert.equal(byId.get('level-8-3'), 'shadow-decoy');
+  assert.equal(byId.get('easy-3'), 'snap-peek');
+  assert.equal(byId.get('level-10-6'), 'jigsaw-spin');
+  assert.equal(byId.get('medium-5'), 'maze-dark', 'the Lantern Walk');
+  assert.equal(byId.get('level-5-2'), 'maze-switch');
+  assert.equal(byId.get('level-3-5'), 'maze-levers');
+  const clips = new Set(voiceScripts().map((c) => c.clip));
+  for (const id of Object.keys(HOW_TO) as HowToId[]) assert.ok(clips.has(howToClip(id, 'en')) && clips.has(howToClip(id, 'hi')), id);
+  assert.equal(voiceScripts().find((c) => c.clip === 'help-maze-en')!.lang, 'en-IN');
+});
+
+test("levels: shadows only show friends the child has already met on the trip", () => {
+  for (const p of PUZZLES.filter((q): q is ShadowPuzzle => q.kind === 'shadow')) {
+    const met = friendsMet(p.level);
+    p.friends.forEach((f) => assert.ok(met.includes(f), `${p.id} shows ${f}, who joins later`));
+  }
+});
+
 // ---------------------------------------------------------------- puzzles from the server
 const SEED = JSON.parse(readFileSync(new URL('../../../../backend/content/seed.json', import.meta.url), 'utf8'));
 
@@ -638,7 +719,7 @@ test('server seed: every puzzle reads cleanly into the same game the app has bui
   }
 });
 test('server seed: an app that has never heard of a level, a kind or a picture skips just those puzzles', () => {
-  const small = { ...KNOWN, levels: 3, pictures: ['gappu', 'chunnu', 'station', 'bholu', 'kesar'] };
+  const small = { ...KNOWN, levels: [1, 2, 3], pictures: ['gappu', 'chunnu', 'station', 'bholu', 'kesar'] };
   const { puzzles, skipped } = readServerPuzzles(SEED, small);
   assert.ok(puzzles.every((p) => p.level <= 3));
   assert.deepEqual(levelsIn(puzzles), [1, 2, 3]);
@@ -719,13 +800,34 @@ test('unlocking: a level opens once four puzzles of the level before have stars;
   // A level with fewer than four puzzles needs all of them.
   const short = puzzles.filter((p) => p.level !== 1 || p.order <= 2);
   assert.equal(unlockNeed(short, 2), 2);
-  // A level the server left empty is skipped over.
+  // A level the server left empty is skipped over: without Punjab, the Hills come straight after level 1.
   const gap = puzzles.filter((p) => p.level !== 2);
-  assert.ok(isLevelUnlocked(gap, 3, four));
+  assert.ok(isLevelUnlocked(gap, 9, four));
   // The last level is only done when every puzzle in it (The Big Picture too) has a star.
   const all = Object.fromEntries(puzzles.map((p) => [p.id, 3]));
   assert.ok(isLevelDone(puzzles, 10, all));
   assert.ok(!isLevelDone(puzzles, 10, { ...all, 'level-10-6': 0 }));
+});
+
+test('unlocking: levels open in trip order, and a stop with a star stays open when the order changes', () => {
+  const puzzles = PUZZLES;
+  assert.deepEqual(levelsIn(puzzles), [1, 2, 9, 8, 3, 4, 5, 7, 6, 10]);
+  const ids = (level: number, n = 99) => puzzles.filter((p) => p.level === level).slice(0, n).map((p) => p.id);
+  const done = (list: string[]) => Object.fromEntries(list.map((id) => [id, 3]));
+  // Punjab done: the Hills (level 9) open next, Kolkata (level 8) doesn't yet.
+  const punjab = done([...ids(1), ...ids(2)]);
+  assert.ok(isLevelUnlocked(puzzles, 9, punjab));
+  assert.ok(!isLevelUnlocked(puzzles, 8, punjab));
+  assert.equal(nextPuzzle(puzzles, punjab)?.id, 'level-9-1');
+  assert.equal(puzzleAfter(puzzles, ids(2).at(-1)!, punjab)?.id, 'level-9-1');
+  // A child who played the old order (Jalebi Junction, Punjab, Rajasthan, Gujarat) keeps Rajasthan and Gujarat
+  // open, Mumbai after them opens too, and the Hills are their next new stop.
+  const old = done([...ids(1), ...ids(2), ...ids(3), ...ids(4, 4)]);
+  for (const level of [1, 2, 9, 3, 4, 5]) assert.ok(isLevelUnlocked(puzzles, level, old), `level ${level} should be open`);
+  for (const level of [8, 7, 6, 10]) assert.ok(!isLevelUnlocked(puzzles, level, old), `level ${level} should be locked`);
+  assert.equal(nextPuzzle(puzzles, old)?.id, 'level-9-1');
+  // One star is enough to keep a stop open.
+  assert.ok(isLevelUnlocked(puzzles, 6, { [ids(6)[2]]: 1 }));
 });
 
 console.log(`\n${passed} checks passed`);

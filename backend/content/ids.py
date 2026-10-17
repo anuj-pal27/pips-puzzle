@@ -4,20 +4,24 @@ A puzzle on the server can only use these (the app can't draw anything else). Ke
 app: app/src/data/levels.ts, app/src/data/games.ts and app/src/data/puzzles.ts (PICTURE_INFO).
 """
 
-# The 10 levels: one stop each on the Jalebi Express's trip round India (STORY.md).
+# The levels, in the order the Jalebi Express visits them: from Jammu & Kashmir at the top of India to Kanyakumari
+# at the very tip (STORY.md; the stops still to come are in ROUTE.md). The number is the level's id, which never
+# changes (phones keep stars and story cards by it, and older apps know the levels by it), so a new stop gets the
+# next free number and goes wherever it belongs in this list. The app shows a level's place on the trip: STOP.
 LEVELS = {
-    1: "Jalebi Junction",
+    1: "Jammu & Kashmir",
     2: "Punjab",
+    9: "The Hills",
+    8: "Kolkata",
     3: "Rajasthan",
     4: "Gujarat",
     5: "Mumbai",
-    6: "Kerala",
     7: "Tamil Nadu",
-    8: "Kolkata",
-    9: "The Hills",
-    10: "Home for Diwali",
+    6: "Kerala",
+    10: "Kanyakumari",
 }
-LAST_LEVEL = max(LEVELS)
+STOP = {n: i + 1 for i, n in enumerate(LEVELS)}  # level id -> its place on the trip ("Level 3" in the app)
+LAST_LEVEL = list(LEVELS)[-1]  # the last stop: Diwali at Kanyakumari
 
 # Pictures for jigsaws and slide puzzles.
 PICTURES = {

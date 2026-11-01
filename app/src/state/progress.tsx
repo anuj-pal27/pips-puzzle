@@ -9,6 +9,7 @@ import { playFinished, setPlayStatsEnabled } from './playStats';
 // Everything the game remembers, saved on the phone (no account, works offline).
 
 export type Settings = {
+  muted: boolean; // the speaker button on the home screen: silences everything, leaving the switches below as they are
   sound: boolean;
   music: boolean;
   voice: boolean; // the narrator reads each stop's story in its own language, and says how to play each game
@@ -25,7 +26,7 @@ export type Settings = {
 type Saved = { version: 1; stars: Record<string, number>; lab: Record<string, number>; celebrated: string[]; settings: Settings };
 
 const STORAGE_KEY = 'pips-puzzles/progress';
-const DEFAULTS: Saved = { version: 1, stars: {}, lab: {}, celebrated: [], settings: { sound: true, music: true, voice: true, helpLanguage: 'en', pictureHint: true, shareStats: true } };
+const DEFAULTS: Saved = { version: 1, stars: {}, lab: {}, celebrated: [], settings: { muted: false, sound: true, music: true, voice: true, helpLanguage: 'en', pictureHint: true, shareStats: true } };
 
 type ProgressApi = {
   ready: boolean;
@@ -54,7 +55,10 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       .then((raw) => {
         if (!raw) return;
         const parsed = JSON.parse(raw) as Partial<Saved>;
-        setSaved({ ...DEFAULTS, ...parsed, lab: { ...parsed.lab }, celebrated: parsed.celebrated ?? [], settings: { ...DEFAULTS.settings, ...parsed.settings } });
+        const settings = { ...DEFAULTS.settings, ...parsed.settings };
+        // Up to 1.5.0 the speaker button only switched the effects off: a phone saved that way meant "quiet".
+        if (parsed.settings && parsed.settings.muted === undefined && parsed.settings.sound === false) Object.assign(settings, { muted: true, sound: true });
+        setSaved({ ...DEFAULTS, ...parsed, lab: { ...parsed.lab }, celebrated: parsed.celebrated ?? [], settings });
       })
       .catch(() => {
         // Corrupt or unreadable save: start fresh rather than crash.
@@ -66,12 +70,13 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     setPlayStatsEnabled(saved.settings.shareStats);
   }, [saved.settings.shareStats]);
 
-  // Grown-ups' switches. Wait for the saved settings, so music never starts for a moment when it's off.
+  // The speaker button and the grown-ups' switches. Wait for the saved settings, so music never starts for a moment when it's off.
   useEffect(() => {
-    setSoundOn(saved.settings.sound);
-    setMusicOn(ready && saved.settings.music);
-    setVoiceOn(ready && saved.settings.voice);
-  }, [ready, saved.settings.sound, saved.settings.music, saved.settings.voice]);
+    const on = !saved.settings.muted;
+    setSoundOn(on && saved.settings.sound);
+    setMusicOn(ready && on && saved.settings.music);
+    setVoiceOn(ready && on && saved.settings.voice);
+  }, [ready, saved.settings.muted, saved.settings.sound, saved.settings.music, saved.settings.voice]);
 
   const save = (next: Saved) => {
     setSaved(next);

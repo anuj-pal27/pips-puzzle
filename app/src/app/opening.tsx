@@ -151,7 +151,7 @@ export default function OpeningStory() {
               <View key={i} style={[styles.dot, i === page && styles.dotOn]} />
             ))}
           </View>
-          {settings.voice && hasVoice(voice) ? <CircleButton icon="sound" label="Hear this page again" onPress={() => speak(voice)} /> : <View style={{ width: 56 }} />}
+          {!settings.muted && settings.voice && hasVoice(voice) ? <CircleButton icon="sound" label="Hear this page again" onPress={() => speak(voice)} /> : <View style={{ width: 56 }} />}
         </View>
         <ScrollView contentContainerStyle={styles.body}>
           <OutlinedText size={width < 380 ? 34 : 40} color={colors.sun} align="center">Pip&apos;s Big Idea</OutlinedText>

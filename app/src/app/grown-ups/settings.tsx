@@ -128,6 +128,12 @@ export default function GrownUpsSettings() {
       </View>
       <ScrollView contentContainerStyle={styles.content}>
         <Section title="Sound">
+          <ToggleRow
+            label="All sound"
+            help="Same as the speaker button on the home screen. Off keeps the game quiet, whatever is set below"
+            value={!settings.muted}
+            onChange={(on) => updateSettings({ muted: !on })}
+          />
           <ToggleRow label="Sound effects" value={settings.sound} onChange={(sound) => updateSettings({ sound })} />
           <ToggleRow label="Music" value={settings.music} onChange={(music) => updateSettings({ music })} />
           <ToggleRow

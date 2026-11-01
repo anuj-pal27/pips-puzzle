@@ -93,11 +93,11 @@ export default function Home() {
         <View style={styles.topBar}>
           <View style={styles.topLeft}>
             <CircleButton
-              icon={settings.sound ? 'sound' : 'soundOff'}
-              label="Sound"
-              selected={settings.sound}
+              icon={settings.muted ? 'soundOff' : 'sound'}
+              label={settings.muted ? 'Sound off' : 'Sound on'}
+              selected={!settings.muted}
               shadow={colors.skyShadow}
-              onPress={() => updateSettings({ sound: !settings.sound })}
+              onPress={() => updateSettings({ muted: !settings.muted })}
             />
             <CircleButton icon="book" label="Pip's story" shadow={colors.skyShadow} onPress={() => router.push('/opening')} />
           </View>

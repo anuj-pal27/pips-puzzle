@@ -27,7 +27,7 @@ export function useHowTo(puzzle: Puzzle): VoiceClip {
 /** A small speaker button next to the level badge: hear how to play again. */
 export function HowToButton({ clip }: { clip: VoiceClip }) {
   const { settings } = useProgress();
-  if (!settings.voice || !hasVoice(clip)) return null;
+  if (settings.muted || !settings.voice || !hasVoice(clip)) return null;
   return (
     <Pressable
       accessibilityRole="button"

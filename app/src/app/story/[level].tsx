@@ -59,7 +59,7 @@ export default function StoryCard() {
           <View style={[styles.levelBadge, { backgroundColor: theme.accent }]}>
             <Txt weight="display" size={20} color={colors.ink}>Level {stopNumber(level.n)}</Txt>
           </View>
-          {settings.voice && hasVoice(voice) ? <CircleButton icon="sound" label="Hear the story again" onPress={() => speak(voice)} /> : <View style={{ width: 56 }} />}
+          {!settings.muted && settings.voice && hasVoice(voice) ? <CircleButton icon="sound" label="Hear the story again" onPress={() => speak(voice)} /> : <View style={{ width: 56 }} />}
         </View>
         <ScrollView contentContainerStyle={styles.body}>
           <Animated.View entering={ZoomIn.springify()} style={{ alignItems: 'center' }}>
